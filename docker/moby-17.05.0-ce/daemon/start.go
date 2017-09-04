@@ -95,6 +95,8 @@ func (daemon *Daemon) Start(container *container.Container) error {
 // container needs, such as storage and networking, as well as links
 // between containers. The container is left waiting for a signal to
 // begin running.
+
+//启动容器
 func (daemon *Daemon) containerStart(container *container.Container, checkpoint string, checkpointDir string, resetRestartManager bool) (err error) {
 	start := time.Now()
 	container.Lock()
@@ -163,6 +165,7 @@ func (daemon *Daemon) containerStart(container *container.Container, checkpoint 
 		return err
 	}
 
+	////libcontainerd\client_unix.go中的Create函数
 	if err := daemon.containerd.Create(container.ID, checkpoint, checkpointDir, *spec, container.InitializeStdio, createOptions...); err != nil {
 		errDesc := grpc.ErrorDesc(err)
 		contains := func(s1, s2 string) bool {

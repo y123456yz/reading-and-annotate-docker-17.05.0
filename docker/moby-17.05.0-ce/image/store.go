@@ -26,25 +26,40 @@ type Store interface {
 }
 
 // LayerGetReleaser is a minimal interface for getting and releasing images.
-type LayerGetReleaser interface {
+type LayerGetReleaser interface { //下面的store包含该结构
 	Get(layer.ChainID) (layer.Layer, error)
 	Release(layer.Layer) ([]layer.Metadata, error)
 }
 
 type imageMeta struct {
+	//imageMeta包含一个layer成员，docker image是由多个只读的roLayer构成，而这里的layer就是最上层的layer。
 	layer    layer.Layer
 	children map[ID]struct{}
 }
 
+//imageStore 存放的是各个docker image的信息。imageStore的类型为image.Store，结构体为
+//Docker镜像存储相关数据结构参考http://licyhust.com/%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF/2016/09/27/docker-image-data-structure/
 type store struct {
 	sync.Mutex
+	//ls类型为LayerGetReleaser接口，初始化时将ls初始化为 layerStore。fs类型为StoreBackend。
 	ls        LayerGetReleaser
+	//images就是每一个镜像的信息
 	images    map[ID]*imageMeta
+	//fs存放了image的原信息，存储的目录位于/var/lib/docker/image/{driver}/imagedb，该目录下主要包含两个目录content和metadata
+	/*
+		content目录：content下面的sha256目录下存放了每个docker image的元数据文件，除了制定了这个image由那些roLayer构成，还包含了部分配置信息，
+	了解docker的人应该知道容器的部分配置信息是存放在image里面的，如volume、port、workdir等，这部分信息就存放在这个目录下面，
+	docker启动时会读取镜像配置信息，反序列化出image对象，docker images获取到的镜像有多少个，这里就有多少个响应的目录，目录名image id
+		metadata目录：metadata目录存放了docker image的parent信息
+	*/
 	fs        StoreBackend
+
+	//digestSet成员，本质上是一个set数据结构，里面存放的其实是每个docker的最上层layer的chain-id。
 	digestSet *digestset.Set
 }
 
 // NewImageStore returns new store object for given layer store
+// image/store.go  创建镜像仓库实例
 func NewImageStore(fs StoreBackend, ls LayerGetReleaser) (Store, error) {
 	is := &store{
 		ls:        ls,

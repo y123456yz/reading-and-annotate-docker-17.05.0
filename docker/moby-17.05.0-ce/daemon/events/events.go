@@ -19,7 +19,7 @@ type Events struct {
 	events []eventtypes.Message
 	pub    *pubsub.Publisher
 }
-
+//  daemon/events/events.go  创建event服务实例
 // New returns new *Events instance
 func New() *Events {
 	return &Events{

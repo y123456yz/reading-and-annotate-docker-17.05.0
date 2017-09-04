@@ -56,7 +56,7 @@ func MkdirAs(path string, mode os.FileMode, ownerUID, ownerGID int) error {
 
 // GetRootUIDGID retrieves the remapped root uid/gid pair from the set of maps.
 // If the maps are empty, then the root uid/gid will default to "real" 0/0
-func GetRootUIDGID(uidMap, gidMap []IDMap) (int, int, error) {
+func GetRootUIDGID(uidMap, gidMap []IDMap) (int, int, error) { // pkg/idtools/idtools.go 创建根uid、gid
 	var uid, gid int
 
 	if uidMap != nil {

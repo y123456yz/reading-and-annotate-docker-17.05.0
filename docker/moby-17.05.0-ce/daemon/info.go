@@ -23,7 +23,7 @@ import (
 	"github.com/docker/docker/volume/drivers"
 	"github.com/docker/go-connections/sockets"
 )
-
+// 获取host server系统信息
 // SystemInfo returns information about the host server the daemon is running on.
 func (daemon *Daemon) SystemInfo() (*types.Info, error) {
 	kernelVersion := "<unknown>"

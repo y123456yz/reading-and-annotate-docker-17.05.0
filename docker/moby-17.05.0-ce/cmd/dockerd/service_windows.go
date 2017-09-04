@@ -24,7 +24,7 @@ import (
 )
 
 var (
-	flServiceName       *string
+	flServiceName       *string  //service-name配置
 	flRegisterService   *bool
 	flUnregisterService *bool
 	flRunService        *bool
@@ -56,6 +56,7 @@ func installServiceFlags(flags *pflag.FlagSet) {
 	flags.MarkHidden("run-service")
 }
 
+//使用见initService
 type handler struct {
 	tosvc     chan bool
 	fromsvc   chan error
@@ -286,7 +287,7 @@ func initService(daemonCli *DaemonCli) (bool, bool, error) {
 	}
 
 	var log *eventlog.Log
-	if !interactive {
+	if !interactive {  //
 		log, err = eventlog.Open(*flServiceName)
 		if err != nil {
 			return false, false, err

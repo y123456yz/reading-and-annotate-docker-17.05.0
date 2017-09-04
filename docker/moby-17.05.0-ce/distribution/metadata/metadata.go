@@ -22,12 +22,12 @@ type Store interface {
 }
 
 // FSMetadataStore uses the filesystem to associate metadata with layer and
-// image IDs.
+// image IDs.  //数据存储在/var/lib/docker/image/{driver}/distribution
 type FSMetadataStore struct {
 	sync.RWMutex
 	basePath string
 }
-
+// distribution/metadata/metadata.go  按照路径创建一个基于文件系统的元数据仓库实例
 // NewFSMetadataStore creates a new filesystem-based metadata store.
 func NewFSMetadataStore(basePath string) (*FSMetadataStore, error) {
 	if err := os.MkdirAll(basePath, 0700); err != nil {

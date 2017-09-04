@@ -18,18 +18,20 @@ import (
 
 // PullImage initiates a pull operation. image is the repository name to pull, and
 // tag may be either empty, or indicate a specific tag to pull.
+
+//postImagesCreate中调用该接口
 func (daemon *Daemon) PullImage(ctx context.Context, image, tag string, metaHeaders map[string][]string, authConfig *types.AuthConfig, outStream io.Writer) error {
 	// Special case: "pull -a" may send an image name with a
 	// trailing :. This is ugly, but let's not break API
 	// compatibility.
 	image = strings.TrimSuffix(image, ":")
-
+	//name格式: xxx:yyy | @zzz  xxx 代表镜像名,如果没有加上仓库地址:docker.io，会使用默认的仓库地址， yyy ：代表版本 zzz： 代表摘要
 	ref, err := reference.ParseNormalizedNamed(image)
 	if err != nil {
 		return err
 	}
 
-	if tag != "" {
+	if tag != "" {//如果tag不为空，则要看标签还是摘要，或者什么也不是
 		// The "tag" could actually be a digest.
 		var dgst digest.Digest
 		dgst, err = digest.Parse(tag)
@@ -78,9 +80,11 @@ func (daemon *Daemon) PullOnBuild(ctx context.Context, name string, authConfigs 
 func (daemon *Daemon) pullImageWithReference(ctx context.Context, ref reference.Named, metaHeaders map[string][]string, authConfig *types.AuthConfig, outStream io.Writer) error {
 	// Include a buffer so that slow client connections don't affect
 	// transfer performance.
+
+	//progressChan 通道是用来显示pull操作的状态
 	progressChan := make(chan progress.Progress, 100)
 
-	writesDone := make(chan struct{})
+	writesDone := make(chan struct{}) //writesDone 用来等待协程处理结束
 
 	ctx, cancelFunc := context.WithCancel(ctx)
 
@@ -89,6 +93,7 @@ func (daemon *Daemon) pullImageWithReference(ctx context.Context, ref reference.
 		close(writesDone)
 	}()
 
+	//构造了一个imagePullConfig 对象，里面包含了很多拉取镜像时要用到的信息
 	imagePullConfig := &distribution.ImagePullConfig{
 		Config: distribution.Config{
 			MetaHeaders:      metaHeaders,
@@ -104,6 +109,7 @@ func (daemon *Daemon) pullImageWithReference(ctx context.Context, ref reference.
 		Schema2Types:    distribution.ImageTypes,
 	}
 
+	//获取仓库端信息，遍历端点，根据api版本创建V1或V2版本的puller的Pull 函数
 	err := distribution.Pull(ctx, ref, imagePullConfig)
 	close(progressChan)
 	<-writesDone

@@ -102,6 +102,8 @@ func processReturn(r io.Reader) error {
 	return nil
 }
 
+//controller.go中的func New(cfgOptions ...config.Option) (NetworkController, error)中执行
+////restore(daemon.go)->initNetworkController(daemon_unix.go)->libnetwork.New(controller.go)->startExternalKeyListener(sendbox_externalkey_unix.go)
 func (c *controller) startExternalKeyListener() error {
 	if err := os.MkdirAll(udsBase, 0600); err != nil {
 		return err
@@ -123,6 +125,8 @@ func (c *controller) startExternalKeyListener() error {
 	return nil
 }
 
+//startExternalKeyListener中执行
+////restore(daemon.go)->initNetworkController(daemon_unix.go)->libnetwork.New(controller.go)->startExternalKeyListener(sendbox_externalkey_unix.go)->acceptClientConnections
 func (c *controller) acceptClientConnections(sock string, l net.Listener) {
 	for {
 		conn, err := l.Accept()
@@ -151,6 +155,8 @@ func (c *controller) acceptClientConnections(sock string, l net.Listener) {
 	}
 }
 
+//restore(daemon.go)->initNetworkController(daemon_unix.go)->libnetwork.New(controller.go)->startExternalKeyListener(sendbox_externalkey_unix.go)
+// ->acceptClientConnections->processExternalKey
 func (c *controller) processExternalKey(conn net.Conn) error {
 	buf := make([]byte, 1280)
 	nr, err := conn.Read(buf)

@@ -70,9 +70,9 @@ var (
 )
 
 // Daemon holds information about the Docker daemon.
-type Daemon struct {
+type Daemon struct { //赋值见NewDaemon 见 NewDaemon
 	ID                        string
-	repository                string
+	repository                string   //  /var/log/docker/container
 	containers                container.Store
 	execCommands              *exec.Store
 	referenceStore            refstore.Store
@@ -268,6 +268,8 @@ func (daemon *Daemon) restore() error {
 		}(c)
 	}
 	wg.Wait()
+
+
 	daemon.netController, err = daemon.initNetworkController(daemon.configStore, activeSandboxes)
 	if err != nil {
 		return fmt.Errorf("Error initializing network controller: %v", err)
@@ -481,20 +483,27 @@ func (daemon *Daemon) IsSwarmCompatible() error {
 
 // NewDaemon sets up everything for the daemon to be able to service
 // requests from the webserver.
+//dockerd\daemon.go中start函数和daemon\daemon.go中的NewDaemon是理解的主线
+//dockerd\daemon.go中start中执行该函数
 func NewDaemon(config *config.Config, registryService registry.Service, containerdRemote libcontainerd.Remote, pluginStore *plugin.Store) (daemon *Daemon, err error) {
-	setDefaultMtu(config)
+	setDefaultMtu(config)//  设置默认MTU 1500
 
 	// Ensure that we have a correct root key limit for launching containers.
-	if err := ModifyRootKeyLimit(); err != nil {
+	if err := ModifyRootKeyLimit(); err != nil {//  "/proc/sys/kernel/keys/root_maxkeys"  key权限不足的话修改权限
 		logrus.Warnf("unable to modify root key limit, number of containers could be limited by this quota: %v", err)
 	}
 
+	//检查是否出现有冲突的配置，主要有(1)config.Bridge.Iface 与 config.Bridge.IP 这两项配置不能都有，设置一个就可；
+	//(2) config.Bridge.EnableIPTables 与 config.Bridge.InterContainerCommunication，后者是icc，表示docker容器间是否可以互相通信，
+	// icc是通过iptables来实现的，即在iptables的FORWARD链中增加规则，所以不能在两者同时为false，但不清楚icc＝true，但EntableIPTables为false的时候会怎么样；
+	// (3) 当config.Bridge.EnableIPTables为false时，config.Bridge.EnableIPMasq，ip伪装功能不能为true，和(2) 一样，因为ip伪装是通过iptables来实现的；
 	// Ensure we have compatible and valid configuration options
-	if err := verifyDaemonSettings(config); err != nil {
+	if err := verifyDaemonSettings(config); err != nil {//   检查配置是否正确，不正确退出
 		return nil, err
 	}
 
 	// Do we have a disabled network?
+	// 判断config.Bridge.Iface 与 disableNetworkBridge是否相等，犹豫Iface默认值为空，disableNetworkBridge默认值为none，所以这个config.DisableBridge  为false
 	config.DisableBridge = isBridgeNetworkDisabled(config)
 
 	// Verify the platform is supported as a daemon
@@ -503,38 +512,43 @@ func NewDaemon(config *config.Config, registryService registry.Service, containe
 	}
 
 	// Validate platform-specific requirements
-	if err := checkSystem(); err != nil {
+	//checkSystem主要验证运行docker的进程是否为root，需要root权限；还有包括验证linux kernel的版本；
+	if err := checkSystem(); err != nil {//   系统是否支持
 		return nil, err
 	}
 
+	 /*// 根据username、groupname创建两个map*/
 	uidMaps, gidMaps, err := setupRemappedRoot(config)
 	if err != nil {
 		return nil, err
 	}
-	rootUID, rootGID, err := idtools.GetRootUIDGID(uidMaps, gidMaps)
+
+
+	rootUID, rootGID, err := idtools.GetRootUIDGID(uidMaps, gidMaps) // pkg/idtools/idtools.go 创建根uid、gid
 	if err != nil {
 		return nil, err
 	}
-
-	if err := setupDaemonProcess(config); err != nil {
+	// linux   设置 /proc/self/oom_score_adj
+	if err := setupDaemonProcess(config); err != nil {// setup the daemons oom_score_adj
 		return nil, err
 	}
 
-	// set up the tmpDir to use a canonical path
+	// set up the tmpDir to use a canonical path  //  创建/var/lib/docker/tmp文件夹
 	tmp, err := prepareTempDir(config.Root, rootUID, rootGID)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to get the TempDir under %s: %s", config.Root, err)
 	}
-	realTmp, err := fileutils.ReadSymlinkedDirectory(tmp)
+	realTmp, err := fileutils.ReadSymlinkedDirectory(tmp)//  pkg/fileutils/fileutils.go 给tmp创建一个symlink
 	if err != nil {
 		return nil, fmt.Errorf("Unable to get the full path to the TempDir (%s): %s", tmp, err)
 	}
+	//建立temp文件的存放路径，读取环境变量DOCKER_TMPDIR值，如果没有那么直接在根路径下建立tmp子目录 ，即/var/lib/docker/tmp
 	os.Setenv("TMPDIR", realTmp)
 
-	d := &Daemon{configStore: config}
+	d := &Daemon{configStore: config}  //创建个daem 实例
 	// Ensure the daemon is properly shutdown if there is a failure during
 	// initialization
-	defer func() {
+	defer func() {  // 函数退出时 daemon 关闭
 		if err != nil {
 			if err := d.Shutdown(); err != nil {
 				logrus.Error(err)
@@ -544,32 +558,34 @@ func NewDaemon(config *config.Config, registryService registry.Service, containe
 
 	// set up SIGUSR1 handler on Unix-like systems, or a Win32 global event
 	// on Windows to dump Go routine stacks
+	//获取docker运行时的根路径，后续的流程会在这个根目录下创建各种子目录，默认的是在"/var/lib/docker"路径下；
 	stackDumpDir := config.Root
 	if execRoot := config.GetExecRoot(); execRoot != "" {
 		stackDumpDir = execRoot
 	}
-	d.setupDumpStackTrap(stackDumpDir)
+	d.setupDumpStackTrap(stackDumpDir) //setupDumpStackTrap// 创建处理系统信号的通道和协程
 
-	if err := d.setupSeccompProfile(); err != nil {
+	if err := d.setupSeccompProfile(); err != nil {// 需要的话创建 seccompProfile
 		return nil, err
 	}
 
 	// Set the default isolation mode (only applicable on Windows)
-	if err := d.setDefaultIsolation(); err != nil {
+	if err := d.setDefaultIsolation(); err != nil { // 只是windows使用，决定 isolation mode
 		return nil, fmt.Errorf("error setting default isolation mode: %v", err)
 	}
 
+	//进行log driver的配置，默认的log driver 是json-file， 在deamon/logger 目录下是各种log driver，包括： fluentd,syslogd,journald, gelf等
 	logrus.Debugf("Using default logging driver %s", config.LogConfig.Type)
 
-	if err := configureMaxThreads(config); err != nil {
+	if err := configureMaxThreads(config); err != nil { // linux 下面设置最大线程 /proc/sys/kernel/threads-max
 		logrus.Warnf("Failed to configure golang's threads limit: %v", err)
 	}
 
-	if err := ensureDefaultAppArmorProfile(); err != nil {
+	if err := ensureDefaultAppArmorProfile(); err != nil {// 如果使能 AppArmor ，则加载
 		logrus.Errorf(err.Error())
 	}
-
-	daemonRepo := filepath.Join(config.Root, "containers")
+	//创建容器的存储目录，在根目录下创建container子目录，/var/log/docker/container
+	daemonRepo := filepath.Join(config.Root, "containers") // 创建一个containers的目录
 	if err := idtools.MkdirAllAs(daemonRepo, 0700, rootUID, rootGID); err != nil && !os.IsExist(err) {
 		return nil, err
 	}
@@ -580,7 +596,7 @@ func NewDaemon(config *config.Config, registryService registry.Service, containe
 		}
 	}
 
-	driverName := os.Getenv("DOCKER_DRIVER")
+	driverName := os.Getenv("DOCKER_DRIVER") /* //取环境变量设置值，未设置取配置 */
 	if driverName == "" {
 		driverName = config.GraphDriver
 	}
@@ -590,7 +606,7 @@ func NewDaemon(config *config.Config, registryService registry.Service, containe
 	logger.RegisterPluginGetter(d.PluginStore)
 
 	// Plugin system initialization should happen before restore. Do not change order.
-	d.pluginManager, err = plugin.NewManager(plugin.ManagerConfig{
+	d.pluginManager, err = plugin.NewManager(plugin.ManagerConfig{ // plugin/manager.go  创建plugin manager 实例
 		Root:               filepath.Join(config.Root, "plugins"),
 		ExecRoot:           getPluginExecRoot(config.Root),
 		Store:              d.PluginStore,
@@ -604,6 +620,9 @@ func NewDaemon(config *config.Config, registryService registry.Service, containe
 		return nil, errors.Wrap(err, "couldn't create plugin manager")
 	}
 
+	//设立graph driver，graphdriver主要是来管理镜像，以及镜像与镜像之间关系的实现方法。由于config.GraphDriver的默认值为空，所以主要的处理流程在graphdriver.New()中；
+	//加载的优先级的顺序为 priority = []string{"aufs","btrfs","zfs","devicemapper","overlay","vfs"}，
+	// NewStoreFromOptions creates a new Store instance  // lay/layer_store.go 创建graphDriver实例，从driver创建layer仓库的实例
 	d.layerStore, err = layer.NewStoreFromOptions(layer.StoreOptions{
 		StorePath:                 config.Root,
 		MetadataStorePathTemplate: filepath.Join(config.Root, "image", "%s", "layerdb"),
@@ -618,20 +637,21 @@ func NewDaemon(config *config.Config, registryService registry.Service, containe
 		return nil, err
 	}
 
-	graphDriver := d.layerStore.DriverName()
+	graphDriver := d.layerStore.DriverName() // 取layer里面的graphDriver
 	imageRoot := filepath.Join(config.Root, "image", graphDriver)
-
+	//设置系统是否使用SELinux，SElinux有个问题是不能和btrfs的graphdriver一起使用；
 	// Configure and validate the kernels security support
-	if err := configureKernelSecuritySupport(config, graphDriver); err != nil {
+	if err := configureKernelSecuritySupport(config, graphDriver); err != nil {// linux内核安全支持的配置
 		return nil, err
 	}
 
 	logrus.Debugf("Max Concurrent Downloads: %d", *config.MaxConcurrentDownloads)
-	d.downloadManager = xfer.NewLayerDownloadManager(d.layerStore, *config.MaxConcurrentDownloads)
+	d.downloadManager = xfer.NewLayerDownloadManager(d.layerStore, *config.MaxConcurrentDownloads)// distribution/xfer/download.go 创建层下载管理实例
 	logrus.Debugf("Max Concurrent Uploads: %d", *config.MaxConcurrentUploads)
-	d.uploadManager = xfer.NewLayerUploadManager(*config.MaxConcurrentUploads)
+	d.uploadManager = xfer.NewLayerUploadManager(*config.MaxConcurrentUploads)// distribution/xfer/upload.go 创建层上传管理实例
 
-	ifs, err := image.NewFSStoreBackend(filepath.Join(imageRoot, "imagedb"))
+	//fs存放了image的原信息，存储的目录位于/var/lib/docker/image/{driver}/imagedb，该目录下主要包含两个目录content和metadata
+	ifs, err := image.NewFSStoreBackend(filepath.Join(imageRoot, "imagedb")) // image/fs.go   创建仓库后端的文件系统
 	if err != nil {
 		return nil, err
 	}
@@ -642,11 +662,11 @@ func NewDaemon(config *config.Config, registryService registry.Service, containe
 	}
 
 	// Configure the volumes driver
-	volStore, err := d.configureVolumes(rootUID, rootGID)
+	volStore, err := d.configureVolumes(rootUID, rootGID) // 创建 volumes driver实例
 	if err != nil {
 		return nil, err
 	}
-
+	//  api/common.go 按照路径加载libtrust key ，没有就新建一个
 	trustKey, err := api.LoadOrCreateTrustKey(config.TrustKeyPath)
 	if err != nil {
 		return nil, err
@@ -657,20 +677,21 @@ func NewDaemon(config *config.Config, registryService registry.Service, containe
 	if err := system.MkdirAll(trustDir, 0700); err != nil {
 		return nil, err
 	}
-
+	// distribution/metadata/metadata.go  按照路径创建一个基于文件系统的元数据仓库实例
 	distributionMetadataStore, err := dmetadata.NewFSMetadataStore(filepath.Join(imageRoot, "distribution"))
 	if err != nil {
 		return nil, err
 	}
 
-	eventsService := events.New()
-
+	eventsService := events.New()  //  daemon/events/events.go  创建event服务实例
+	// reference/store.go  按照路径创建 reference仓库实例
 	referenceStore, err := refstore.NewReferenceStore(filepath.Join(imageRoot, "repositories.json"))
 	if err != nil {
 		return nil, fmt.Errorf("Couldn't create Tag store repositories: %s", err)
 	}
 
 	migrationStart := time.Now()
+	// migrate/v1/migrate.go  迁移metadata
 	if err := v1.Migrate(config.Root, graphDriver, d.layerStore, d.imageStore, referenceStore, distributionMetadataStore); err != nil {
 		logrus.Errorf("Graph migration failed: %q. Your old graph data was found to be too inconsistent for upgrading to content-addressable storage. Some of the old data was probably not upgraded. We recommend starting over with a clean storage directory if possible.", err)
 	}
@@ -678,18 +699,18 @@ func NewDaemon(config *config.Config, registryService registry.Service, containe
 
 	// Discovery is only enabled when the daemon is launched with an address to advertise.  When
 	// initialized, the daemon is registered and we can store the discovery backend as it's read-only
-	if err := d.initDiscovery(config); err != nil {
+	if err := d.initDiscovery(config); err != nil { // 创建 discoveryWatcher 实例
 		return nil, err
 	}
 
-	sysInfo := sysinfo.New(false)
+	sysInfo := sysinfo.New(false) // 获取系统信息，linux 不支持cgroup则返回
 	// Check if Devices cgroup is mounted, it is hard requirement for container security,
 	// on Linux.
 	if runtime.GOOS == "linux" && !sysInfo.CgroupDevicesEnabled {
 		return nil, errors.New("Devices cgroup isn't mounted")
 	}
 
-	d.ID = trustKey.PublicKey().KeyID()
+	d.ID = trustKey.PublicKey().KeyID() // 赋值
 	d.repository = daemonRepo
 	d.containers = container.NewMemoryStore()
 	d.execCommands = exec.NewStore()
@@ -714,19 +735,19 @@ func NewDaemon(config *config.Config, registryService registry.Service, containe
 	d.linkIndex = newLinkIndex()
 	d.containerdRemote = containerdRemote
 
-	go d.execCommandGC()
+	go d.execCommandGC() // 新建协程清理容器不需要的命令
 
-	d.containerd, err = containerdRemote.Client(d)
+	d.containerd, err = containerdRemote.Client(d) //  创建和daemon相关的容器客户端 libcontainerd
 	if err != nil {
 		return nil, err
 	}
 
-	if err := d.restore(); err != nil {
+	if err := d.restore(); err != nil { //  restart  container
 		return nil, err
 	}
 
 	// FIXME: this method never returns an error
-	info, _ := d.SystemInfo()
+	info, _ := d.SystemInfo()  // 获取host server系统信息
 
 	engineVersion.WithValues(
 		dockerversion.Version,
@@ -806,6 +827,11 @@ func (daemon *Daemon) ShutdownTimeout() int {
 	return shutdownTimeout
 }
 
+/*
+遍历所有运行中的容器，先使用SIGTERM软杀死容器进程，如果10S内不能完成，则使用SIGKILL强制杀死
+如果netcontroller被初始化过，调用libnetwork/controller.go GC方法进行垃圾回收
+结束运行中的镜像存储驱动进程
+*/
 // Shutdown stops the daemon.
 func (daemon *Daemon) Shutdown() error {
 	daemon.shutdown = true
@@ -973,6 +999,7 @@ func prepareTempDir(rootDir string, rootUID, rootGID int) (string, error) {
 	return tmpDir, idtools.MkdirAllAs(tmpDir, 0700, rootUID, rootGID)
 }
 
+//setupInitLayer(initPath)；创建初始化层，就是创建一个容器需要的基本目录和文
 func (daemon *Daemon) setupInitLayer(initPath string) error {
 	rootUID, rootGID := daemon.GetRemappedUIDGID()
 	return initlayer.Setup(initPath, rootUID, rootGID)
@@ -985,7 +1012,8 @@ func setDefaultMtu(conf *config.Config) {
 	}
 	conf.Mtu = config.DefaultNetworkMtu
 }
-
+// 创建 volumes driver实例
+// 创建 volumes driver实例
 func (daemon *Daemon) configureVolumes(rootUID, rootGID int) (*store.VolumeStore, error) {
 	volumesDriver, err := local.New(daemon.configStore.Root, rootUID, rootGID)
 	if err != nil {
@@ -1004,7 +1032,7 @@ func (daemon *Daemon) configureVolumes(rootUID, rootGID int) (*store.VolumeStore
 func (daemon *Daemon) IsShuttingDown() bool {
 	return daemon.shutdown
 }
-
+// 创建 discoveryWatcher 实例
 // initDiscovery initializes the discovery watcher for this daemon.
 func (daemon *Daemon) initDiscovery(conf *config.Config) error {
 	advertise, err := config.ParseClusterAdvertiseSettings(conf.ClusterStore, conf.ClusterAdvertise)
@@ -1119,7 +1147,7 @@ func (daemon *Daemon) PluginManager() *plugin.Manager { // set up before daemon 
 func (daemon *Daemon) PluginGetter() *plugin.Store {
 	return daemon.PluginStore
 }
-
+//  daemon/daemon.go  先创建daemon 的root路径,linux 为 /var/lib/docker
 // CreateDaemonRoot creates the root for the daemon
 func CreateDaemonRoot(config *config.Config) error {
 	// get the canonical path to the Docker root directory

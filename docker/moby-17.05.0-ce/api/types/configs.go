@@ -12,6 +12,7 @@ import (
 // ContainerCreateConfig is the parameter set to ContainerCreate()
 type ContainerCreateConfig struct {
 	Name             string
+	//*container.config与*container.hostConfig都是配置的结构，区别是config是只与container相关的配置，hostConfig属于与宿主机相关的配置选项；
 	Config           *container.Config
 	HostConfig       *container.HostConfig
 	NetworkingConfig *network.NetworkingConfig

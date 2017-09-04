@@ -207,7 +207,7 @@ func (a *Driver) Exists(id string) bool {
 }
 
 // CreateReadWrite creates a layer that is writable for use as a container
-// file system.
+// file system. ///var/lib/docker/overlay/xxxx-init  ///var/lib/docker/overlay/xxxx 相关目录中相关文件夹创建
 func (a *Driver) CreateReadWrite(id, parent string, opts *graphdriver.CreateOpts) error {
 	return a.Create(id, parent, opts)
 }

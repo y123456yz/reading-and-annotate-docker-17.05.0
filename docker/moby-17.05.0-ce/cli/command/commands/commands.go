@@ -20,8 +20,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+//添加docker的各种命令信息，如docker image   docker bolume等     应该做各种客户端的时候用
 // AddCommands adds all the commands from cli/command to the root command
-func AddCommands(cmd *cobra.Command, dockerCli *command.DockerCli) {
+
+//客户端通过//newDockerCommand->AddCommands构建命令请求发往daemon，daemon收到后通过initRouter中初始化的handler来执行对应job
+func AddCommands(cmd *cobra.Command, dockerCli *command.DockerCli) { //newDockerCommand->AddCommands
 	cmd.AddCommand(
 		// checkpoint
 		checkpoint.NewCheckpointCommand(dockerCli),

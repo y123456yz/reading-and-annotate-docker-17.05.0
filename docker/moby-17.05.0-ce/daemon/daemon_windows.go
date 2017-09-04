@@ -32,7 +32,7 @@ import (
 
 const (
 	defaultNetworkSpace  = "172.16.0.0/12"
-	platformSupported    = true
+	platformSupported    = true //   系统是否支持
 	windowsMinCPUShares  = 1
 	windowsMaxCPUShares  = 10000
 	windowsMinCPUPercent = 1
@@ -228,7 +228,7 @@ func verifyDaemonSettings(config *config.Config) error {
 }
 
 // checkSystem validates platform-specific requirements
-func checkSystem() error {
+func checkSystem() error { //   检查系统版本等信息 //checkSystem主要验证运行docker的进程是否为root，需要root权限；还有包括验证linux kernel的版本；
 	// Validate the OS version. Note that docker.exe must be manifested for this
 	// call to return the correct version.
 	osv := system.GetOSVersion()
@@ -256,6 +256,7 @@ func configureKernelSecuritySupport(config *config.Config, driverName string) er
 func configureMaxThreads(config *config.Config) error {
 	return nil
 }
+
 
 func (daemon *Daemon) initNetworkController(config *config.Config, activeSandboxes map[string]interface{}) (libnetwork.NetworkController, error) {
 	netOptions, err := daemon.networkOptions(config, nil, nil)

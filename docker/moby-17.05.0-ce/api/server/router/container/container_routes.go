@@ -163,6 +163,7 @@ func (s *containerRouter) postContainersStart(ctx context.Context, w http.Respon
 
 	checkpoint := r.Form.Get("checkpoint")
 	checkpointDir := r.Form.Get("checkpoint-dir")
+	////启动容器
 	if err := s.backend.ContainerStart(vars["name"], hostConfig, checkpoint, checkpointDir); err != nil {
 		return err
 	}
@@ -359,6 +360,10 @@ func (s *containerRouter) postContainerUpdate(ctx context.Context, w http.Respon
 	return httputils.WriteJSON(w, http.StatusOK, resp)
 }
 
+/*
+docker run命令直接创建并运行一个容器，它的背后其实包含独立的两步，一步是docker create创建容器，另一步是docker start启动容器
+docker create命令干的活比较少，主要是准备container的layer和配置文件
+*/
 func (s *containerRouter) postContainersCreate(ctx context.Context, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
 	if err := httputils.ParseForm(r); err != nil {
 		return err
@@ -381,6 +386,7 @@ func (s *containerRouter) postContainersCreate(ctx context.Context, w http.Respo
 		hostConfig.AutoRemove = false
 	}
 
+	//客户端通过 createContainer 组api请求，服务端通过postContainersCreate->ContainerCreate(daemon\create.go)处理
 	ccr, err := s.backend.ContainerCreate(types.ContainerCreateConfig{
 		Name:             name,
 		Config:           config,

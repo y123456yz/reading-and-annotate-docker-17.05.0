@@ -21,13 +21,14 @@ import (
 	"github.com/spf13/pflag"
 )
 
+//客户端通过//newDockerCommand->AddCommands构建命令请求发往daemon，daemon收到后通过initRouter中初始化的handler来执行对应job
 func newDockerCommand(dockerCli *command.DockerCli) *cobra.Command {
 	opts := cliflags.NewClientOptions()
 	var flags *pflag.FlagSet
-
+	fmt.Printf("yang test ...newDockerCommand... docker main")
 	cmd := &cobra.Command{
-		Use:              "docker [OPTIONS] COMMAND [ARG...]",
-		Short:            "A self-sufficient runtime for containers",
+		Use:              "docker [OPTIONS] COMMAND [ARG...] ---- yyz docker",
+		Short:            "A self-sufficient runtime for containers ---- yyz docker",
 		SilenceUsage:     true,
 		SilenceErrors:    true,
 		TraverseChildren: true,
@@ -163,8 +164,10 @@ func main() {
 	stdin, stdout, stderr := term.StdStreams()
 	logrus.SetOutput(stderr)
 
+	fmt.Printf("yang test ...... docker main")
 	dockerCli := command.NewDockerCli(stdin, stdout, stderr)
 	cmd := newDockerCommand(dockerCli)
+
 
 	if err := cmd.Execute(); err != nil {
 		if sterr, ok := err.(cli.StatusError); ok {

@@ -25,6 +25,7 @@ type Config struct {
 }
 
 // DaemonCfg represents libnetwork core configuration
+//Config结构包含该DaemonCfg结构成员，代表整个docker daemon的配置信息
 type DaemonCfg struct {
 	Debug           bool
 	Experimental    bool

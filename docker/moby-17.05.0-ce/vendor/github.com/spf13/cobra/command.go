@@ -31,7 +31,7 @@ import (
 // eg.  'go run' ... 'run' is the command. Cobra requires
 // you to define the usage and description as part of your command
 // definition to ensure usability.
-type Command struct {
+type Command struct { //newDaemonCommand中构造使用该结构
 	// Name is the command name, usually the executable's name.
 	name string
 	// The one-line usage message.
@@ -62,7 +62,7 @@ type Command struct {
 	// Tags are key/value pairs that can be used by applications to identify or
 	// group commands
 	Tags map[string]string
-	// Full set of flags
+	// Full set of flags  c.flags = flag.NewFlagSet()中赋值
 	flags *flag.FlagSet
 	// Set of flags childrens of this command will inherit
 	pflags *flag.FlagSet
@@ -79,6 +79,7 @@ type Command struct {
 	//   * PostRun()
 	//   * PersistentPostRun()
 	// All functions get the same args, the arguments after the command name
+	//以下函数一般在command.go中的execute中执行
 	// PersistentPreRun: children of this command will inherit and execute
 	PersistentPreRun func(cmd *Command, args []string)
 	// PersistentPreRunE: PersistentPreRun but returns an error
@@ -89,7 +90,7 @@ type Command struct {
 	PreRunE func(cmd *Command, args []string) error
 	// Run: Typically the actual work function. Most commands will only implement this
 	Run func(cmd *Command, args []string)
-	// RunE: Run but returns an error
+	// RunE: Run but returns an error  赋值见newDaemonCommand  runDaemon
 	RunE func(cmd *Command, args []string) error
 	// PostRun: run after the Run command.
 	PostRun func(cmd *Command, args []string)
@@ -112,15 +113,20 @@ type Command struct {
 	// is commands slice are sorted or not
 	commandsAreSorted bool
 
+	//c.flagErrorBuf = new(bytes.Buffer)中创建空间
 	flagErrorBuf *bytes.Buffer
 
 	args          []string             // actual args parsed from flags
 	output        *io.Writer           // nil means stderr; use Out() method instead
 	usageFunc     func(*Command) error // Usage can be defined by application
+	//赋值见SetupRootCommand
 	usageTemplate string               // Can be defined by Application
+	//赋值见SetupRootCommand
 	flagErrorFunc func(*Command, error) error
+	//赋值见SetupRootCommand
 	helpTemplate  string                   // Can be defined by Application
 	helpFunc      func(*Command, []string) // Help can be defined by application
+	//赋值见SetupRootCommand
 	helpCommand   *Command                 // The help command
 	// The global normalization function that we can use on every pFlag set and children commands
 	globNormFunc func(f *flag.FlagSet, name string) flag.NormalizedName
@@ -642,7 +648,7 @@ func (c *Command) execute(a []string) (err error) {
 		c.PreRun(c, argWoFlags)
 	}
 
-	if c.RunE != nil {
+	if c.RunE != nil { //执行 runDaemon
 		if err := c.RunE(c, argWoFlags); err != nil {
 			return err
 		}
@@ -721,6 +727,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		args = c.args
 	}
 
+	fmt.Printf("yang test ............. ExecuteC \n");
 	var flags []string
 	if c.TraverseChildren {
 		cmd, flags, err = c.Traverse(args)
@@ -738,8 +745,8 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		}
 		return c, err
 	}
-
-	err = cmd.execute(flags)
+	fmt.Printf("yang test .......2222222222...... ExecuteC \n");
+	err = cmd.execute(flags) //主流程执行在这里面
 	if err != nil {
 		// Always show help if requested, even if SilenceErrors is in
 		// effect
@@ -761,6 +768,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		}
 		return cmd, err
 	}
+	fmt.Printf("yang test ....44444444444444444......... ExecuteC \n");
 	return cmd, nil
 }
 
@@ -1140,7 +1148,7 @@ func (c *Command) GlobalNormalizationFunc() func(f *flag.FlagSet, name string) f
 }
 
 // Get the complete FlagSet that applies to this command (local and persistent declared here and by all parents)
-func (c *Command) Flags() *flag.FlagSet {
+func (c *Command) Flags() *flag.FlagSet { //把新new的flag赋值个c.flags，c代表调用该Flags接口的变量
 	if c.flags == nil {
 		c.flags = flag.NewFlagSet(c.Name(), flag.ContinueOnError)
 		if c.flagErrorBuf == nil {

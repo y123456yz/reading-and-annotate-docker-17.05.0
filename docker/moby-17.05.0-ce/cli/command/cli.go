@@ -44,7 +44,7 @@ type Cli interface {
 
 // DockerCli is an instance the docker command line client.
 // Instances of the client can be returned from NewDockerCli.
-type DockerCli struct {
+type DockerCli struct { //NewDockerCli表示的是docker客户端，在api/client/cli.go中定义；
 	configFile     *configfile.ConfigFile
 	in             *InStream
 	out            *OutStream
@@ -214,6 +214,7 @@ type ServerInfo struct {
 }
 
 // NewDockerCli returns a DockerCli instance with IO output and error streams set by in, out and err.
+//NewDockerCli表示的是docker客户端，在api/client/cli.go中定义；
 func NewDockerCli(in io.ReadCloser, out, err io.Writer) *DockerCli {
 	return &DockerCli{in: NewInStream(in), out: NewOutStream(out), err: err}
 }

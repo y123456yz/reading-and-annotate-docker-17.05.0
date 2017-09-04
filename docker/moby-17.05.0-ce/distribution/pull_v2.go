@@ -60,6 +60,7 @@ type v2Puller struct {
 	confirmedV2 bool
 }
 
+//V2版本的Puller
 func (p *v2Puller) Pull(ctx context.Context, ref reference.Named) (err error) {
 	// TODO(tiborvass): was ReceiveTimeout
 	p.repo, p.confirmedV2, err = NewV2Repository(ctx, p.repoInfo, p.endpoint, p.config.MetaHeaders, p.config.AuthConfig, "pull")
@@ -83,6 +84,11 @@ func (p *v2Puller) Pull(ctx context.Context, ref reference.Named) (err error) {
 	return err
 }
 
+//一个repository可能对应着多个tag，docker的镜像呈现的是树形关系，比如ubuntu是一个repository，实际的存储情况是可能会有一个基础镜像base，
+// 这个基础镜像上，增加一些新的内容（实际上就是增加一个新的读写层，写入东西进去）就会形成新的镜像，比如：ubuntu:12.12是一个镜像，那么
+// ubuntu:14.01是在前者基础上进行若干修改操作而形成的新的镜像；所以要下载ubuntu:14.01这个镜像的话，必须要将其父镜像完全下载下来，这样下载之后的镜像才是完整的；
+
+//新建一个V2版本的仓库赋值给p.repo，调用pullV2Respository函数
 func (p *v2Puller) pullV2Repository(ctx context.Context, ref reference.Named) (err error) {
 	var layersDownloaded bool
 	if !reference.IsNameOnly(ref) {
@@ -108,6 +114,8 @@ func (p *v2Puller) pullV2Repository(ctx context.Context, ref reference.Named) (e
 			if err != nil {
 				return err
 			}
+
+			//pullV2Tag才是真正的最后的下载环节
 			pulledNew, err := p.pullV2Tag(ctx, tagRef)
 			if err != nil {
 				// Since this is the pull-all-tags case, don't
@@ -320,8 +328,9 @@ func (ld *v2LayerDescriptor) Registered(diffID layer.DiffID) {
 	ld.V2MetadataService.Add(diffID, metadata.V2Metadata{Digest: ld.digest, SourceRepository: ld.repoInfo.Name.Name()})
 }
 
+//有tag的话，遍历tag，每个tag调用pullV2Tag，没有的话直接调用pullV2Tag
 func (p *v2Puller) pullV2Tag(ctx context.Context, ref reference.Named) (tagUpdated bool, err error) {
-	manSvc, err := p.repo.Manifests(ctx)
+	manSvc, err := p.repo.Manifests(ctx) //获取首选项的mainfest服务
 	if err != nil {
 		return false, err
 	}

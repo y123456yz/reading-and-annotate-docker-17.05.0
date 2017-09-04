@@ -24,7 +24,7 @@ type LayerUploadManager struct {
 func (lum *LayerUploadManager) SetConcurrency(concurrency int) {
 	lum.tm.SetConcurrency(concurrency)
 }
-
+// distribution/xfer/upload.go 创建层上传管理实例
 // NewLayerUploadManager returns a new LayerUploadManager.
 func NewLayerUploadManager(concurrencyLimit int, options ...func(*LayerUploadManager)) *LayerUploadManager {
 	manager := LayerUploadManager{

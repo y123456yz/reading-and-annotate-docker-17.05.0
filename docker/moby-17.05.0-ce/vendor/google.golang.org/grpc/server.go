@@ -66,7 +66,7 @@ type MethodDesc struct {
 }
 
 // ServiceDesc represents an RPC service's specification.
-type ServiceDesc struct {
+type ServiceDesc struct { //见 _API_serviceDesc
 	ServiceName string
 	// The pointer to the service interface. Used to check whether the user
 	// provided implementation satisfies the interface requirements.

@@ -199,6 +199,7 @@ type Options struct {
 }
 
 // New creates the driver and initializes it at the specified root.
+//NewStoreFromOptions->graphdriver.New
 func New(name string, pg plugingetter.PluginGetter, config Options) (Driver, error) {
 	if name != "" {
 		logrus.Debugf("[graphdriver] trying provided driver: %s", name) // so the logs show specified driver

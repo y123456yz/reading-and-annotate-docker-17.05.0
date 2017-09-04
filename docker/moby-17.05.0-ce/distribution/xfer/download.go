@@ -31,7 +31,7 @@ type LayerDownloadManager struct {
 func (ldm *LayerDownloadManager) SetConcurrency(concurrency int) {
 	ldm.tm.SetConcurrency(concurrency)
 }
-
+// distribution/xfer/download.go 创建层下载管理实例
 // NewLayerDownloadManager returns a new LayerDownloadManager.
 func NewLayerDownloadManager(layerStore layer.Store, concurrencyLimit int, options ...func(*LayerDownloadManager)) *LayerDownloadManager {
 	manager := LayerDownloadManager{

@@ -24,6 +24,7 @@ import (
 // setupMounts iterates through each of the mount points for a container and
 // calls Setup() on each. It also looks to see if is a network mount such as
 // /etc/resolv.conf, and if it is not, appends it to the array of mounts.
+//container的所有挂载点；
 func (daemon *Daemon) setupMounts(c *container.Container) ([]container.Mount, error) {
 	var mounts []container.Mount
 	// TODO: tmpfs mounts should be part of Mountpoints

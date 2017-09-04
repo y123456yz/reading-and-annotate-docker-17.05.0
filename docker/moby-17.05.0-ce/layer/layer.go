@@ -64,6 +64,7 @@ func (id ChainID) String() string {
 	return string(id)
 }
 
+//digest.Digest类型，其实都是string类型,都是sha256:uuid，uuid为64个16进制数
 // DiffID is the hash of an individual layer tar.
 type DiffID digest.Digest
 
@@ -170,7 +171,7 @@ type Metadata struct {
 type MountInit func(root string) error
 
 // CreateRWLayerOpts contains optional arguments to be passed to CreateRWLayer
-type CreateRWLayerOpts struct {
+type CreateRWLayerOpts struct { //使用见setRWLayer
 	MountLabel string
 	InitFunc   MountInit
 	StorageOpt map[string]string
@@ -184,6 +185,7 @@ type Store interface {
 	Map() map[ChainID]Layer
 	Release(Layer) ([]Metadata, error)
 
+	//create.go中的setRWLayer函数调用
 	CreateRWLayer(id string, parent ChainID, opts *CreateRWLayerOpts) (RWLayer, error)
 	GetRWLayer(id string) (RWLayer, error)
 	GetMountID(id string) (string, error)
@@ -191,7 +193,7 @@ type Store interface {
 
 	Cleanup() error
 	DriverStatus() [][2]string
-	DriverName() string
+	DriverName() string // 取layer里面的graphDriver
 }
 
 // DescribableStore represents a layer store capable of storing
@@ -218,6 +220,7 @@ type MetadataTransaction interface {
 // MetadataStore represents a backend for persisting
 // metadata about layers and providing the metadata
 // for restoring a Store.
+//MetadataStore为接口，主要为获得层基本信息的方法。 metadata 是这个层的额外信息，不仅能够让docker获取运行和构建的信息，也包括父层的层次信息（只读层和读写层都包含元数据）。
 type MetadataStore interface {
 	// StartTransaction starts an update for new metadata
 	// which will be used to represent an ID on commit.

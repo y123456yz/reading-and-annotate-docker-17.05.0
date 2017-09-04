@@ -19,10 +19,12 @@ type CommonUnixConfig struct {
 }
 
 type commonUnixBridgeConfig struct {
+	//绑定容器端口时使用的默认IP
 	DefaultIP                   net.IP `json:"ip,omitempty"`
 	IP                          string `json:"bip,omitempty"`
 	DefaultGatewayIPv4          net.IP `json:"default-gateway,omitempty"`
 	DefaultGatewayIPv6          net.IP `json:"default-gateway-v6,omitempty"`
+	//是否允许宿主机上docker容器见通信  InterContainerCommunication的作用是启用Docker container之间互相通信的功能
 	InterContainerCommunication bool   `json:"icc,omitempty"`
 }
 

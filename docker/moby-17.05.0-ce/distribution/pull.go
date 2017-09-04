@@ -27,6 +27,7 @@ type Puller interface {
 // whether a v1 or v2 puller will be created. The other parameters are passed
 // through to the underlying puller implementation for use during the actual
 // pull operation.
+//NewPuller会根据endpoint的形式（endpoint应该遵循restful api的设计，url中含有版本号），决定采用version1还是version2版本，我主要分析v2的版本，在graph/pull_v2.go中
 func newPuller(endpoint registry.APIEndpoint, repoInfo *registry.RepositoryInfo, imagePullConfig *ImagePullConfig) (Puller, error) {
 	switch endpoint.Version {
 	case registry.APIVersion2:
@@ -51,17 +52,32 @@ func newPuller(endpoint registry.APIEndpoint, repoInfo *registry.RepositoryInfo,
 // tag may be either empty, or indicate a specific tag to pull.
 func Pull(ctx context.Context, ref reference.Named, imagePullConfig *ImagePullConfig) error {
 	// Resolve the Repository name from fqn to RepositoryInfo
+	//在/docker/registry/config.go的 newServiceConfig初始化仓库地址和仓库镜像地址，其中有官方的和通过选项insecure-registry
+	// 自定义的私有仓库,实质是通过IndexName找到IndexInfo，有用的也只有IndexName
+	//这里的imagePullConfig.RegistryService为daemon.RegistryService，也即是docker\registry\service.go的DefaultService
+	//初始化时,会将insecure-registry选项和registry-mirrors存入ServiceOptions,在NewService函数被调用时,作为参入传入
+
+	//repoInfo为RepositoryInfo对象,其实是对reference.Named对象的封装,添加了镜像成员和官方标示
 	repoInfo, err := imagePullConfig.RegistryService.ResolveRepository(ref)
 	if err != nil {
 		return err
 	}
 
 	// makes sure name is not `scratch`
+	//为了确保不为空
 	if err := ValidateRepoName(repoInfo.Name); err != nil {
 		return err
 	}
 
-	endpoints, err := imagePullConfig.RegistryService.LookupPullEndpoints(reference.Domain(repoInfo.Name))
+	// /docker/cmd/dockerddaemon.go----大约125 和 248
+	//如果没有镜像仓库服务器地址，默认使用V2仓库地址registry-1.docker.io
+	//Hostname()函数来源于Named
+
+	//实质上如果Hostname()返回的是官方仓库地址,则endpoint的URL将是registry-1.docker.io,如果有镜像则会添加镜像作为endpoint
+	// 否则就是私有地址的两种类型:http和https
+
+	//V2的接口具体代码在Zdocker\registry\service_v2.go的函数lookupV2Endpoints
+	endpoints, err := imagePullConfig.RegistryService.LookupPullEndpoints(reference.Domain(repoInfo.Name)) //通过repositoryInfo找到下载镜像的endpoint
 	if err != nil {
 		return err
 	}
@@ -88,7 +104,8 @@ func Pull(ctx context.Context, ref reference.Named, imagePullConfig *ImagePullCo
 		// retry for any of these.
 		confirmedTLSRegistries = make(map[string]struct{})
 	)
-	for _, endpoint := range endpoints {
+	//如果设置了镜像服务器地址,且使用了官方默认的镜像仓库,则endpoints包含官方仓库地址和镜像服务器地址,否则就是私有仓库地址的http和https形式
+	for _, endpoint := range endpoints { //找到endpoints, 然后puller.Pull
 		if imagePullConfig.RequireSchema2 && endpoint.Version == registry.APIVersion1 {
 			continue
 		}
@@ -106,12 +123,16 @@ func Pull(ctx context.Context, ref reference.Named, imagePullConfig *ImagePullCo
 		}
 
 		logrus.Debugf("Trying to pull %s from %s %s", reference.FamiliarName(repoInfo.Name), endpoint.URL, endpoint.Version)
-
+		//针对每一个endpoint，建立一个Puller,newPuller会根据endpoint的形式（endpoint应该遵循restful api的设计，url中含有版本号），
+		// 决定采用version1还是version2版本
+		//imagePullConfig是个很重要的对象,包含了很多镜像操作相关的对象  针对每一个endpoint，建立一个Puller
 		puller, err := newPuller(endpoint, repoInfo, imagePullConfig)
 		if err != nil {
 			lastErr = err
 			continue
 		}
+
+		//pullRepository 或者 pullV2Repository
 		if err := puller.Pull(ctx, ref); err != nil {
 			// Was this pull cancelled? If so, don't try to fall
 			// back.

@@ -37,7 +37,7 @@ const (
 	contentDirName  = "content"
 	metadataDirName = "metadata"
 )
-
+// image/fs.go   创建仓库后端的文件系统
 // NewFSStoreBackend returns new filesystem based backend for image.Store
 func NewFSStoreBackend(root string) (StoreBackend, error) {
 	return newFSStore(root)

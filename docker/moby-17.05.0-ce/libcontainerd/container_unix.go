@@ -90,6 +90,7 @@ func (ctr *container) spec() (*specs.Spec, error) {
 	return &spec, nil
 }
 
+//client_unix.go中的Create函数调用
 func (ctr *container) start(checkpoint string, checkpointDir string, attachStdio StdioCallback) (err error) {
 	spec, err := ctr.spec()
 	if err != nil {

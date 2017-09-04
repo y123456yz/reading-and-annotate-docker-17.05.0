@@ -52,7 +52,9 @@ const (
 
 var (
 	// Slice of drivers that should be used in an order
-	priority = []string{
+	//设立graph driver，graphdriver主要是来管理镜像，以及镜像与镜像之间关系的实现方法
+	//加载的优先级的顺序为 priority = []string{"aufs","btrfs","zfs","devicemapper","overlay","vfs"}，
+	priority = []string{ ////NewStoreFromOptions->graphdriver.New中使用
 		"aufs",
 		"btrfs",
 		"zfs",

@@ -28,7 +28,7 @@ func (r *imageRouter) Routes() []router.Route {
 }
 
 // initRoutes initializes the routes in the image router
-func (r *imageRouter) initRoutes() {
+func (r *imageRouter) initRoutes() { //Docker镜像存储相关数据结构 见http://www.infocool.net/kb/OtherCloud/201705/346489.html
 	r.routes = []router.Route{
 		// GET
 		router.NewGetRoute("/images/json", r.getImagesJSON),
@@ -40,7 +40,7 @@ func (r *imageRouter) initRoutes() {
 		// POST
 		router.NewPostRoute("/commit", r.postCommit),
 		router.NewPostRoute("/images/load", r.postImagesLoad),
-		router.Cancellable(router.NewPostRoute("/images/create", r.postImagesCreate)),
+		router.Cancellable(router.NewPostRoute("/images/create", r.postImagesCreate)),  //例如客户端docker pull对应的就是这里，daemon会发送create到数据仓库
 		router.Cancellable(router.NewPostRoute("/images/{name:.*}/push", r.postImagesPush)),
 		router.NewPostRoute("/images/{name:.*}/tag", r.postImagesTag),
 		router.NewPostRoute("/images/prune", r.postImagesPrune),

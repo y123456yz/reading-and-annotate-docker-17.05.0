@@ -10,7 +10,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	stackdump "github.com/docker/docker/pkg/signal"
 )
-
+//setupDumpStackTrap// 创建处理系统信号的通道和协程  创建处理系统信号的通道和协程
 func (d *Daemon) setupDumpStackTrap(root string) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGUSR1)

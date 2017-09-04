@@ -18,6 +18,7 @@ import (
 
 // ServiceOptions holds command line options.
 type ServiceOptions struct {
+	//docker registry镜像地址
 	Mirrors            []string `json:"registry-mirrors,omitempty"`
 	InsecureRegistries []string `json:"insecure-registries,omitempty"`
 
@@ -27,7 +28,7 @@ type ServiceOptions struct {
 }
 
 // serviceConfig holds daemon configuration for the registry service.
-type serviceConfig struct {
+type serviceConfig struct { //newServiceConfig中使用
 	registrytypes.ServiceConfig
 	V2Only bool
 }
@@ -332,6 +333,9 @@ func newIndexInfo(config *serviceConfig, indexName string) (*registrytypes.Index
 		return nil, err
 	}
 
+	//config是在上面NewService函数中通过传入的ServiceOptions选项生成的
+	//serviceConfig，在docker\registry\config.go的InstallCliFlags被初始化
+	//index其实就是镜像的仓库地址,或仓库的镜像地址
 	// Return any configured index info, first.
 	if index, ok := config.IndexConfigs[indexName]; ok {
 		return index, nil

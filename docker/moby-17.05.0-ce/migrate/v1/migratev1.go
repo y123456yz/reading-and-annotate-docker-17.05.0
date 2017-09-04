@@ -56,7 +56,7 @@ var (
 )
 
 // Migrate takes an old graph directory and transforms the metadata into the
-// new format.
+// new format. // migrate/v1/migrate.go  迁移metadata
 func Migrate(root, driverName string, ls layer.Store, is image.Store, rs refstore.Store, ms metadata.Store) error {
 	graphDir := filepath.Join(root, graphDirName)
 	if _, err := os.Lstat(graphDir); os.IsNotExist(err) {

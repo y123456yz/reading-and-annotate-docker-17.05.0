@@ -30,7 +30,7 @@ func getDaemonConfDir(root string) string {
 }
 
 // preNotifySystem sends a message to the host when the API is active, but before the daemon is
-func preNotifySystem() {
+func preNotifySystem() { // // 只是window系统有用
 	// start the service now to prevent timeouts waiting for daemon to start
 	// but still (eventually) complete all requests that are sent after this
 	if service != nil {
@@ -56,7 +56,7 @@ func notifyShutdown(err error) {
 }
 
 // setupConfigReloadTrap configures a Win32 event to reload the configuration.
-func (cli *DaemonCli) setupConfigReloadTrap() {
+func (cli *DaemonCli) setupConfigReloadTrap() {//  设置一个系统调用重新加载配置
 	go func() {
 		sa := syscall.SecurityAttributes{
 			Length: 0,

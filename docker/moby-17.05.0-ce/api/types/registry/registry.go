@@ -66,7 +66,8 @@ func (ipnet *NetIPNet) UnmarshalJSON(b []byte) (err error) {
 //   "CanonicalName" : "127.0.0.1:5000/user/repo",
 //   "Official" : false,
 // }
-type IndexInfo struct {
+type IndexInfo struct { //RepositoryInfo结构包含该结构
+
 	// Name is the name of the registry, such as "docker.io"
 	Name string
 	// Mirrors is a list of mirrors, expressed as URIs

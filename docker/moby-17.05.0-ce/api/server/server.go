@@ -22,7 +22,8 @@ import (
 const versionMatcher = "/v{version:[0-9.]+}"
 
 // Config provides the configuration for the API server
-type Config struct {
+//serverConfig 中使用
+type Config struct { ///  server 的config文件创建以及一些赋值
 	Logging     bool
 	EnableCors  bool
 	CorsHeaders string
@@ -32,17 +33,21 @@ type Config struct {
 }
 
 // Server contains instance details for the server
-type Server struct {
+//New函数返回了一个Server的实例，我理解一个Server可以应对不同的协议（http，tcp等等），所以Server有一个servers的数组，
+// //其中的每一个元素对应服务一种协议的请求；
+
+//下面的New中构造该结构，在initRouter中api server匹配处理各自url请求
+type Server struct { //server.go中func (s *Server) Wait(waitChan chan error)中使用
 	cfg           *Config
-	servers       []*HTTPServer
+	servers       []*HTTPServer //赋值见下面的Accept
 	routers       []router.Router
-	routerSwapper *routerSwapper
+	routerSwapper *routerSwapper //生效见serveAPI
 	middlewares   []middleware.Middleware
 }
 
 // New returns a new instance of the server based on the specified configuration.
 // It allocates resources which will be needed for ServeAPI(ports, unix-sockets).
-func New(cfg *Config) *Server {
+func New(cfg *Config) *Server { //daemonCli.start(opts)中调用，见api := apiserver.New(serverConfig)
 	return &Server{
 		cfg: cfg,
 	}
@@ -63,7 +68,7 @@ func (s *Server) Accept(addr string, listeners ...net.Listener) {
 			},
 			l: listener,
 		}
-		s.servers = append(s.servers, httpServer)
+		s.servers = append(s.servers, httpServer) //往数组添加成员
 	}
 }
 
@@ -78,8 +83,12 @@ func (s *Server) Close() {
 
 // serveAPI loops through all initialized servers and spawns goroutine
 // with Serve method for each. It sets createMux() as Handler also.
+//创建一个ServerApiWait阻塞通道， 采用一个go routine 来启动api的ServerAPI，ServerAPI的代码在api/server/server.go中
 func (s *Server) serveAPI() error {
 	var chErrors = make(chan error, len(s.servers))
+
+	//每一个地址开启一个新的goroutine 启动一个server来对外提供服务，如果启动过程中有错误，则将错误信息放入chErrors通道中。
+	// //最后便利chErrors的通道，如果有错误，则将错误作为返回值返回；
 	for _, srv := range s.servers {
 		srv.srv.Handler = s.routerSwapper
 		go func(srv *HTTPServer) {
@@ -105,7 +114,7 @@ func (s *Server) serveAPI() error {
 // HTTPServer contains an instance of http server and the listener.
 // srv *http.Server, contains configuration to create an http server and a mux router with all api end points.
 // l   net.Listener, is a TCP or Socket listener that dispatches incoming request to the router.
-type HTTPServer struct {
+type HTTPServer struct { //构造见server\server.go中的Accept
 	srv *http.Server
 	l   net.Listener
 }
@@ -187,13 +196,15 @@ func (s *Server) createMux() *mux.Router {
 // Wait blocks the server goroutine until it exits.
 // It sends an error message if there is any error during
 // the API execution.
+
+//daemon.go中go api.Wait(serveAPIWait)执行
 func (s *Server) Wait(waitChan chan error) {
 	if err := s.serveAPI(); err != nil {
 		logrus.Errorf("ServeAPI error: %v", err)
 		waitChan <- err
 		return
 	}
-	waitChan <- nil
+	waitChan <- nil //触发外层的errAPI := <-serveAPIWait返回，然后daemon服务停止
 }
 
 // DisableProfiler reloads the server mux without adding the profiler routes.

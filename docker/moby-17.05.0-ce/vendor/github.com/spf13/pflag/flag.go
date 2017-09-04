@@ -143,6 +143,7 @@ type FlagSet struct {
 	argsLenAtDash     int      // len(args) when a '--' was located when parsing, or -1 if no --
 	exitOnError       bool     // does the program exit if there's an error?
 	errorHandling     ErrorHandling
+	//c.flags.SetOutput(c.flagErrorBuf)中赋值
 	output            io.Writer // nil means stderr; use out() accessor
 	interspersed      bool      // allow interspersed option/non-option args
 	normalizeNameFunc func(f *FlagSet, name string) NormalizedName

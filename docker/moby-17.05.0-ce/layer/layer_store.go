@@ -25,10 +25,25 @@ import (
 // used to create a rwlayer.
 const maxLayerDepth = 125
 
+//docker daemon在初始化过程中，会初始化一个layerStore，那么layerStore是什么呢？从名字可以看出，是用来存储layer的，docker镜像时分层的，一层称为一个layer。
+//docker的镜像在docker老版本中是由一个叫graph的数据结构进行管理的，现在换成了layerStore
+//见http://licyhust.com/%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF/2016/09/27/docker-image-data-structure/
+
+//注意roLayer 和 layerStore 的关系
 type layerStore struct {
+	//MetadataStore为接口，主要为获得层基本信息的方法。
+	// metadata是这个层的额外信息，不仅能够让docker获取运行和构建的信息， 也包括父层的层次信息（只读层和读写层都包含元数据）。
+
+	/*
+	store的数据类型为MetadataStore，主要用来存储每个layer的元数据，存储的目录位于/var/lib/docker/image/{driver}/layerdb，
+	这里的driver包括aufs、devicemapper、overlay和btrfs。
+	layerdb下面有三个目录，mounts、sha256和tmp，tmp目录主要存放临时性数据，因此不做介绍。主要介绍mounts和sha256两个目录。
+	*/
 	store  MetadataStore
 	driver graphdriver.Driver
 
+	//即map的键为ChainID（字母串），值为roLayer, store本质上是磁盘上保存了各个layer的元数据信息，当docker初始化时，它会利用
+	//这些元数据文件在内存中构造各个layer，每个Layer都用一个roLayer结构体表示，即只读(ro)的layer
 	layerMap map[ChainID]*roLayer
 	layerL   sync.Mutex
 
@@ -39,9 +54,10 @@ type layerStore struct {
 }
 
 // StoreOptions are the options used to create a new Store instance
-type StoreOptions struct {
+type StoreOptions struct { //初始化赋值见NewDaemon
 	StorePath                 string
 	MetadataStorePathTemplate string
+	//生效使用见NewStoreFromOptions
 	GraphDriver               string
 	GraphDriverOptions        []string
 	UIDMaps                   []idtools.IDMap
@@ -49,9 +65,13 @@ type StoreOptions struct {
 	PluginGetter              plugingetter.PluginGetter
 	ExperimentalEnabled       bool
 }
-
+// NewStoreFromOptions creates a new Store instance  // lay/layer_store.go 创建graphDriver实例，从driver创建layer仓库的实例
 // NewStoreFromOptions creates a new Store instance
+/*
+
+*/ //NewDaemon中执行
 func NewStoreFromOptions(options StoreOptions) (Store, error) {
+	//NewStoreFromOptions->graphdriver.New
 	driver, err := graphdriver.New(options.GraphDriver, options.PluginGetter, graphdriver.Options{
 		Root:                options.StorePath,
 		DriverOptions:       options.GraphDriverOptions,
@@ -456,6 +476,8 @@ func (ls *layerStore) Release(l Layer) ([]Metadata, error) {
 	return ls.releaseLayer(layer)
 }
 
+//create.go中的setRWLayer函数调用
+//如果是最底层parent为""，如果不是底层，则parent指向父id
 func (ls *layerStore) CreateRWLayer(name string, parent ChainID, opts *CreateRWLayerOpts) (RWLayer, error) {
 	var (
 		storageOpt map[string]string
@@ -464,7 +486,12 @@ func (ls *layerStore) CreateRWLayer(name string, parent ChainID, opts *CreateRWL
 	)
 
 	if opts != nil {
-		mountLabel = opts.MountLabel
+		/*
+		MountLabel: container.MountLabel,
+		InitFunc:   daemon.getLayerInit(),
+		StorageOpt: container.HostConfig.StorageOpt,
+		*/
+		mountLabel = opts.MountLabel   //opts赋值见 setRWLayer
 		storageOpt = opts.StorageOpt
 		initFunc = opts.InitFunc
 	}
@@ -479,7 +506,7 @@ func (ls *layerStore) CreateRWLayer(name string, parent ChainID, opts *CreateRWL
 	var err error
 	var pid string
 	var p *roLayer
-	if string(parent) != "" {
+	if string(parent) != "" { //每一层都包括指向父层的指针。如果没有这个指针，说明处于最底层。
 		p = ls.get(parent)
 		if p == nil {
 			return nil, ErrLayerDoesNotExist
@@ -504,7 +531,7 @@ func (ls *layerStore) CreateRWLayer(name string, parent ChainID, opts *CreateRWL
 		references: map[RWLayer]*referencedRWLayer{},
 	}
 
-	if initFunc != nil {
+	if initFunc != nil { //daemon.getLayerInit(),
 		pid, err = ls.initMount(m.mountID, pid, mountLabel, initFunc, storageOpt)
 		if err != nil {
 			return nil, err
@@ -516,10 +543,12 @@ func (ls *layerStore) CreateRWLayer(name string, parent ChainID, opts *CreateRWL
 		StorageOpt: storageOpt,
 	}
 
+	///var/lib/docker/overlay/xxxx，xxx-INIT在上面的initMount函数中创建 相关目录中相关文件夹创建
 	if err = ls.driver.CreateReadWrite(m.mountID, pid, createOpts); err != nil {
 		return nil, err
 	}
 
+	//向/var/lib/docker/image/overlay/layerdb/mounts/中的指定文件中写入对应的内容 例如，该目录下的以下文件内容init-id  mount-id  parent
 	if err = ls.saveMount(m); err != nil {
 		return nil, err
 	}
@@ -597,6 +626,7 @@ func (ls *layerStore) ReleaseRWLayer(l RWLayer) ([]Metadata, error) {
 	return []Metadata{}, nil
 }
 
+//向/var/lib/docker/image/overlay/layerdb/mounts/中的指定文件中写入对应的内容 例如，该目录下的以下文件内容init-id  mount-id  parent
 func (ls *layerStore) saveMount(mount *mountedLayer) error {
 	if err := ls.store.SetMountID(mount.name, mount.mountID); err != nil {
 		return err
@@ -631,6 +661,7 @@ func (ls *layerStore) initMount(graphID, parent, mountLabel string, initFunc Mou
 		StorageOpt: storageOpt,
 	}
 
+	///var/lib/docker/overlay/xxxx-init 相关目录中相关文件夹创建
 	if err := ls.driver.CreateReadWrite(initID, parent, createOpts); err != nil {
 		return "", err
 	}

@@ -240,6 +240,8 @@ func (d *Driver) CreateReadWrite(id, parent string, opts *graphdriver.CreateOpts
 
 // Create is used to create the upper, lower, and merge directories required for overlay fs for a given id.
 // The parent filesystem is used to configure these directories for the overlay.
+
+///var/lib/docker/overlay/xxxx-init  ///var/lib/docker/overlay/xxxx 相关目录中相关文件夹创建
 func (d *Driver) Create(id, parent string, opts *graphdriver.CreateOpts) (retErr error) {
 
 	if opts != nil && len(opts.StorageOpt) != 0 {

@@ -124,7 +124,7 @@ func MatchesContentType(contentType, expectedType string) bool {
 }
 
 // LoadOrCreateTrustKey attempts to load the libtrust key at the given path,
-// otherwise generates a new one
+// otherwise generates a new one  //  api/common.go 按照路径加载libtrust key ，没有就新建一个
 func LoadOrCreateTrustKey(trustKeyPath string) (libtrust.PrivateKey, error) {
 	err := system.MkdirAll(filepath.Dir(trustKeyPath), 0700)
 	if err != nil {

@@ -75,7 +75,7 @@ func (s *imageRouter) postImagesCreate(ctx context.Context, w http.ResponseWrite
 		return err
 	}
 
-	var (
+	var ( //解析Http头中的相关信息
 		image   = r.Form.Get("fromImage")
 		repo    = r.Form.Get("repo")
 		tag     = r.Form.Get("tag")
@@ -87,6 +87,7 @@ func (s *imageRouter) postImagesCreate(ctx context.Context, w http.ResponseWrite
 
 	w.Header().Set("Content-Type", "application/json")
 
+	//从http参数中解析出镜像名和tag，分了有镜像名和无镜像名两个分支
 	if image != "" { //pull
 		metaHeaders := map[string][]string{}
 		for k, v := range r.Header {
@@ -106,6 +107,7 @@ func (s *imageRouter) postImagesCreate(ctx context.Context, w http.ResponseWrite
 			}
 		}
 
+		//image_pull.go中的PullImage接口
 		err = s.backend.PullImage(ctx, image, tag, metaHeaders, authConfig, output)
 	} else { //import
 		src := r.Form.Get("fromSrc")

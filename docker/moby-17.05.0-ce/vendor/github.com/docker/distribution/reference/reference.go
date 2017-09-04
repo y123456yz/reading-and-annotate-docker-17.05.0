@@ -106,7 +106,7 @@ func (f *Field) UnmarshalText(p []byte) error {
 }
 
 // Named is an object with a full name
-type Named interface {
+type Named interface { //RepositoryInfo结构包含该结构
 	Reference
 	Name() string
 }
@@ -117,6 +117,7 @@ type Tagged interface {
 	Tag() string
 }
 
+//镜像名解析，如果我们传入的是tag就得到一个reference.NamedTagged对象ref,参考PullImage
 // NamedTagged is an object including a name and tag.
 type NamedTagged interface {
 	Named
@@ -327,6 +328,12 @@ func TrimNamed(ref Named) Named {
 	}
 }
 
+/*
+①　带镜像名，则matches[1]不为nil;
+②　带tag，则matches[2]不为nil;
+③　带数字摘要，则matches[3]不为nil
+getBestReferenceType根据各个matchs是否为空，根据带相应的部分返回不同类型的Reference接口。
+*/ //参考http://blog.csdn.net/zhonglinzhang/article/details/53484799
 func getBestReferenceType(ref reference) Reference {
 	if ref.Name() == "" {
 		// Allow digest only references

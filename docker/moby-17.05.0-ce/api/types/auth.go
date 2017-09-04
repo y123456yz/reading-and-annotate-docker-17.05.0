@@ -1,7 +1,7 @@
 package types
 
 // AuthConfig contains authorization information for connecting to a Registry
-type AuthConfig struct {
+type AuthConfig struct { //registry的认证信息
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
 	Auth     string `json:"auth,omitempty"`

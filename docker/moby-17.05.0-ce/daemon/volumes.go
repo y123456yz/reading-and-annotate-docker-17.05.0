@@ -69,6 +69,13 @@ func (m mounts) parts(i int) int {
 // 2. Select the volumes mounted from another containers. Overrides previously configured mount point destination.
 // 3. Select the bind mounts set by the client. Overrides previously configured mount point destinations.
 // 4. Cleanup old volumes that are about to be reassigned.
+//①　daemon.registerMountPoints注册所有挂载到容器的数据卷
+/*
+registerMountPoints(container, hostConfig)； 注册所有挂载到容器的数据卷，主要有三种方式和来源：
+（1）容器本身原有自带的挂载的数据卷，应该是容器的json镜像文件中 "Volumes"这个key对应得内容；
+（2）通过其他数据卷容器（通过--volumes-from）挂载的数据卷;
+（3）通过命令行参数（-v参数）挂载的与主机绑定的数据卷，与主机绑定得数据卷在docker中叫做bind-mounts，这种数据卷与一般的正常得数据卷是有些细微区别的；
+*/
 func (daemon *Daemon) registerMountPoints(container *container.Container, hostConfig *containertypes.HostConfig) (retErr error) {
 	binds := map[string]bool{}
 	mountPoints := map[string]*volume.MountPoint{}

@@ -26,6 +26,7 @@ import (
 	"unicode"
 )
 
+//AddTemplateFunc函数会新增成员
 var templateFuncs = template.FuncMap{
 	"trim":               strings.TrimSpace,
 	"trimRightSpace":     trimRightSpace,

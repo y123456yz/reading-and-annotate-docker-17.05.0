@@ -568,6 +568,7 @@ func (daemon *Daemon) allocateNetwork(container *container.Container) error {
 
 	}
 
+	//hostconfig写入hostconfig.json文件
 	if err := container.WriteHostConfig(); err != nil {
 		return err
 	}
@@ -876,6 +877,11 @@ func (daemon *Daemon) tryDetachContainerFromClusterNetwork(network libnetwork.Ne
 	daemon.LogNetworkEventWithAttributes(network, "disconnect", attributes)
 }
 
+/*
+initializeNetworking() 对网络进行初始化，docker网络模式有三种，分别是 bridge模式（每个容器用户单独的网络栈），host模式（与宿主机共用一个网络栈），
+contaier模式（与其他容器共用一个网络栈，猜测kubernate中的pod所用的模式）；根据config和hostConfig中的参数来确定容器的网络模式，然后调动libnetwork
+包来建立网络，关于docker网络的部分后面会单独拿出一章出来梳理；
+*/
 func (daemon *Daemon) initializeNetworking(container *container.Container) error {
 	var err error
 

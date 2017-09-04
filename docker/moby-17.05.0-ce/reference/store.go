@@ -35,7 +35,28 @@ type Store interface {
 	Delete(ref reference.Named) (bool, error)
 	Get(ref reference.Named) (digest.Digest, error)
 }
+/*
+referfenceStore的类型为reference.store，这个应该是docker用户最熟悉的部分了。以一个ubunu镜像为例，ubuntu镜像的名字就叫ubuntu，一个完成的镜像还包括tag，
+于是就有了ubuntu:latest、ubuntu:14.04等。这部分信息其实就是存储才referenceStore中。
+这部分信息其实保存在/var/lib/docker/image/{driver}/repositories.json这个文件中
 
+ "Repositories": {
+    "ubuntu": {
+      "ubuntu@sha256:bd00486535fd3ab00463b0572d94a62715cb790e482d5419c9179cd22c74520b": "sha256:f2d8ce9fa988ed844dda693fe260b9afd393b9a65b647aa02f62d6eecdb7b635",
+      "ubuntu@sha256:3235a49037919e99696d97df8d8a230717272d848ee4ddadbca8d54f97ee30cb": "sha256:45bc58500fa3d3c0d67233d4a7798134b46b486af1389ca87000c543f46c3d24",
+      "ubuntu:latest": "sha256:45bc58500fa3d3c0d67233d4a7798134b46b486af1389ca87000c543f46c3d24",
+      "ubuntu:14.04": "sha256:f2d8ce9fa988ed844dda693fe260b9afd393b9a65b647aa02f62d6eecdb7b635"
+    },
+    "busybox": {
+      "busybox@sha256:a59906e33509d14c036c8678d687bd4eec81ed7c4b8ce907b888c607f6a1e0e6": "sha256:2b8fd9751c4c0f5dd266fcae00707e67a2545ef34f9a29354585f93dac906749",
+      "busybox:latest": "sha256:2b8fd9751c4c0f5dd266fcae00707e67a2545ef34f9a29354585f93dac906749"
+    }
+  }
+}
+从这里我们可以看出，这才机器包括两个镜像，ubuntu和busybox，其中ubuntu有两个tag分别为latest和14.04，而busybox只有latest一个tag
+
+referfenceStore其实就是从这个文件反序列化而来的
+*/ //使用见NewReferenceStore
 type store struct {
 	mu sync.RWMutex
 	// jsonPath is the path to the file where the serialized tag data is
@@ -68,8 +89,31 @@ func (a lexicalAssociations) Less(i, j int) bool {
 	return a[i].Ref.String() < a[j].Ref.String()
 }
 
+/*
+referfenceStore的类型为reference.store，这个应该是docker用户最熟悉的部分了。以一个ubunu镜像为例，ubuntu镜像的名字就叫ubuntu，一个完成的镜像还包括tag，
+于是就有了ubuntu:latest、ubuntu:14.04等。这部分信息其实就是存储才referenceStore中。
+这部分信息其实保存在/var/lib/docker/image/{driver}/repositories.json这个文件中
+
+ "Repositories": {
+    "ubuntu": {
+      "ubuntu@sha256:bd00486535fd3ab00463b0572d94a62715cb790e482d5419c9179cd22c74520b": "sha256:f2d8ce9fa988ed844dda693fe260b9afd393b9a65b647aa02f62d6eecdb7b635",
+      "ubuntu@sha256:3235a49037919e99696d97df8d8a230717272d848ee4ddadbca8d54f97ee30cb": "sha256:45bc58500fa3d3c0d67233d4a7798134b46b486af1389ca87000c543f46c3d24",
+      "ubuntu:latest": "sha256:45bc58500fa3d3c0d67233d4a7798134b46b486af1389ca87000c543f46c3d24",
+      "ubuntu:14.04": "sha256:f2d8ce9fa988ed844dda693fe260b9afd393b9a65b647aa02f62d6eecdb7b635"
+    },
+    "busybox": {
+      "busybox@sha256:a59906e33509d14c036c8678d687bd4eec81ed7c4b8ce907b888c607f6a1e0e6": "sha256:2b8fd9751c4c0f5dd266fcae00707e67a2545ef34f9a29354585f93dac906749",
+      "busybox:latest": "sha256:2b8fd9751c4c0f5dd266fcae00707e67a2545ef34f9a29354585f93dac906749"
+    }
+  }
+}
+从这里我们可以看出，这才机器包括两个镜像，ubuntu和busybox，其中ubuntu有两个tag分别为latest和14.04，而busybox只有latest一个tag
+
+referfenceStore其实就是从这个文件反序列化而来的
+*/
 // NewReferenceStore creates a new reference store, tied to a file path where
 // the set of references are serialized in JSON format.
+// reference/store.go  按照路径创建 reference仓库实例
 func NewReferenceStore(jsonPath string) (Store, error) {
 	abspath, err := filepath.Abs(jsonPath)
 	if err != nil {

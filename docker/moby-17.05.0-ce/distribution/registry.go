@@ -54,6 +54,8 @@ func init() {
 // NewV2Repository returns a repository (v2 only). It creates an HTTP transport
 // providing timeout settings and authentication support, and also verifies the
 // remote API version.
+
+//NewV2Repository函数来创建一个提供身份验证的http传输通道，并返回repository接口
 func NewV2Repository(ctx context.Context, repoInfo *registry.RepositoryInfo, endpoint registry.APIEndpoint, metaHeaders http.Header, authConfig *types.AuthConfig, actions ...string) (repo distribution.Repository, foundVersion bool, err error) {
 	repoName := repoInfo.Name.Name()
 	// If endpoint does not support CanonicalName, use the RemoteName instead

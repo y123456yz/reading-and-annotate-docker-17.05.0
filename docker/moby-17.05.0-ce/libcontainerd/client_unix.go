@@ -42,11 +42,13 @@ func (clnt *client) prepareBundleDir(uid, gid int) (string, error) {
 	return p, nil
 }
 
+//libcontainerd\client_unix.go中的Create函数
+//start.go中的函数 containerStart 执行
 func (clnt *client) Create(containerID string, checkpoint string, checkpointDir string, spec specs.Spec, attachStdio StdioCallback, options ...CreateOption) (err error) {
 	clnt.lock(containerID)
 	defer clnt.unlock(containerID)
 
-	if _, err := clnt.getContainer(containerID); err == nil {
+	if _, err := clnt.getContainer(containerID); err == nil { //查看该id对应的容器是否已经启动
 		return fmt.Errorf("Container %s is already active", containerID)
 	}
 
@@ -59,6 +61,7 @@ func (clnt *client) Create(containerID string, checkpoint string, checkpointDir 
 		return err
 	}
 
+	//获取一个container实例
 	container := clnt.newContainer(filepath.Join(dir, containerID), options...)
 	if err := container.clean(); err != nil {
 		return err
@@ -75,15 +78,18 @@ func (clnt *client) Create(containerID string, checkpoint string, checkpointDir 
 		return err
 	}
 
+	//在/var/lib/docker/container/containerID创建config.json文件
 	f, err := os.Create(filepath.Join(container.dir, configFilename))
 	if err != nil {
 		return err
 	}
 	defer f.Close()
+	//把spec配置序列化写入config.json文件
 	if err := json.NewEncoder(f).Encode(spec); err != nil {
 		return err
 	}
 
+	//启动container   libcontainerd\container_unix.go中的start函数
 	return container.start(checkpoint, checkpointDir, attachStdio)
 }
 

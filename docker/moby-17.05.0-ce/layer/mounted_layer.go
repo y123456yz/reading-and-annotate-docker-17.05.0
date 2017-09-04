@@ -6,8 +6,15 @@ import (
 	"github.com/docker/docker/pkg/archive"
 )
 
+/*  参考http://licyhust.com/%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF/2016/09/27/docker-image-data-structure/
+mounts本质上是一个map，类型为map[string]*mountedLayer。前面提到过mounts存放的其实是每个容器可写的layer的信息，他们的元数据存
+放在/var/lib/docker/image/{driver}/layerdb/mounts目录下。而mountedLayer则是这些可写的layer在内存中的结构
+*/
+//roLayer是只读的layer原信息，mounts是运行容器的时候可写layer
+//初始化实例见CreateRWLayer
 type mountedLayer struct {
 	name       string
+	//initID和mountID表示了这个layer数据存放的位置，和 roLayer.CacheId一样。
 	mountID    string
 	initID     string
 	parent     *roLayer

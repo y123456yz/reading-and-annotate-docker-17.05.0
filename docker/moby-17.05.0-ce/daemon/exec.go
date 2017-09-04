@@ -264,7 +264,7 @@ func (d *Daemon) ContainerExecStart(ctx context.Context, name string, stdin io.R
 
 // execCommandGC runs a ticker to clean up the daemon references
 // of exec configs that are no longer part of the container.
-func (d *Daemon) execCommandGC() {
+func (d *Daemon) execCommandGC() {// 新建协程清理容器不需要的命令
 	for range time.Tick(5 * time.Minute) {
 		var (
 			cleaned          int

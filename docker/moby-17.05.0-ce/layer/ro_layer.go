@@ -6,17 +6,31 @@ import (
 
 	"github.com/docker/distribution"
 	"github.com/opencontainers/go-digest"
+	"database/sql/driver"
 )
+//参考http://licyhust.com/%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF/2016/09/27/docker-image-data-structure/
+//store本质上是磁盘上保存了各个layer的元数据信息，当docker初始化时，它会利用
+//这些元数据文件在内存中构造各个layer，每个Layer都用一个roLayer结构体表示，即只读(ro)的layer
+//注意roLayer 和 layerStore 的关系
 
-type roLayer struct {
-	chainID    ChainID
+//roLayer是只读的layer原信息，mounts是运行容器的时候可写layer
+type roLayer struct { //对应/var/lib/docker/image/overlay/layerdb/sha256/目录相关
+/*  参考http://licyhust.com/%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF/2016/09/27/docker-image-data-structure/
+diff-id：通过docker pull下载镜像时，镜像的json文件中每一个layer都有一个唯一的diff-id
+chain-id：chain-id是根据parent的chain-id和自身的diff-id生成的，假如没有parent，则chain-id等于diff-id，假如有parent，则chain-id等于sha256sum( “parent-chain-id diff-id”)
+cache-id：随机生成的64个16进制数。前面提到过，cache-id标识了这个layer的数据具体存放位置
+*/
+	chainID    ChainID //
 	diffID     DiffID
-	parent     *roLayer
-	cacheID    string
+	parent     *roLayer  //每一层都包括指向父层的指针。如果没有这个指针，说明处于最底层。
+	cacheID    string //知名layer数据存放位置，/var/lib/docker/devicemapper/metadata/cache-id
+
+
 	size       int64
 	layerStore *layerStore
 	descriptor distribution.Descriptor
 
+	//referentces存放的是他的子layer的信息。当删除镜像时，只有roLayer的referentceCount为零时，才能够删除该layer。
 	referenceCount int
 	references     map[Layer]struct{}
 }

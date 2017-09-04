@@ -37,13 +37,14 @@ type Service interface {
 
 // DefaultService is a registry service. It tracks configuration data such as a list
 // of mirrors.
-type DefaultService struct {
+type DefaultService struct { //也就是endpoint，见lookupEndpoints  new见ResolveRepository newRepositoryInfo
 	config *serviceConfig
 	mu     sync.Mutex
 }
 
 // NewService returns a new instance of DefaultService ready to be
 // installed into an engine.
+// registry/service.go 新建一个default的registryserver
 func NewService(options ServiceOptions) *DefaultService {
 	return &DefaultService{
 		config: newServiceConfig(options),
@@ -268,6 +269,7 @@ func (s *DefaultService) tlsConfigForMirror(mirrorURL *url.URL) (*tls.Config, er
 // LookupPullEndpoints creates a list of endpoints to try to pull from, in order of preference.
 // It gives preference to v2 endpoints over v1, mirrors over the actual
 // registry, and HTTPS over plain HTTP.
+// 通过repositoryInfo找到下载镜像的endpoint
 func (s *DefaultService) LookupPullEndpoints(hostname string) (endpoints []APIEndpoint, err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

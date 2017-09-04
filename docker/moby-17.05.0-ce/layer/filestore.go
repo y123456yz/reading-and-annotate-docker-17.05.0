@@ -58,6 +58,7 @@ func (fms *fileMetadataStore) getLayerFilename(layer ChainID, filename string) s
 	return filepath.Join(fms.getLayerDirectory(layer), filename)
 }
 
+//参考http://licyhust.com/%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF/2016/09/27/docker-image-data-structure/
 func (fms *fileMetadataStore) getMountDirectory(mount string) string {
 	return filepath.Join(fms.root, "mounts", mount)
 }
@@ -87,6 +88,12 @@ func (fm *fileMetadataTransaction) SetSize(size int64) error {
 	return fm.ws.WriteFile("size", []byte(content), 0644)
 }
 
+/*
+diff-id：通过docker pull下载镜像时，镜像的json文件中每一个layer都有一个唯一的diff-id
+chain-id：chain-id是根据parent的chain-id和自身的diff-id生成的，假如没有parent，则chain-id等于diff-id，假如有parent，则chain-id等于sha256sum( “parent-chain-id diff-id”)
+cache-id：随机生成的64个16进制数。前面提到过，cache-id标识了这个layer的数据具体存放位置
+见http://licyhust.com/%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF/2016/09/27/docker-image-data-structure/
+*/
 func (fm *fileMetadataTransaction) SetParent(parent ChainID) error {
 	return fm.ws.WriteFile("parent", []byte(digest.Digest(parent).String()), 0644)
 }

@@ -17,10 +17,15 @@ import (
 	"github.com/spf13/pflag"
 )
 
+//命令行参数解析存储在该结构中
 type daemonOptions struct {
+	//命令行是否是--version
 	version      bool
-	configFile   string
+	//命令行携带的config-file
+	configFile   string//默认/etc/docker/daemon.json
+	//赋值见installConfigFlags(opts.daemonConfig, flags)
 	daemonConfig *config.Config
+	//赋值见opts.common.InstallFlags(flags)
 	common       *cliflags.CommonOptions
 	flags        *pflag.FlagSet
 }
@@ -32,8 +37,8 @@ func newDaemonCommand() *cobra.Command {
 	}
 
 	cmd := &cobra.Command{
-		Use:           "dockerd [OPTIONS]",
-		Short:         "A self-sufficient runtime for containers.",
+		Use:           "dockerd [OPTIONS--yyz]",
+		Short:         "A self-sufficient runtime for containers. --yyz dockered",
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		Args:          cli.NoArgs,
@@ -45,17 +50,19 @@ func newDaemonCommand() *cobra.Command {
 	cli.SetupRootCommand(cmd)
 
 	flags := cmd.Flags()
-	flags.BoolVarP(&opts.version, "version", "v", false, "Print version information and quit")
-	flags.StringVar(&opts.configFile, "config-file", defaultDaemonConfigFile, "Daemon configuration file")
-	opts.common.InstallFlags(flags)
-	installConfigFlags(opts.daemonConfig, flags)
+	//解析命令行中的version   config-file参数
+	flags.BoolVarP(&opts.version, "version", "v", false, "Print version information and quit --yyz")
+	flags.StringVar(&opts.configFile, "config-file", defaultDaemonConfigFile, "Daemon configuration file -- yyz")
+
+	opts.common.InstallFlags(flags) //opts.common解析赋值
+	installConfigFlags(opts.daemonConfig, flags)//opts.daemonConfig
 	installServiceFlags(flags)
 
 	return cmd
 }
 
 func runDaemon(opts daemonOptions) error {
-	if opts.version {
+	if opts.version { //如果是--version,则打印版本号返回
 		showVersion()
 		return nil
 	}
@@ -94,16 +101,16 @@ func runDaemon(opts daemonOptions) error {
 }
 
 func showVersion() {
-	fmt.Printf("Docker version %s, build %s\n", dockerversion.Version, dockerversion.GitCommit)
+	fmt.Printf("Dockerd version %s, build %s\n", dockerversion.Version, dockerversion.GitCommit)
 }
 
-func main() {
-	if reexec.Init() {
+func main() {  //dockerd入口程序在这个main
+	if reexec.Init() { //reexec.Init()（在pkg/reexec/reexec.go文件中），看有没有注册的初始化函数，如果有，就直接return了；
 		return
 	}
-
+	fmt.Printf("yang test ...main... dockerd main")
 	// Set terminal emulation based on platform as required.
-	_, stdout, stderr := term.StdStreams()
+	_, stdout, stderr := term.StdStreams() //返回标准输入、输出、错误流；
 
 	// @jhowardmsft - maybe there is a historic reason why on non-Windows, stderr is used
 	// here. However, on Windows it makes no sense and there is no need.
@@ -115,7 +122,9 @@ func main() {
 
 	cmd := newDaemonCommand()
 	cmd.SetOutput(stdout)
-	if err := cmd.Execute(); err != nil {
+
+	//主流程在这里面执行
+	if err := cmd.Execute(); err != nil {  //执行newDaemonCommand中的 runDaemon
 		fmt.Fprintf(stderr, "%s\n", err)
 		os.Exit(1)
 	}

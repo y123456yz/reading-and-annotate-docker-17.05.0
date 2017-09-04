@@ -1950,7 +1950,7 @@ var _ grpc.ClientConn
 const _ = grpc.SupportPackageIsVersion4
 
 // Client API for API service
-
+//APIClient和该文件中的APIServer对应，client接口见(c *aPIClient) CreateContainer等，server对应接口见ServiceDesc
 type APIClient interface {
 	GetServerVersion(ctx context.Context, in *GetServerVersionRequest, opts ...grpc.CallOption) (*GetServerVersionResponse, error)
 	CreateContainer(ctx context.Context, in *CreateContainerRequest, opts ...grpc.CallOption) (*CreateContainerResponse, error)
@@ -1983,9 +1983,12 @@ func (c *aPIClient) GetServerVersion(ctx context.Context, in *GetServerVersionRe
 	return out, nil
 }
 
+//APIClient和该文件中的APIServer对应，client接口见(c *aPIClient) CreateContainer等，server对应接口见 ServiceDesc
 func (c *aPIClient) CreateContainer(ctx context.Context, in *CreateContainerRequest, opts ...grpc.CallOption) (*CreateContainerResponse, error) {
 	out := new(CreateContainerResponse)
-	err := grpc.Invoke(ctx, "/types.API/CreateContainer", in, out, c.cc, opts...)
+
+	//var _API_serviceDesc = grpc.ServiceDesc 中对应的handler执行
+	err := grpc.Invoke(ctx, "/types.API/CreateContainer", in, out, c.cc, opts...) //见 _API_CreateContainer_Handler
 	if err != nil {
 		return nil, err
 	}
@@ -2106,7 +2109,7 @@ func (c *aPIClient) Stats(ctx context.Context, in *StatsRequest, opts ...grpc.Ca
 }
 
 // Server API for API service
-
+//APIClient和该文件中的APIServer对应，client接口见(c *aPIClient) CreateContainer等，server对应接口见 ServiceDesc
 type APIServer interface {
 	GetServerVersion(context.Context, *GetServerVersionRequest) (*GetServerVersionResponse, error)
 	CreateContainer(context.Context, *CreateContainerRequest) (*CreateContainerResponse, error)
@@ -2159,6 +2162,7 @@ func _API_CreateContainer_Handler(srv interface{}, ctx context.Context, dec func
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(APIServer).CreateContainer(ctx, req.(*CreateContainerRequest))
 	}
+
 	return interceptor(ctx, in, info, handler)
 }
 

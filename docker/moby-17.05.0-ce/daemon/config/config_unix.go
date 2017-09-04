@@ -20,6 +20,7 @@ type Config struct {
 
 	// Fields below here are platform specific.
 	CgroupParent         string                   `json:"cgroup-parent,omitempty"`
+	//是否支持selinux功能
 	EnableSelinuxSupport bool                     `json:"selinux-enabled,omitempty"`
 	RemappedRoot         string                   `json:"userns-remap,omitempty"`
 	Ulimits              map[string]*units.Ulimit `json:"default-ulimits,omitempty"`
@@ -35,7 +36,7 @@ type Config struct {
 
 // BridgeConfig stores all the bridge driver specific
 // configuration.
-type BridgeConfig struct {
+type BridgeConfig struct { //网桥配置
 	commonBridgeConfig
 
 	// These fields are common to all unix platforms.
@@ -43,8 +44,11 @@ type BridgeConfig struct {
 
 	// Fields below here are platform specific.
 	EnableIPv6          bool   `json:"ipv6,omitempty"`
+	//是否启用IPtable功能 EnableIptables属性的作用是启用Docker对iptables规则的添加功能
 	EnableIPTables      bool   `json:"iptables,omitempty"`
+	//是否启用IPFORWRD功能
 	EnableIPForward     bool   `json:"ip-forward,omitempty"`
+	//是否启用IP伪装技术
 	EnableIPMasq        bool   `json:"ip-masq,omitempty"`
 	EnableUserlandProxy bool   `json:"userland-proxy,omitempty"`
 	UserlandProxyPath   string `json:"userland-proxy-path,omitempty"`

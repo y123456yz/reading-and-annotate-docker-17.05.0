@@ -23,6 +23,7 @@ func (daemon *Daemon) createContainerPlatformSpecificSettings(container *contain
 	defer daemon.Unmount(container)
 
 	rootUID, rootGID := daemon.GetRemappedUIDGID()
+	//setupWorkingDirectory() 建立容器执行命令时的工作目录；
 	if err := container.SetupWorkingDirectory(rootUID, rootGID); err != nil {
 		return err
 	}

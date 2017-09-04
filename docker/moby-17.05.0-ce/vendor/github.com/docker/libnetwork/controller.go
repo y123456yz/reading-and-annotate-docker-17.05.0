@@ -145,6 +145,7 @@ type SandboxWalker func(sb Sandbox) bool
 
 type sandboxTable map[string]*sandbox
 
+//下面的New函数中用到
 type controller struct {
 	id                     string
 	drvRegistry            *drvregistry.DrvRegistry
@@ -176,6 +177,8 @@ type initializer struct {
 }
 
 // New creates a new instance of network controller.
+//initNetworkController 中运行该接口
+//restore(daemon.go)->initNetworkController(daemon_unix.go)->libnetwork.New(controller.go)
 func New(cfgOptions ...config.Option) (NetworkController, error) {
 	c := &controller{
 		id:              stringid.GenerateRandomID(),

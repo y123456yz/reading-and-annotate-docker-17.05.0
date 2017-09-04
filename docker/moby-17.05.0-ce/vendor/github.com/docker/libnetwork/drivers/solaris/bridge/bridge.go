@@ -57,6 +57,7 @@ const (
 // configuration info for the "bridge" driver.
 type configuration struct {
 	EnableIPForwarding  bool
+	//EnableIptables属性的作用是启用Docker对iptables规则的添加功能
 	EnableIPTables      bool
 	EnableUserlandProxy bool
 }

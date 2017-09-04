@@ -328,6 +328,7 @@ type UpdateConfig struct {
 // HostConfig the non-portable Config structure of a container.
 // Here, "non-portable" means "dependent of the host we are running on".
 // Portable information *should* appear in Config.
+//*container.config与*container.hostConfig都是配置的结构，区别是config是只与container相关的配置，hostConfig属于与宿主机相关的配置选项；
 type HostConfig struct {
 	// Applicable to all platforms
 	Binds           []string      // List of volume bindings for this container

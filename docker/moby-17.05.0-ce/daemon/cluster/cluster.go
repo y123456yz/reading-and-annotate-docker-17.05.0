@@ -133,7 +133,7 @@ type attacher struct {
 }
 
 // New creates a new Cluster instance using provided config.
-func New(config Config) (*Cluster, error) {
+func New(config Config) (*Cluster, error) {// daemon/cluster/cluster.go  新建一个cluster 实例
 	root := filepath.Join(config.Root, swarmDirName)
 	if err := os.MkdirAll(root, 0700); err != nil {
 		return nil, err

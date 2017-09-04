@@ -50,7 +50,8 @@ type Config struct {
 }
 
 // ImagePullConfig stores pull configuration.
-type ImagePullConfig struct {
+// 由于docker server也需要与 docker registry 通过http交互来下载docker网络镜像，所以首先封装了 imagePullConfig 参数，在与registry通信的时候使用
+type ImagePullConfig struct { //包含了很多拉取镜像时要用到的信息  pullImageWithReference中会有该结构
 	Config
 
 	// DownloadManager manages concurrent pulls.

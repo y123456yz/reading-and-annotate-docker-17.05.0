@@ -78,7 +78,7 @@ func newWorker(db *bolt.DB, executor exec.Executor, publisherProvider exec.LogPu
 }
 
 // Init prepares the worker for assignments.
-func (w *worker) Init(ctx context.Context) error {
+func (w *worker) Init(ctx context.Context) error { //agent.go中的run函数调用该接口
 	w.mu.Lock()
 	defer w.mu.Unlock()
 

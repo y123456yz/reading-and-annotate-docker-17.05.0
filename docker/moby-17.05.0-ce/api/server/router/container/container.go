@@ -51,6 +51,8 @@ func (r *containerRouter) initRoutes() {
 		router.NewGetRoute("/containers/{name:.*}/attach/ws", r.wsContainersAttach),
 		router.NewGetRoute("/exec/{id:.*}/json", r.getExecByID),
 		router.NewGetRoute("/containers/{name:.*}/archive", r.getContainersArchive),
+
+
 		// POST
 		router.NewPostRoute("/containers/create", r.postContainersCreate),
 		router.NewPostRoute("/containers/{name:.*}/kill", r.postContainersKill),

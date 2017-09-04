@@ -146,6 +146,10 @@ func newCIDFile(path string) (*cidFile, error) {
 	return &cidFile{path: path, file: f}, nil
 }
 
+//客户端通过createContainer组api请求，服务端通过 postContainersCreate->ContainerCreate 处理
+
+//创建一个容器在客户端实现是在api/client/create.go，其中得CmdCreate()方法，这个函数的作用是通过给daemon发送一个给定的image run请求来启动一个container；
+// 其中的createContainer()函数是最主要的实现部分；
 func createContainer(ctx context.Context, dockerCli *command.DockerCli, containerConfig *containerConfig, name string) (*container.ContainerCreateCreatedBody, error) {
 	config := containerConfig.Config
 	hostConfig := containerConfig.HostConfig

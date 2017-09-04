@@ -67,7 +67,9 @@ type LogConfig struct {
 // commonBridgeConfig stores all the platform-common bridge driver specific
 // configuration.
 type commonBridgeConfig struct {
+	//容器网络接口名
 	Iface     string `json:"bridge,omitempty"`
+	//IPV4子网，必须被网桥子网包含
 	FixedCIDR string `json:"fixed-cidr,omitempty"`
 }
 
@@ -84,23 +86,31 @@ type CommonTLSOptions struct {
 // common across platforms.
 // It includes json tags to deserialize configuration from a file
 // using the same names that the flags in the command line use.
-type CommonConfig struct {
+type CommonConfig struct { //包含在config\config_unix.go中的Config结构中
 	AuthzMiddleware      *authorization.Middleware `json:"-"`
 	AuthorizationPlugins []string                  `json:"authorization-plugins,omitempty"` // AuthorizationPlugins holds list of authorization plugins
+	//是否一致支持创建容器的重启
 	AutoRestart          bool                      `json:"-"`
 	Context              map[string][]string       `json:"-"`
 	DisableBridge        bool                      `json:"-"`
+	//DNS 服务器
 	DNS                  []string                  `json:"dns,omitempty"`
 	DNSOptions           []string                  `json:"dns-opts,omitempty"`
+	//DNS查找地址
 	DNSSearch            []string                  `json:"dns-search,omitempty"`
 	ExecOptions          []string                  `json:"exec-opts,omitempty"`
+	//Daemon运行时使用的特定存储驱动
 	GraphDriver          string                    `json:"storage-driver,omitempty"`
+	//可设置的存储驱动选项
 	GraphOptions         []string                  `json:"storage-opts,omitempty"`
 	Labels               []string                  `json:"labels,omitempty"`
+	//赋值见setDefaultMtu
 	Mtu                  int                       `json:"mtu,omitempty"`
+	//docker daemon进程所属的PID文件
 	Pidfile              string                    `json:"pidfile,omitempty"`
 	RawLogs              bool                      `json:"raw-logs,omitempty"`
 	RootDeprecated       string                    `json:"graph,omitempty"`
+	//docker运行时所使用的路径 默认的是在"/var/lib/docker"路径下；
 	Root                 string                    `json:"data-root,omitempty"`
 	SocketGroup          string                    `json:"group,omitempty"`
 	TrustKeyPath         string                    `json:"-"`
@@ -137,6 +147,7 @@ type CommonConfig struct {
 	// to stop when daemon is being shutdown
 	ShutdownTimeout int `json:"shutdown-timeout,omitempty"`
 
+	//赋值见loadDaemonCliConfig
 	Debug     bool     `json:"debug,omitempty"`
 	Hosts     []string `json:"hosts,omitempty"`
 	LogLevel  string   `json:"log-level,omitempty"`
@@ -153,7 +164,7 @@ type CommonConfig struct {
 	// specified.
 	SwarmDefaultAdvertiseAddr string `json:"swarm-default-advertise-addr"`
 	MetricsAddress            string `json:"metrics-addr"`
-
+	//进行log driver的配置，默认的log driver 是json-file， 在deamon/logger 目录下是各种log driver，包括： fluentd,syslogd,journald, gelf等
 	LogConfig
 	BridgeConfig // bridgeConfig holds bridge network specific configuration.
 	registry.ServiceOptions

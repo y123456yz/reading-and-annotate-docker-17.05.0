@@ -78,6 +78,7 @@ func (daemon *Daemon) IsPaused(id string) bool {
 	return c.State.IsPaused()
 }
 
+// /var/log/docker/container + id
 func (daemon *Daemon) containerRoot(id string) string {
 	return filepath.Join(daemon.repository, id)
 }
@@ -111,6 +112,7 @@ func (daemon *Daemon) Register(c *container.Container) {
 	daemon.idIndex.Add(c.ID)
 }
 
+//实例化一个新的container，获取一个container实例
 func (daemon *Daemon) newContainer(name string, config *containertypes.Config, hostConfig *containertypes.HostConfig, imgID image.ID, managed bool) (*container.Container, error) {
 	var (
 		id             string
@@ -195,9 +197,22 @@ func (daemon *Daemon) setSecurityOptions(container *container.Container, hostCon
 	return daemon.parseSecurityOpt(container, hostConfig)
 }
 
+/*
+①　daemon.registerMountPoints注册所有挂载到容器的数据卷
+②　daemon.registerLinks，load所有links（包括父子关系），写入host配置至文件（ 注册互联容器，容器可以通过 ip:端口访问，可以通过--link互联。）
+③　container.ToDisk将container持久化至disk。路径为如下所示
+/var/lib/Docker/containers/$containerID
+*/
 func (daemon *Daemon) setHostConfig(container *container.Container, hostConfig *containertypes.HostConfig) error {
 	// Do not lock while creating volumes since this could be calling out to external plugins
 	// Don't want to block other actions, like `docker ps` because we're waiting on an external plugin
+
+	/*
+	registerMountPoints(container, hostConfig)； 注册所有挂载到容器的数据卷，主要有三种方式和来源：
+	（1）容器本身原有自带的挂载的数据卷，应该是容器的json镜像文件中 "Volumes"这个key对应得内容；
+	（2）通过其他数据卷容器（通过--volumes-from）挂载的数据卷;
+	（3）通过命令行参数（-v参数）挂载的与主机绑定的数据卷，与主机绑定得数据卷在docker中叫做bind-mounts，这种数据卷与一般的正常得数据卷是有些细微区别的；
+	*/
 	if err := daemon.registerMountPoints(container, hostConfig); err != nil {
 		return err
 	}
@@ -205,6 +220,11 @@ func (daemon *Daemon) setHostConfig(container *container.Container, hostConfig *
 	container.Lock()
 	defer container.Unlock()
 
+	/*
+	RegisterLinks(container, hostConfig) (daemon/daemon_unix.go)  注册互联的容器，容器之间除了可以通过 ip:端口 相互访问，容器之
+	间还可以互联（通过--link 容器名字 的方式），例如一个web容器可以通过这种方式与一个数据库容器互联；互联的容器之间可以相互访问，
+	可以通过环境变量和/etc/hosts 来公开连接信息
+	*/
 	// Register any links from the host config before starting the container
 	if err := daemon.registerLinks(container, hostConfig); err != nil {
 		return err

@@ -18,6 +18,7 @@ import (
 	"github.com/docker/libnetwork/portallocator"
 )
 
+//默认配置文件
 const defaultDaemonConfigFile = "/etc/docker/daemon.json"
 
 // currentUserIsOwner checks whether the current user is the owner of the given
@@ -48,7 +49,7 @@ func getDaemonConfDir(_ string) string {
 }
 
 // setupConfigReloadTrap configures the USR2 signal to reload the configuration.
-func (cli *DaemonCli) setupConfigReloadTrap() {
+func (cli *DaemonCli) setupConfigReloadTrap() {//  设置一个系统调用重新加载配置
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGHUP)
 	go func() {

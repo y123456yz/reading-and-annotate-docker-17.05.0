@@ -12,7 +12,7 @@ import (
 
 // Container holds fields specific to the Windows implementation. See
 // CommonContainer for standard fields common to all containers.
-type Container struct {
+type Container struct { //构造实例见NewBaseContainer
 	CommonContainer
 
 	// Fields below here are platform specific.
@@ -25,6 +25,7 @@ type ExitStatus struct {
 	ExitCode int
 }
 
+//createDaemonEnvironment() 将container中的自有的一些环境变量和之前的linkedEnv和合在一起(append)，然后返回；
 // CreateDaemonEnvironment creates a new environment variable slice for this container.
 func (container *Container) CreateDaemonEnvironment(_ bool, linkedEnv []string) []string {
 	// because the env on the container can override certain default values

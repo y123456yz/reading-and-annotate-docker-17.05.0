@@ -60,12 +60,14 @@ var (
 
 // CommonContainer holds the fields for a container which are
 // applicable across all platforms supported by the daemon.
-type CommonContainer struct {
+//type Container struct包含该结构
+type CommonContainer struct { //主要结构赋值见newContainer
 	StreamConfig *stream.Config
 	// embed for Container to support states directly.
 	*State          `json:"State"` // Needed for Engine API version <= 1.11
 	Root            string         `json:"-"` // Path to the "home" of the container, including metadata.
 	BaseFS          string         `json:"-"` // Path to the graphdriver mountpoint
+	//赋值见 setRWLayer
 	RWLayer         layer.RWLayer  `json:"-"`
 	ID              string
 	Created         time.Time
@@ -138,6 +140,9 @@ func (container *Container) FromDisk() error {
 	return container.readHostConfig()
 }
 
+//这段代码就是将container中的config和hostconfig结构体存储到磁盘上，存储的路径是/var/lib/docker/container/containerId/config.json
+// 和 /var/lib/docker/container/containerId/hostConfig.json
+//将container持久化至disk
 // ToDisk saves the container configuration on disk.
 func (container *Container) ToDisk() error {
 	pth, err := container.ConfigPath()
@@ -198,6 +203,7 @@ func (container *Container) readHostConfig() error {
 	return nil
 }
 
+//hostconfig写入hostconfig.json文件
 // WriteHostConfig saves the host configuration on disk for the container.
 func (container *Container) WriteHostConfig() error {
 	pth, err := container.HostConfigPath()
@@ -215,6 +221,7 @@ func (container *Container) WriteHostConfig() error {
 }
 
 // SetupWorkingDirectory sets up the container's working directory as set in container.Config.WorkingDir
+//setupWorkingDirectory() 建立容器执行命令时的工作目录；
 func (container *Container) SetupWorkingDirectory(rootUID, rootGID int) error {
 	if container.Config.WorkingDir == "" {
 		return nil

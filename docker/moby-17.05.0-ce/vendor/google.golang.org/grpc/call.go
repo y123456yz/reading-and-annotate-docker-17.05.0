@@ -111,6 +111,7 @@ func sendRequest(ctx context.Context, codec Codec, compressor Compressor, callHd
 // Invoke sends the RPC request on the wire and returns after response is received.
 // Invoke is called by generated code. Also users can call Invoke directly when it
 // is really needed in their use cases.
+//执行的地方见var _API_serviceDesc = grpc.ServiceDesc
 func Invoke(ctx context.Context, method string, args, reply interface{}, cc *ClientConn, opts ...CallOption) error {
 	if cc.dopts.unaryInt != nil {
 		return cc.dopts.unaryInt(ctx, method, args, reply, cc, invoke, opts...)

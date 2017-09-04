@@ -7,6 +7,7 @@ import (
 )
 
 // DefaultSpec returns default spec used by docker.
+//containerStart->createSpec中执行
 func DefaultSpec() specs.Spec {
 	return specs.Spec{
 		Version: specs.Version,

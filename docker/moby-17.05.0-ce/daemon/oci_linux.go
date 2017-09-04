@@ -597,6 +597,7 @@ func setMounts(daemon *Daemon, s *specs.Spec, c *container.Container, mounts []c
 	return nil
 }
 
+//containerStart->createSpec中调用
 func (daemon *Daemon) populateCommonSpec(s *specs.Spec, c *container.Container) error {
 	linkedEnv, err := daemon.setupLinkedContainers(c)
 	if err != nil {
@@ -649,6 +650,7 @@ func (daemon *Daemon) populateCommonSpec(s *specs.Spec, c *container.Container) 
 	return nil
 }
 
+//containerStart 中执行
 func (daemon *Daemon) createSpec(c *container.Container) (*specs.Spec, error) {
 	s := oci.DefaultSpec()
 	if err := daemon.populateCommonSpec(&s, c); err != nil {

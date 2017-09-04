@@ -42,7 +42,7 @@ func (pm *Manager) restorePlugin(p *v2.Plugin) error {
 type eventLogger func(id, name, action string)
 
 // ManagerConfig defines configuration needed to start new manager.
-type ManagerConfig struct {
+type ManagerConfig struct { //初始化赋值见NewDaemon
 	Store              *Store // remove
 	Executor           libcontainerd.Remote
 	RegistryService    registry.Service
@@ -85,6 +85,7 @@ func (s pluginRegistryService) ResolveRepository(name reference.Named) (repoInfo
 }
 
 // NewManager returns a new plugin manager.
+//// plugin/manager.go  创建plugin manager 实例
 func NewManager(config ManagerConfig) (*Manager, error) {
 	if config.RegistryService != nil {
 		config.RegistryService = pluginRegistryService{config.RegistryService}

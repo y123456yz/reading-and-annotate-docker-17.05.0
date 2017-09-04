@@ -31,6 +31,7 @@ import (
 	"google.golang.org/grpc/transport"
 )
 
+//默认文件在/run/docker/libcontainerd目录下面
 const (
 	maxConnectionRetryCount      = 3
 	containerdHealthCheckTimeout = 3 * time.Second
@@ -45,6 +46,7 @@ const (
 type remote struct {
 	sync.RWMutex
 	apiClient            containerd.APIClient
+	//赋值见//赋值见runContainerdDaemon
 	daemonPid            int
 	stateDir             string
 	rpcAddr              string
@@ -56,6 +58,7 @@ type remote struct {
 	eventTsPath          string
 	runtime              string
 	runtimeArgs          []string
+	//赋值见runContainerdDaemon，和handleConnectionChange配合阅读
 	daemonWaitCh         chan struct{}
 	liveRestore          bool
 	oomScore             int
@@ -63,6 +66,9 @@ type remote struct {
 }
 
 // New creates a fresh instance of libcontainerd remote.
+//  /var/run/docker路径 ，创建 containerd Remote，container相关处理启动grpc的client api，事件监控等
+//runContainerdDaemon在该函数中运行
+//func (cli *DaemonCli) start(opts daemonOptions) (err error) 中执行该函数
 func New(stateDir string, options ...RemoteOption) (_ Remote, err error) {
 	defer func() {
 		if err != nil {
@@ -89,6 +95,7 @@ func New(stateDir string, options ...RemoteOption) (_ Remote, err error) {
 	}
 
 	if r.startDaemon {
+		//run container daemon
 		if err := r.runContainerdDaemon(); err != nil {
 			return nil, err
 		}
@@ -333,7 +340,9 @@ func (r *remote) handleEventStream(events containerd.API_EventsClient) {
 	}
 }
 
+//remote_unix.go中的new接口调用执行
 func (r *remote) runContainerdDaemon() error {
+	//containerd进程Pid文件
 	pidFilename := filepath.Join(r.stateDir, containerdPidFilename)
 	f, err := os.OpenFile(pidFilename, os.O_RDWR|os.O_CREATE, 0600)
 	if err != nil {
@@ -348,7 +357,7 @@ func (r *remote) runContainerdDaemon() error {
 		return err
 	}
 
-	if n > 0 {
+	if n > 0 { //说明该进程以及存在了
 		pid, err := strconv.ParseUint(string(b[:n]), 10, 64)
 		if err != nil {
 			return err
@@ -372,6 +381,10 @@ func (r *remote) runContainerdDaemon() error {
 		return err
 	}
 
+	/*
+	/usr/bin/docker-containerd-current -l unix:///var/run/docker/libcontainerd/docker-containerd.sock --metrics-interval=0 --start-timeout 2m
+	--state-dir /var/run/docker/libcontainerd/containerd --shim docker-containerd-shim --runtime docker-runc --debug
+	*/
 	// Start a new instance
 	args := []string{
 		"-l", fmt.Sprintf("unix://%s", r.rpcAddr),
@@ -399,7 +412,7 @@ func (r *remote) runContainerdDaemon() error {
 		logrus.Debugf("libcontainerd: runContainerdDaemon: runtimeArgs: %s", args)
 	}
 
-	cmd := exec.Command(containerdBinary, args...)
+	cmd := exec.Command(containerdBinary, args...) //启动docker-containerd进程
 	// redirect containerd logs to docker logs
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

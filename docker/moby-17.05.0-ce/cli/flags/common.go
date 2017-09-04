@@ -31,7 +31,8 @@ var (
 )
 
 // CommonOptions are options common to both the client and the daemon.
-type CommonOptions struct {
+//loadDaemonCliConfig 中 赋值给config
+type CommonOptions struct { //赋值见opts.common.InstallFlags(flags)   tls loglevel debug相关的配置
 	Debug      bool
 	Hosts      []string
 	LogLevel   string

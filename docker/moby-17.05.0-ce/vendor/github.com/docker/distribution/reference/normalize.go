@@ -30,6 +30,8 @@ type normalizedNamed interface {
 // transforming a familiar name from Docker UI to a fully
 // qualified reference. If the value may be an identifier
 // use ParseAnyReference.
+
+//name格式: xxx:yyy | @zzz  xxx 代表镜像名,如果没有加上仓库地址:docker.io，会使用默认的仓库地址， yyy ：代表版本 zzz： 代表摘要
 func ParseNormalizedNamed(s string) (Named, error) {
 	if ok := anchoredIdentifierRegexp.MatchString(s); ok {
 		return nil, fmt.Errorf("invalid repository name (%s), cannot specify 64-byte hexadecimal strings", s)

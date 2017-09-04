@@ -23,6 +23,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+//container.setupLinkedContainers() 将通过--link相连的容器中的信息获取过来，然后将其中的信息转成环境变量(是[]string数组的形式，每一个元素类似于"NAME=xxxx")的形式返回；
 func (daemon *Daemon) setupLinkedContainers(container *container.Container) ([]string, error) {
 	var env []string
 	children := daemon.children(container)

@@ -6,6 +6,8 @@ import (
 
 // ReplaceOrAppendEnvValues returns the defaults with the overrides either
 // replaced by env key or appended to the list
+
+//ReplaceOrAppendEnvValues() 将环境变量合在一起(append)，然后返回；
 func ReplaceOrAppendEnvValues(defaults, overrides []string) []string {
 	cache := make(map[string]int, len(defaults))
 	for i, e := range defaults {

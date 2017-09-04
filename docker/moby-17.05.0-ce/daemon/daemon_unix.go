@@ -231,7 +231,7 @@ func getBlkioThrottleDevices(devs []*blkiodev.ThrottleDevice) ([]specs.ThrottleD
 	return throttleDevices, nil
 }
 
-func checkKernel() error {
+func checkKernel() error { //LINUX必须是3.10.0以上版本才支持
 	// Check for unsupported kernel versions
 	// FIXME: it would be cleaner to not test for specific versions, but rather
 	// test for specific functionalities.
@@ -610,12 +610,20 @@ func (daemon *Daemon) reloadPlatform(conf *config.Config, attributes map[string]
 	attributes["default-shm-size"] = fmt.Sprintf("%d", daemon.configStore.ShmSize)
 }
 
+//检查是否出现有冲突的配置，主要有(1)config.Bridge.Iface 与 config.Bridge.IP 这两项配置不能都有，设置一个就可；
+//(2) config.Bridge.EnableIPTables 与 config.Bridge.InterContainerCommunication，后者是icc，表示docker容器间是否可以互相通信，
+// icc是通过iptables来实现的，即在iptables的FORWARD链中增加规则，所以不能在两者同时为false，但不清楚icc＝true，但EntableIPTables为false的时候会怎么样；
+// (3) 当config.Bridge.EnableIPTables为false时，config.Bridge.EnableIPMasq，ip伪装功能不能为true，和(2) 一样，因为ip伪装是通过iptables来实现的；
 // verifyDaemonSettings performs validation of daemon config struct
-func verifyDaemonSettings(conf *config.Config) error {
+func verifyDaemonSettings(conf *config.Config) error { //   检查配置是否正确
 	// Check for mutually incompatible config options
+	//检测config中BridgeIface和BridgeIP这两个信息。BridgeIface和BridgeIP的作用是为创建网桥的任务”init_networkdriver”提供参数。
 	if conf.BridgeConfig.Iface != "" && conf.BridgeConfig.IP != "" {
+		//用户同时指定了BridgeIface和BridgeIP，这两个属性属于互斥类型，只能至多指定其中之一。而在默认配置文件中，BridgeIface和BridgeIP均为空。
 		return fmt.Errorf("You specified -b & --bip, mutually exclusive options. Please specify only one")
 	}
+
+	//用户将以上两属性均置为false，container间通信需要iptables的支持，需设置至少其中之一为true。而在默认配置文件中，这两个属性的值均为true。
 	if !conf.BridgeConfig.EnableIPTables && !conf.BridgeConfig.InterContainerCommunication {
 		return fmt.Errorf("You specified --iptables=false with --icc=false. ICC=false uses iptables to function. Please set --icc or --iptables to true")
 	}
@@ -643,16 +651,16 @@ func verifyDaemonSettings(conf *config.Config) error {
 }
 
 // checkSystem validates platform-specific requirements
-func checkSystem() error {
+func checkSystem() error { //   检查系统版本等信息//   检查系统版本等信息 //checkSystem主要验证运行docker的进程是否为root，需要root权限；还有包括验证linux kernel的版本；
 	if os.Geteuid() != 0 {
 		return fmt.Errorf("The Docker daemon needs to be run as root")
 	}
-	return checkKernel()
+	return checkKernel()  //LINUX必须是3.10.0以上版本才支持
 }
 
 // configureMaxThreads sets the Go runtime max threads threshold
 // which is 90% of the kernel setting from /proc/sys/kernel/threads-max
-func configureMaxThreads(config *config.Config) error {
+func configureMaxThreads(config *config.Config) error { // linux 下面设置最大线程 /proc/sys/kernel/threads-max
 	mt, err := ioutil.ReadFile("/proc/sys/kernel/threads-max")
 	if err != nil {
 		return err
@@ -697,7 +705,7 @@ func overlaySupportsSelinux() (bool, error) {
 	}
 	return false, nil
 }
-
+// linux内核安全支持的配置  //设置系统是否使用SELinux，SElinux有个问题是不能和btrfs的graphdriver一起使用；
 // configureKernelSecuritySupport configures and validates security support for the kernel
 func configureKernelSecuritySupport(config *config.Config, driverName string) error {
 	if config.EnableSelinuxSupport {
@@ -724,6 +732,7 @@ func configureKernelSecuritySupport(config *config.Config, driverName string) er
 	return nil
 }
 
+//restore(daemon.go)->initNetworkController(daemon_unix.go)->libnetwork.New(controller.go)
 func (daemon *Daemon) initNetworkController(config *config.Config, activeSandboxes map[string]interface{}) (libnetwork.NetworkController, error) {
 	netOptions, err := daemon.networkOptions(config, daemon.PluginStore, activeSandboxes)
 	if err != nil {
@@ -786,6 +795,7 @@ func driverOptions(config *config.Config) []nwconfig.Option {
 	return dOptions
 }
 
+//restore(daemon.go)->initNetworkController(daemon_unix.go)
 func initBridgeDriver(controller libnetwork.NetworkController, config *config.Config) error {
 	bridgeName := bridge.DefaultBridgeName
 	if config.BridgeConfig.Iface != "" {
@@ -926,6 +936,21 @@ func removeDefaultBridgeInterface() {
 	}
 }
 
+/*
+setupInitLayer(initPath)；创建初始化层，就是创建一个容器需要的基本目录和文件，包括的内容有：
+"/dev/pts":         "dir",
+"/dev/shm":         "dir",
+"/proc":            "dir",
+"/sys":             "dir",
+"/.dockerinit":     "file",
+"/.dockerenv":      "file",
+"/etc/resolv.conf": "file",
+"/etc/hosts":       "file",
+"/etc/hostname":    "file",
+"/dev/console":     "file",
+"/etc/mtab":        "/proc/mounts"
+*/
+//setupInitLayer(initPath)；创建初始化层，就是创建一个容器需要的基本目录和文
 func (daemon *Daemon) getLayerInit() func(string) error {
 	return daemon.setupInitLayer
 }
@@ -1023,6 +1048,7 @@ func parseRemappedRoot(usergrp string) (string, string, error) {
 	return username, groupname, nil
 }
 
+//根据username、groupname创建两个map
 func setupRemappedRoot(config *config.Config) ([]idtools.IDMap, []idtools.IDMap, error) {
 	if runtime.GOOS != "linux" && config.RemappedRoot != "" {
 		return nil, nil, fmt.Errorf("User namespaces are only supported on Linux")
@@ -1105,6 +1131,12 @@ func setupDaemonRoot(config *config.Config, rootDir string, rootUID, rootGID int
 	return nil
 }
 
+/*
+RegisterLinks(container, hostConfig) (daemon/daemon_unix.go)  注册互联的容器，容器之间除了可以通过 ip:端口 相互访问，容器之
+间还可以互联（通过--link 容器名字 的方式），例如一个web容器可以通过这种方式与一个数据库容器互联；互联的容器之间可以相互访问，
+可以通过环境变量和/etc/hosts 来公开连接信息
+*/
+//load所有links（包括父子关系），写入host配置至文件（ 注册互联容器，容器可以通过 ip:端口访问，可以通过--link互联。）
 // registerLinks writes the links to a file.
 func (daemon *Daemon) registerLinks(container *container.Container, hostConfig *containertypes.HostConfig) error {
 	if hostConfig == nil || hostConfig.NetworkMode.IsUserDefined() {
@@ -1229,8 +1261,9 @@ func rootFSToAPIType(rootfs *image.RootFS) types.RootFS {
 	}
 }
 
+// linux   设置 /proc/self/oom_score_adj
 // setupDaemonProcess sets various settings for the daemon's process
-func setupDaemonProcess(config *config.Config) error {
+func setupDaemonProcess(config *config.Config) error { // linux   设置 /proc/self/oom_score_adj
 	// setup the daemons oom_score_adj
 	return setupOOMScoreAdj(config.OOMScoreAdjust)
 }
@@ -1302,6 +1335,7 @@ func maybeCreateCPURealTimeFile(sysinfoPresent bool, configValue int64, file str
 	return nil
 }
 
+// 需要的话创建 seccompProfile
 func (daemon *Daemon) setupSeccompProfile() error {
 	if daemon.configStore.SeccompProfile != "" {
 		daemon.seccompProfilePath = daemon.configStore.SeccompProfile

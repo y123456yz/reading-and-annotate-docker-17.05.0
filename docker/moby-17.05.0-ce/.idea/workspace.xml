@@ -1,0 +1,1492 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="d7f5be35-7ab4-4ca0-887c-ae2d45b445fb" name="Default" comment="">
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/api/common.go" afterPath="$PROJECT_DIR$/api/common.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/api/server/router/container/container.go" afterPath="$PROJECT_DIR$/api/server/router/container/container.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/api/server/router/container/container_routes.go" afterPath="$PROJECT_DIR$/api/server/router/container/container_routes.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/api/server/router/image/image.go" afterPath="$PROJECT_DIR$/api/server/router/image/image.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/api/server/router/image/image_routes.go" afterPath="$PROJECT_DIR$/api/server/router/image/image_routes.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/api/server/router/router.go" afterPath="$PROJECT_DIR$/api/server/router/router.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/api/server/server.go" afterPath="$PROJECT_DIR$/api/server/server.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/api/types/auth.go" afterPath="$PROJECT_DIR$/api/types/auth.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/api/types/configs.go" afterPath="$PROJECT_DIR$/api/types/configs.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/api/types/container/config.go" afterPath="$PROJECT_DIR$/api/types/container/config.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/api/types/container/host_config.go" afterPath="$PROJECT_DIR$/api/types/container/host_config.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/api/types/registry/registry.go" afterPath="$PROJECT_DIR$/api/types/registry/registry.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cli/command/cli.go" afterPath="$PROJECT_DIR$/cli/command/cli.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cli/command/commands/commands.go" afterPath="$PROJECT_DIR$/cli/command/commands/commands.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cli/command/container/create.go" afterPath="$PROJECT_DIR$/cli/command/container/create.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cli/command/container/testdata/utf16.env" afterPath="$PROJECT_DIR$/cli/command/container/testdata/utf16.env" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cli/command/container/testdata/utf16be.env" afterPath="$PROJECT_DIR$/cli/command/container/testdata/utf16be.env" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cli/command/container/testdata/utf8.env" afterPath="$PROJECT_DIR$/cli/command/container/testdata/utf8.env" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cli/command/image/cmd.go" afterPath="$PROJECT_DIR$/cli/command/image/cmd.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cli/flags/common.go" afterPath="$PROJECT_DIR$/cli/flags/common.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmd/docker/docker.go" afterPath="$PROJECT_DIR$/cmd/docker/docker.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmd/dockerd/daemon.go" afterPath="$PROJECT_DIR$/cmd/dockerd/daemon.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmd/dockerd/daemon_linux.go" afterPath="$PROJECT_DIR$/cmd/dockerd/daemon_linux.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmd/dockerd/daemon_unix.go" afterPath="$PROJECT_DIR$/cmd/dockerd/daemon_unix.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmd/dockerd/daemon_windows.go" afterPath="$PROJECT_DIR$/cmd/dockerd/daemon_windows.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmd/dockerd/docker.go" afterPath="$PROJECT_DIR$/cmd/dockerd/docker.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmd/dockerd/service_windows.go" afterPath="$PROJECT_DIR$/cmd/dockerd/service_windows.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/container/container.go" afterPath="$PROJECT_DIR$/container/container.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/container/container_windows.go" afterPath="$PROJECT_DIR$/container/container_windows.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/container/env.go" afterPath="$PROJECT_DIR$/container/env.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/builder/deb/aarch64/build.sh" afterPath="$PROJECT_DIR$/contrib/builder/deb/aarch64/build.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/builder/deb/aarch64/generate.sh" afterPath="$PROJECT_DIR$/contrib/builder/deb/aarch64/generate.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/builder/deb/amd64/build.sh" afterPath="$PROJECT_DIR$/contrib/builder/deb/amd64/build.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/builder/deb/amd64/generate.sh" afterPath="$PROJECT_DIR$/contrib/builder/deb/amd64/generate.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/builder/deb/armhf/generate.sh" afterPath="$PROJECT_DIR$/contrib/builder/deb/armhf/generate.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/builder/deb/ppc64le/build.sh" afterPath="$PROJECT_DIR$/contrib/builder/deb/ppc64le/build.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/builder/deb/ppc64le/generate.sh" afterPath="$PROJECT_DIR$/contrib/builder/deb/ppc64le/generate.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/builder/deb/s390x/build.sh" afterPath="$PROJECT_DIR$/contrib/builder/deb/s390x/build.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/builder/deb/s390x/generate.sh" afterPath="$PROJECT_DIR$/contrib/builder/deb/s390x/generate.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/builder/rpm/amd64/build.sh" afterPath="$PROJECT_DIR$/contrib/builder/rpm/amd64/build.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/builder/rpm/amd64/generate.sh" afterPath="$PROJECT_DIR$/contrib/builder/rpm/amd64/generate.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/builder/rpm/armhf/build.sh" afterPath="$PROJECT_DIR$/contrib/builder/rpm/armhf/build.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/builder/rpm/armhf/generate.sh" afterPath="$PROJECT_DIR$/contrib/builder/rpm/armhf/generate.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/builder/rpm/ppc64le/build.sh" afterPath="$PROJECT_DIR$/contrib/builder/rpm/ppc64le/build.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/builder/rpm/ppc64le/generate.sh" afterPath="$PROJECT_DIR$/contrib/builder/rpm/ppc64le/generate.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/check-config.sh" afterPath="$PROJECT_DIR$/contrib/check-config.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/docker-machine-install-bundle.sh" afterPath="$PROJECT_DIR$/contrib/docker-machine-install-bundle.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/dockerize-disk.sh" afterPath="$PROJECT_DIR$/contrib/dockerize-disk.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/download-frozen-image-v1.sh" afterPath="$PROJECT_DIR$/contrib/download-frozen-image-v1.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/download-frozen-image-v2.sh" afterPath="$PROJECT_DIR$/contrib/download-frozen-image-v2.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/gitdm/generate_aliases.sh" afterPath="$PROJECT_DIR$/contrib/gitdm/generate_aliases.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/init/sysvinit-debian/docker" afterPath="$PROJECT_DIR$/contrib/init/sysvinit-debian/docker" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/init/sysvinit-redhat/docker" afterPath="$PROJECT_DIR$/contrib/init/sysvinit-redhat/docker" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/mac-install-bundle.sh" afterPath="$PROJECT_DIR$/contrib/mac-install-bundle.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/mkimage-alpine.sh" afterPath="$PROJECT_DIR$/contrib/mkimage-alpine.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/mkimage-arch.sh" afterPath="$PROJECT_DIR$/contrib/mkimage-arch.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/mkimage-busybox.sh" afterPath="$PROJECT_DIR$/contrib/mkimage-busybox.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/mkimage-crux.sh" afterPath="$PROJECT_DIR$/contrib/mkimage-crux.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/mkimage-debootstrap.sh" afterPath="$PROJECT_DIR$/contrib/mkimage-debootstrap.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/mkimage-pld.sh" afterPath="$PROJECT_DIR$/contrib/mkimage-pld.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/mkimage-rinse.sh" afterPath="$PROJECT_DIR$/contrib/mkimage-rinse.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/mkimage-yum.sh" afterPath="$PROJECT_DIR$/contrib/mkimage-yum.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/mkimage.sh" afterPath="$PROJECT_DIR$/contrib/mkimage.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/mkimage/.febootstrap-minimize" afterPath="$PROJECT_DIR$/contrib/mkimage/.febootstrap-minimize" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/mkimage/busybox-static" afterPath="$PROJECT_DIR$/contrib/mkimage/busybox-static" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/mkimage/debootstrap" afterPath="$PROJECT_DIR$/contrib/mkimage/debootstrap" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/mkimage/mageia-urpmi" afterPath="$PROJECT_DIR$/contrib/mkimage/mageia-urpmi" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/mkimage/rinse" afterPath="$PROJECT_DIR$/contrib/mkimage/rinse" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/mkimage/solaris" afterPath="$PROJECT_DIR$/contrib/mkimage/solaris" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/nuke-graph-directory.sh" afterPath="$PROJECT_DIR$/contrib/nuke-graph-directory.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/project-stats.sh" afterPath="$PROJECT_DIR$/contrib/project-stats.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/report-issue.sh" afterPath="$PROJECT_DIR$/contrib/report-issue.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/contrib/reprepro/suites.sh" afterPath="$PROJECT_DIR$/contrib/reprepro/suites.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/daemon/cluster/cluster.go" afterPath="$PROJECT_DIR$/daemon/cluster/cluster.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/daemon/config/config.go" afterPath="$PROJECT_DIR$/daemon/config/config.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/daemon/config/config_common_unix.go" afterPath="$PROJECT_DIR$/daemon/config/config_common_unix.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/daemon/config/config_unix.go" afterPath="$PROJECT_DIR$/daemon/config/config_unix.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/daemon/container.go" afterPath="$PROJECT_DIR$/daemon/container.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/daemon/container_operations.go" afterPath="$PROJECT_DIR$/daemon/container_operations.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/daemon/container_operations_unix.go" afterPath="$PROJECT_DIR$/daemon/container_operations_unix.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/daemon/create.go" afterPath="$PROJECT_DIR$/daemon/create.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/daemon/create_unix.go" afterPath="$PROJECT_DIR$/daemon/create_unix.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/daemon/daemon.go" afterPath="$PROJECT_DIR$/daemon/daemon.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/daemon/daemon_unix.go" afterPath="$PROJECT_DIR$/daemon/daemon_unix.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/daemon/daemon_windows.go" afterPath="$PROJECT_DIR$/daemon/daemon_windows.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/daemon/debugtrap_unix.go" afterPath="$PROJECT_DIR$/daemon/debugtrap_unix.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/daemon/events/events.go" afterPath="$PROJECT_DIR$/daemon/events/events.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/daemon/exec.go" afterPath="$PROJECT_DIR$/daemon/exec.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/daemon/graphdriver/aufs/aufs.go" afterPath="$PROJECT_DIR$/daemon/graphdriver/aufs/aufs.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/daemon/graphdriver/driver.go" afterPath="$PROJECT_DIR$/daemon/graphdriver/driver.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/daemon/graphdriver/driver_linux.go" afterPath="$PROJECT_DIR$/daemon/graphdriver/driver_linux.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/daemon/graphdriver/overlay/overlay.go" afterPath="$PROJECT_DIR$/daemon/graphdriver/overlay/overlay.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/daemon/image_pull.go" afterPath="$PROJECT_DIR$/daemon/image_pull.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/daemon/info.go" afterPath="$PROJECT_DIR$/daemon/info.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/daemon/oci_linux.go" afterPath="$PROJECT_DIR$/daemon/oci_linux.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/daemon/start.go" afterPath="$PROJECT_DIR$/daemon/start.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/daemon/volumes.go" afterPath="$PROJECT_DIR$/daemon/volumes.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/daemon/volumes_unix.go" afterPath="$PROJECT_DIR$/daemon/volumes_unix.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/distribution/config.go" afterPath="$PROJECT_DIR$/distribution/config.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/distribution/metadata/metadata.go" afterPath="$PROJECT_DIR$/distribution/metadata/metadata.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/distribution/pull.go" afterPath="$PROJECT_DIR$/distribution/pull.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/distribution/pull_v2.go" afterPath="$PROJECT_DIR$/distribution/pull_v2.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/distribution/registry.go" afterPath="$PROJECT_DIR$/distribution/registry.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/distribution/xfer/download.go" afterPath="$PROJECT_DIR$/distribution/xfer/download.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/distribution/xfer/upload.go" afterPath="$PROJECT_DIR$/distribution/xfer/upload.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/dind" afterPath="$PROJECT_DIR$/hack/dind" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/dockerfile/install-binaries.sh" afterPath="$PROJECT_DIR$/hack/dockerfile/install-binaries.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/generate-authors.sh" afterPath="$PROJECT_DIR$/hack/generate-authors.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/generate-swagger-api.sh" afterPath="$PROJECT_DIR$/hack/generate-swagger-api.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/make.sh" afterPath="$PROJECT_DIR$/hack/make.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/make/.build-deb/docker-engine.docker.default" afterPath="$PROJECT_DIR$/hack/make/.build-deb/docker-engine.docker.default" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/make/.build-deb/docker-engine.docker.init" afterPath="$PROJECT_DIR$/hack/make/.build-deb/docker-engine.docker.init" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/make/.build-deb/docker-engine.docker.upstart" afterPath="$PROJECT_DIR$/hack/make/.build-deb/docker-engine.docker.upstart" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/make/.build-deb/docker-engine.udev" afterPath="$PROJECT_DIR$/hack/make/.build-deb/docker-engine.udev" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/make/.build-deb/rules" afterPath="$PROJECT_DIR$/hack/make/.build-deb/rules" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/make/clean-apt-repo" afterPath="$PROJECT_DIR$/hack/make/clean-apt-repo" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/make/clean-yum-repo" afterPath="$PROJECT_DIR$/hack/make/clean-yum-repo" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/make/generate-index-listing" afterPath="$PROJECT_DIR$/hack/make/generate-index-listing" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/make/release-deb" afterPath="$PROJECT_DIR$/hack/make/release-deb" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/make/release-rpm" afterPath="$PROJECT_DIR$/hack/make/release-rpm" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/make/sign-repos" afterPath="$PROJECT_DIR$/hack/make/sign-repos" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/make/test-deb-install" afterPath="$PROJECT_DIR$/hack/make/test-deb-install" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/make/test-install-script" afterPath="$PROJECT_DIR$/hack/make/test-install-script" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/make/test-integration-cli" afterPath="$PROJECT_DIR$/hack/make/test-integration-cli" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/make/test-old-apt-repo" afterPath="$PROJECT_DIR$/hack/make/test-old-apt-repo" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/make/update-apt-repo" afterPath="$PROJECT_DIR$/hack/make/update-apt-repo" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/release.sh" afterPath="$PROJECT_DIR$/hack/release.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/validate/all" afterPath="$PROJECT_DIR$/hack/validate/all" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/validate/changelog-date-descending" afterPath="$PROJECT_DIR$/hack/validate/changelog-date-descending" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/validate/changelog-well-formed" afterPath="$PROJECT_DIR$/hack/validate/changelog-well-formed" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/validate/compose-bindata" afterPath="$PROJECT_DIR$/hack/validate/compose-bindata" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/validate/dco" afterPath="$PROJECT_DIR$/hack/validate/dco" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/validate/default" afterPath="$PROJECT_DIR$/hack/validate/default" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/validate/default-seccomp" afterPath="$PROJECT_DIR$/hack/validate/default-seccomp" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/validate/gofmt" afterPath="$PROJECT_DIR$/hack/validate/gofmt" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/validate/lint" afterPath="$PROJECT_DIR$/hack/validate/lint" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/validate/pkg-imports" afterPath="$PROJECT_DIR$/hack/validate/pkg-imports" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/validate/swagger" afterPath="$PROJECT_DIR$/hack/validate/swagger" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/validate/swagger-gen" afterPath="$PROJECT_DIR$/hack/validate/swagger-gen" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/validate/test-imports" afterPath="$PROJECT_DIR$/hack/validate/test-imports" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/validate/toml" afterPath="$PROJECT_DIR$/hack/validate/toml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/validate/vendor" afterPath="$PROJECT_DIR$/hack/validate/vendor" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/validate/vet" afterPath="$PROJECT_DIR$/hack/validate/vet" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hack/vendor.sh" afterPath="$PROJECT_DIR$/hack/vendor.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hooks/post_build" afterPath="$PROJECT_DIR$/hooks/post_build" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/image/fs.go" afterPath="$PROJECT_DIR$/image/fs.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/image/store.go" afterPath="$PROJECT_DIR$/image/store.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/integration-cli/fixtures/auth/docker-credential-shell-test" afterPath="$PROJECT_DIR$/integration-cli/fixtures/auth/docker-credential-shell-test" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/integration-cli/fixtures/notary/gen.sh" afterPath="$PROJECT_DIR$/integration-cli/fixtures/notary/gen.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/layer/filestore.go" afterPath="$PROJECT_DIR$/layer/filestore.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/layer/layer.go" afterPath="$PROJECT_DIR$/layer/layer.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/layer/layer_store.go" afterPath="$PROJECT_DIR$/layer/layer_store.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/layer/mounted_layer.go" afterPath="$PROJECT_DIR$/layer/mounted_layer.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/layer/ro_layer.go" afterPath="$PROJECT_DIR$/layer/ro_layer.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/libcontainerd/client.go" afterPath="$PROJECT_DIR$/libcontainerd/client.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/libcontainerd/client_unix.go" afterPath="$PROJECT_DIR$/libcontainerd/client_unix.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/libcontainerd/container_unix.go" afterPath="$PROJECT_DIR$/libcontainerd/container_unix.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/libcontainerd/remote.go" afterPath="$PROJECT_DIR$/libcontainerd/remote.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/libcontainerd/remote_unix.go" afterPath="$PROJECT_DIR$/libcontainerd/remote_unix.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/man/generate.sh" afterPath="$PROJECT_DIR$/man/generate.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/man/md2man-all.sh" afterPath="$PROJECT_DIR$/man/md2man-all.sh" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/migrate/v1/migratev1.go" afterPath="$PROJECT_DIR$/migrate/v1/migratev1.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/oci/defaults_windows.go" afterPath="$PROJECT_DIR$/oci/defaults_windows.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pkg/fileutils/fileutils.go" afterPath="$PROJECT_DIR$/pkg/fileutils/fileutils.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pkg/idtools/idtools.go" afterPath="$PROJECT_DIR$/pkg/idtools/idtools.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pkg/sysinfo/sysinfo_windows.go" afterPath="$PROJECT_DIR$/pkg/sysinfo/sysinfo_windows.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/plugin/manager.go" afterPath="$PROJECT_DIR$/plugin/manager.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/profiles/seccomp/default.json" afterPath="$PROJECT_DIR$/profiles/seccomp/default.json" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/profiles/seccomp/fixtures/example.json" afterPath="$PROJECT_DIR$/profiles/seccomp/fixtures/example.json" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/project/CONTRIBUTING.md" afterPath="$PROJECT_DIR$/project/CONTRIBUTING.md" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/reference/store.go" afterPath="$PROJECT_DIR$/reference/store.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/registry/config.go" afterPath="$PROJECT_DIR$/registry/config.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/registry/service.go" afterPath="$PROJECT_DIR$/registry/service.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/registry/types.go" afterPath="$PROJECT_DIR$/registry/types.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/armon/go-metrics/metrics.go" afterPath="$PROJECT_DIR$/vendor/github.com/armon/go-metrics/metrics.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/armon/go-metrics/sink.go" afterPath="$PROJECT_DIR$/vendor/github.com/armon/go-metrics/sink.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/armon/go-metrics/start.go" afterPath="$PROJECT_DIR$/vendor/github.com/armon/go-metrics/start.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/armon/go-metrics/statsite.go" afterPath="$PROJECT_DIR$/vendor/github.com/armon/go-metrics/statsite.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/docker/containerd/api/grpc/types/api.pb.go" afterPath="$PROJECT_DIR$/vendor/github.com/docker/containerd/api/grpc/types/api.pb.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/docker/distribution/reference/normalize.go" afterPath="$PROJECT_DIR$/vendor/github.com/docker/distribution/reference/normalize.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/docker/distribution/reference/reference.go" afterPath="$PROJECT_DIR$/vendor/github.com/docker/distribution/reference/reference.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/docker/libnetwork/config/config.go" afterPath="$PROJECT_DIR$/vendor/github.com/docker/libnetwork/config/config.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/docker/libnetwork/controller.go" afterPath="$PROJECT_DIR$/vendor/github.com/docker/libnetwork/controller.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/docker/libnetwork/drivers/bridge/bridge.go" afterPath="$PROJECT_DIR$/vendor/github.com/docker/libnetwork/drivers/bridge/bridge.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/docker/libnetwork/drivers/solaris/bridge/bridge.go" afterPath="$PROJECT_DIR$/vendor/github.com/docker/libnetwork/drivers/solaris/bridge/bridge.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/docker/libnetwork/sandbox_externalkey_unix.go" afterPath="$PROJECT_DIR$/vendor/github.com/docker/libnetwork/sandbox_externalkey_unix.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/docker/swarmkit/agent/worker.go" afterPath="$PROJECT_DIR$/vendor/github.com/docker/swarmkit/agent/worker.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/asn1/asn1.go" afterPath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/asn1/asn1.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/asn1/common.go" afterPath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/asn1/common.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/asn1/marshal.go" afterPath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/asn1/marshal.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/x509/cert_pool.go" afterPath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/x509/cert_pool.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/x509/pem_decrypt.go" afterPath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/x509/pem_decrypt.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/x509/pkcs1.go" afterPath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/x509/pkcs1.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/x509/pkcs8.go" afterPath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/x509/pkcs8.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/x509/pkix/pkix.go" afterPath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/x509/pkix/pkix.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/x509/root.go" afterPath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/x509/root.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/x509/root_darwin.go" afterPath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/x509/root_darwin.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/x509/root_plan9.go" afterPath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/x509/root_plan9.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/x509/root_stub.go" afterPath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/x509/root_stub.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/x509/root_unix.go" afterPath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/x509/root_unix.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/x509/root_windows.go" afterPath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/x509/root_windows.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/x509/sec1.go" afterPath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/x509/sec1.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/x509/verify.go" afterPath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/x509/verify.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/x509/x509.go" afterPath="$PROJECT_DIR$/vendor/github.com/google/certificate-transparency/go/x509/x509.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/opencontainers/runtime-spec/specs-go/config.go" afterPath="$PROJECT_DIR$/vendor/github.com/opencontainers/runtime-spec/specs-go/config.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/pborman/uuid/dce.go" afterPath="$PROJECT_DIR$/vendor/github.com/pborman/uuid/dce.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/pborman/uuid/doc.go" afterPath="$PROJECT_DIR$/vendor/github.com/pborman/uuid/doc.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/pborman/uuid/node.go" afterPath="$PROJECT_DIR$/vendor/github.com/pborman/uuid/node.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/pborman/uuid/time.go" afterPath="$PROJECT_DIR$/vendor/github.com/pborman/uuid/time.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/spf13/cobra/cobra.go" afterPath="$PROJECT_DIR$/vendor/github.com/spf13/cobra/cobra.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/spf13/cobra/command.go" afterPath="$PROJECT_DIR$/vendor/github.com/spf13/cobra/command.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/github.com/spf13/pflag/flag.go" afterPath="$PROJECT_DIR$/vendor/github.com/spf13/pflag/flag.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/google.golang.org/grpc/call.go" afterPath="$PROJECT_DIR$/vendor/google.golang.org/grpc/call.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vendor/google.golang.org/grpc/server.go" afterPath="$PROJECT_DIR$/vendor/google.golang.org/grpc/server.go" />
+    </list>
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="TRACKING_ENABLED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="CreatePatchCommitExecutor">
+    <option name="PATCH_PATH" value="" />
+  </component>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="default_target" />
+  <component name="FileEditorManager">
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+      <file leaf-file-name="daemon.go" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/daemon/daemon.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="386">
+              <caret line="625" column="42" lean-forward="false" selection-start-line="625" selection-start-column="42" selection-end-line="625" selection-end-column="42" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="cli.md" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/docs/reference/commandline/cli.md">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="234">
+              <caret line="63" column="3" lean-forward="false" selection-start-line="63" selection-start-column="3" selection-end-line="63" selection-end-column="3" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="manager.go" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/plugin/manager.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="234">
+              <caret line="46" column="8" lean-forward="false" selection-start-line="46" selection-start-column="8" selection-end-line="46" selection-end-column="8" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="config.go" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/cmd/dockerd/config.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="234">
+              <caret line="33" column="35" lean-forward="false" selection-start-line="33" selection-start-column="35" selection-end-line="33" selection-end-column="35" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="create.go" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/daemon/create.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="423">
+              <caret line="40" column="73" lean-forward="false" selection-start-line="40" selection-start-column="73" selection-end-line="40" selection-end-column="73" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="plugin.go" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/daemon/graphdriver/plugin.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="126">
+              <caret line="20" column="9" lean-forward="true" selection-start-line="20" selection-start-column="9" selection-end-line="20" selection-end-column="9" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="driver.go" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/daemon/graphdriver/driver.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="234">
+              <caret line="202" column="5" lean-forward="false" selection-start-line="202" selection-start-column="5" selection-end-line="202" selection-end-column="5" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="layer_store.go" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/layer/layer_store.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="477">
+              <caret line="81" column="23" lean-forward="true" selection-start-line="81" selection-start-column="23" selection-end-line="81" selection-end-column="23" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="filestore.go" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/layer/filestore.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="234">
+              <caret line="42" column="5" lean-forward="false" selection-start-line="42" selection-start-column="5" selection-end-line="42" selection-end-column="5" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="config.go" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/daemon/config/config.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="234">
+              <caret line="102" column="8" lean-forward="false" selection-start-line="102" selection-start-column="8" selection-end-line="102" selection-end-column="8" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+    </leaf>
+  </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>RawSyscall</find>
+      <find>SYS_FORK</find>
+      <find>docker-containerd-current</find>
+      <find>exec.Command</find>
+      <find>go-connections</find>
+      <find>Path to use for daemon PID file</find>
+      <find>installCommonConfigFlags</find>
+      <find>--add-runtime runtime</find>
+      <find>Register an additional OCI compatible runtime</find>
+      <find>main</find>
+      <find>NewDaemon</find>
+      <find>Enable debug mode</find>
+      <find>NewDockerCli</find>
+      <find>yang test ...main</find>
+      <find>Execute()</find>
+      <find>func Execute()</find>
+      <find>func Execute</find>
+      <find>execute</find>
+      <find>tlsConfig</find>
+      <find>&quot;READY=1</find>
+      <find>READY=1</find>
+      <find>accept</find>
+      <find>signal</find>
+      <find>hostconfig.json</find>
+      <find>UpdateContainer</find>
+      <find>&quot;containers&quot;</find>
+      <find>&quot;graphdriver&quot;</find>
+      <find>DOCKER_DRIVER</find>
+      <find>.GraphDriver</find>
+      <find>daemonRepo</find>
+    </findStrings>
+    <replaceStrings>
+      <replace />
+    </replaceStrings>
+    <dirStrings>
+      <dir>C:\GOPATH\src\github.com\docker\docker\cmd\dockerd</dir>
+      <dir>C:\GOPATH\src\github.com\docker\docker\cmd</dir>
+      <dir>C:\GOPATH\src\github.com\docker\docker\libcontainerd</dir>
+      <dir>C:\GOPATH\src\github.com\docker\docker</dir>
+      <dir>C:\Go\src\github.com\docker\docker\daemon</dir>
+      <dir>C:\Go\src\github.com\docker\docker</dir>
+    </dirStrings>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GradleLocalSettings">
+    <option name="externalProjectsViewState">
+      <projects_view />
+    </option>
+  </component>
+  <component name="IdeDocumentHistory">
+    <option name="CHANGED_PATHS">
+      <list>
+        <option value="$PROJECT_DIR$/registry/config.go" />
+        <option value="$PROJECT_DIR$/cli/command/image/cmd.go" />
+        <option value="$PROJECT_DIR$/vendor/github.com/docker/distribution/reference/reference.go" />
+        <option value="$PROJECT_DIR$/registry/service.go" />
+        <option value="$PROJECT_DIR$/distribution/pull.go" />
+        <option value="$PROJECT_DIR$/distribution/registry.go" />
+        <option value="$PROJECT_DIR$/distribution/pull_v2.go" />
+        <option value="$PROJECT_DIR$/api/server/router/image/image.go" />
+        <option value="$PROJECT_DIR$/layer/ro_layer.go" />
+        <option value="$PROJECT_DIR$/layer/mounted_layer.go" />
+        <option value="$PROJECT_DIR$/image/store.go" />
+        <option value="$PROJECT_DIR$/reference/store.go" />
+        <option value="$PROJECT_DIR$/distribution/metadata/metadata.go" />
+        <option value="$PROJECT_DIR$/api/server/router/container/container.go" />
+        <option value="$PROJECT_DIR$/daemon/graphdriver/overlay/overlay.go" />
+        <option value="$PROJECT_DIR$/daemon/graphdriver/aufs/aufs.go" />
+        <option value="$PROJECT_DIR$/daemon/volumes.go" />
+        <option value="$PROJECT_DIR$/daemon/container.go" />
+        <option value="$PROJECT_DIR$/layer/layer.go" />
+        <option value="$PROJECT_DIR$/layer/filestore.go" />
+        <option value="$PROJECT_DIR$/api/types/configs.go" />
+        <option value="$PROJECT_DIR$/api/types/container/config.go" />
+        <option value="$PROJECT_DIR$/api/types/container/host_config.go" />
+        <option value="$PROJECT_DIR$/cli/command/container/create.go" />
+        <option value="$PROJECT_DIR$/vendor/github.com/docker/swarmkit/agent/worker.go" />
+        <option value="$PROJECT_DIR$/api/server/router/container/container_routes.go" />
+        <option value="$PROJECT_DIR$/daemon/start.go" />
+        <option value="$PROJECT_DIR$/libcontainerd/client.go" />
+        <option value="$PROJECT_DIR$/libcontainerd/container_unix.go" />
+        <option value="$PROJECT_DIR$/vendor/google.golang.org/grpc/call.go" />
+        <option value="$PROJECT_DIR$/daemon/container_operations.go" />
+        <option value="$PROJECT_DIR$/daemon/container_operations_unix.go" />
+        <option value="$PROJECT_DIR$/container/container.go" />
+        <option value="$PROJECT_DIR$/daemon/create_unix.go" />
+        <option value="$PROJECT_DIR$/container/container_windows.go" />
+        <option value="$PROJECT_DIR$/container/env.go" />
+        <option value="$PROJECT_DIR$/daemon/volumes_unix.go" />
+        <option value="$PROJECT_DIR$/oci/defaults_windows.go" />
+        <option value="$PROJECT_DIR$/daemon/oci_linux.go" />
+        <option value="$PROJECT_DIR$/vendor/github.com/opencontainers/runtime-spec/specs-go/config.go" />
+        <option value="$PROJECT_DIR$/libcontainerd/client_unix.go" />
+        <option value="$PROJECT_DIR$/vendor/google.golang.org/grpc/server.go" />
+        <option value="$PROJECT_DIR$/vendor/github.com/docker/containerd/api/grpc/types/api.pb.go" />
+        <option value="$PROJECT_DIR$/cmd/dockerd/docker.go" />
+        <option value="$PROJECT_DIR$/cmd/dockerd/daemon_linux.go" />
+        <option value="$PROJECT_DIR$/cmd/dockerd/daemon.go" />
+        <option value="$PROJECT_DIR$/daemon/daemon_unix.go" />
+        <option value="$PROJECT_DIR$/daemon/daemon.go" />
+        <option value="$PROJECT_DIR$/daemon/create.go" />
+        <option value="$PROJECT_DIR$/plugin/manager.go" />
+        <option value="$PROJECT_DIR$/layer/layer_store.go" />
+      </list>
+    </option>
+  </component>
+  <component name="JsBuildToolGruntFileManager" detection-done="true" sorting="DEFINITION_ORDER" />
+  <component name="JsBuildToolPackageJson" detection-done="true" sorting="DEFINITION_ORDER" />
+  <component name="JsGulpfileManager">
+    <detection-done>true</detection-done>
+    <sorting>DEFINITION_ORDER</sorting>
+  </component>
+  <component name="MavenProjectNavigator">
+    <treeState />
+  </component>
+  <component name="ProjectFrameBounds">
+    <option name="x" value="-8" />
+    <option name="y" value="-8" />
+    <option name="width" value="1936" />
+    <option name="height" value="1056" />
+  </component>
+  <component name="ProjectReloadState">
+    <option name="STATE" value="1" />
+  </component>
+  <component name="ProjectView">
+    <navigator currentView="ProjectPane" proportions="" version="1">
+      <flattenPackages />
+      <showMembers />
+      <showModules />
+      <showLibraryContents />
+      <hideEmptyPackages />
+      <abbreviatePackageNames />
+      <autoscrollToSource />
+      <autoscrollFromSource />
+      <sortByType />
+      <manualOrder />
+      <foldersAlwaysOnTop value="true" />
+    </navigator>
+    <panes>
+      <pane id="PackagesPane" />
+      <pane id="Scope" />
+      <pane id="Scratches" />
+      <pane id="ProjectPane">
+        <subPane>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="docker" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="External Libraries" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ExternalLibrariesNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="GOPATH &lt;docker&gt;" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.NamedLibraryElementNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="docker" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="External Libraries" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ExternalLibrariesNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="GOPATH &lt;docker&gt;" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.NamedLibraryElementNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="path" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="docker" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="External Libraries" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ExternalLibrariesNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="GOPATH &lt;docker&gt;" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.NamedLibraryElementNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="path" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="filepath" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="docker" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="External Libraries" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ExternalLibrariesNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="&lt; Go 1.8.3 &gt;" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.NamedLibraryElementNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="src" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="docker" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="docker" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="docker" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="docker" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="pkg" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="docker" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="docker" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="pkg" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="reexec" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="docker" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="docker" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="cli" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="docker" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="docker" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="cli" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="command" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+        </subPane>
+      </pane>
+    </panes>
+  </component>
+  <component name="PropertiesComponent">
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="settings.editor.selected.configurable" value="com.goide.configuration.GoConfigurableProvider$GoProjectSettingsConfigurable" />
+    <property name="configurable.Global.libraries.is.expanded" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="aspect.path.notification.shown" value="true" />
+    <property name="js.eslint.eslintPackage" value="" />
+    <property name="project.structure.last.edited" value="Project" />
+    <property name="project.structure.proportion" value="0.15332031" />
+    <property name="project.structure.side.proportion" value="0.2" />
+    <property name="WebServerToolWindowPanel.toolwindow.show.size" value="false" />
+    <property name="WebServerToolWindowPanel.toolwindow.show.date" value="false" />
+    <property name="WebServerToolWindowPanel.toolwindow.show.permissions" value="false" />
+    <property name="WebServerToolWindowPanel.toolwindow.highlight.symlinks" value="true" />
+    <property name="WebServerToolWindowPanel.toolwindow.highlight.mappings" value="true" />
+    <property name="configurable.Project.libraries.is.expanded" value="true" />
+    <property name="configurable.Module.libraries.is.expanded" value="false" />
+  </component>
+  <component name="RunManager">
+    <configuration default="true" type="#org.jetbrains.idea.devkit.run.PluginConfigurationType" factoryName="Plugin">
+      <module name="" />
+      <option name="VM_PARAMETERS" value="-Xmx512m -Xms256m -XX:MaxPermSize=250m -ea" />
+      <option name="PROGRAM_PARAMETERS" />
+      <predefined_log_file id="idea.log" enabled="true" />
+      <method />
+    </configuration>
+    <configuration default="true" type="AndroidRunConfigurationType" factoryName="Android App">
+      <module name="" />
+      <option name="DEPLOY" value="true" />
+      <option name="ARTIFACT_NAME" value="" />
+      <option name="PM_INSTALL_OPTIONS" value="" />
+      <option name="ACTIVITY_EXTRA_FLAGS" value="" />
+      <option name="MODE" value="default_activity" />
+      <option name="TARGET_SELECTION_MODE" value="SHOW_DIALOG" />
+      <option name="PREFERRED_AVD" value="" />
+      <option name="CLEAR_LOGCAT" value="false" />
+      <option name="SHOW_LOGCAT_AUTOMATICALLY" value="false" />
+      <option name="SKIP_NOOP_APK_INSTALLATIONS" value="true" />
+      <option name="FORCE_STOP_RUNNING_APP" value="true" />
+      <option name="DEBUGGER_TYPE" value="Java" />
+      <option name="USE_LAST_SELECTED_DEVICE" value="false" />
+      <option name="PREFERRED_AVD" value="" />
+      <Java />
+      <Profilers>
+        <option name="ENABLE_ADVANCED_PROFILING" value="true" />
+        <option name="GAPID_ENABLED" value="false" />
+        <option name="GAPID_DISABLE_PCS" value="false" />
+        <option name="SUPPORT_LIB_ENABLED" value="true" />
+        <option name="INSTRUMENTATION_ENABLED" value="true" />
+      </Profilers>
+      <option name="DEEP_LINK" value="" />
+      <option name="ACTIVITY_CLASS" value="" />
+      <method />
+    </configuration>
+    <configuration default="true" type="AndroidTestRunConfigurationType" factoryName="Android Tests">
+      <module name="" />
+      <option name="TESTING_TYPE" value="0" />
+      <option name="INSTRUMENTATION_RUNNER_CLASS" value="" />
+      <option name="METHOD_NAME" value="" />
+      <option name="CLASS_NAME" value="" />
+      <option name="PACKAGE_NAME" value="" />
+      <option name="EXTRA_OPTIONS" value="" />
+      <option name="TARGET_SELECTION_MODE" value="SHOW_DIALOG" />
+      <option name="PREFERRED_AVD" value="" />
+      <option name="CLEAR_LOGCAT" value="false" />
+      <option name="SHOW_LOGCAT_AUTOMATICALLY" value="false" />
+      <option name="SKIP_NOOP_APK_INSTALLATIONS" value="true" />
+      <option name="FORCE_STOP_RUNNING_APP" value="true" />
+      <option name="DEBUGGER_TYPE" value="Java" />
+      <option name="USE_LAST_SELECTED_DEVICE" value="false" />
+      <option name="PREFERRED_AVD" value="" />
+      <Java />
+      <Profilers>
+        <option name="ENABLE_ADVANCED_PROFILING" value="true" />
+        <option name="GAPID_ENABLED" value="false" />
+        <option name="GAPID_DISABLE_PCS" value="false" />
+        <option name="SUPPORT_LIB_ENABLED" value="true" />
+        <option name="INSTRUMENTATION_ENABLED" value="true" />
+      </Profilers>
+      <method />
+    </configuration>
+    <configuration default="true" type="Applet" factoryName="Applet">
+      <option name="HTML_USED" value="false" />
+      <option name="WIDTH" value="400" />
+      <option name="HEIGHT" value="300" />
+      <option name="POLICY_FILE" value="$APPLICATION_HOME_DIR$/bin/appletviewer.policy" />
+      <module />
+      <method />
+    </configuration>
+    <configuration default="true" type="Application" factoryName="Application">
+      <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
+      <option name="MAIN_CLASS_NAME" />
+      <option name="VM_PARAMETERS" />
+      <option name="PROGRAM_PARAMETERS" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" />
+      <option name="ENABLE_SWING_INSPECTOR" value="false" />
+      <option name="ENV_VARIABLES" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <module name="" />
+      <envs />
+      <method />
+    </configuration>
+    <configuration default="true" type="GoApplicationRunConfiguration" factoryName="Go Application">
+      <module name="" />
+      <working_directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <kind value="FILE" />
+      <method />
+    </configuration>
+    <configuration default="true" type="GoRunFileConfiguration" factoryName="Go Single File">
+      <module name="" />
+      <working_directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <method />
+    </configuration>
+    <configuration default="true" type="GoTestRunConfiguration" factoryName="Go Test">
+      <module name="" />
+      <working_directory value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <kind value="DIRECTORY" />
+      <method />
+    </configuration>
+    <configuration default="true" type="GradleRunConfiguration" factoryName="Gradle">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list />
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <method />
+    </configuration>
+    <configuration default="true" type="JUnit" factoryName="JUnit">
+      <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
+      <module name="" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" />
+      <option name="PACKAGE_NAME" />
+      <option name="MAIN_CLASS_NAME" />
+      <option name="METHOD_NAME" />
+      <option name="TEST_OBJECT" value="class" />
+      <option name="VM_PARAMETERS" value="-ea" />
+      <option name="PARAMETERS" />
+      <option name="WORKING_DIRECTORY" value="$MODULE_DIR$" />
+      <option name="ENV_VARIABLES" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <option name="TEST_SEARCH_SCOPE">
+        <value defaultName="singleModule" />
+      </option>
+      <envs />
+      <patterns />
+      <method />
+    </configuration>
+    <configuration default="true" type="JarApplication" factoryName="JAR Application">
+      <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
+      <envs />
+      <method />
+    </configuration>
+    <configuration default="true" type="Java Scratch" factoryName="Java Scratch">
+      <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
+      <option name="SCRATCH_FILE_ID" value="0" />
+      <option name="MAIN_CLASS_NAME" />
+      <option name="VM_PARAMETERS" />
+      <option name="PROGRAM_PARAMETERS" />
+      <option name="WORKING_DIRECTORY" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" />
+      <option name="ENABLE_SWING_INSPECTOR" value="false" />
+      <option name="ENV_VARIABLES" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <module name="" />
+      <envs />
+      <method />
+    </configuration>
+    <configuration default="true" type="JetRunConfigurationType" factoryName="Kotlin">
+      <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
+      <option name="MAIN_CLASS_NAME" />
+      <option name="VM_PARAMETERS" />
+      <option name="PROGRAM_PARAMETERS" />
+      <option name="WORKING_DIRECTORY" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <module name="docker" />
+      <envs />
+      <method />
+    </configuration>
+    <configuration default="true" type="KotlinStandaloneScriptRunConfigurationType" factoryName="Kotlin script">
+      <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
+      <option name="filePath" />
+      <option name="vmParameters" />
+      <option name="alternativeJrePath" />
+      <option name="programParameters" />
+      <option name="passParentEnvs" value="true" />
+      <option name="workingDirectory" />
+      <option name="isAlternativeJrePathEnabled" value="false" />
+      <envs />
+      <method />
+    </configuration>
+    <configuration default="true" type="Remote" factoryName="Remote">
+      <option name="USE_SOCKET_TRANSPORT" value="true" />
+      <option name="SERVER_MODE" value="false" />
+      <option name="SHMEM_ADDRESS" value="javadebug" />
+      <option name="HOST" value="localhost" />
+      <option name="PORT" value="5005" />
+      <method />
+    </configuration>
+    <configuration default="true" type="TestNG" factoryName="TestNG">
+      <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
+      <module name="" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" />
+      <option name="SUITE_NAME" />
+      <option name="PACKAGE_NAME" />
+      <option name="MAIN_CLASS_NAME" />
+      <option name="METHOD_NAME" />
+      <option name="GROUP_NAME" />
+      <option name="TEST_OBJECT" value="CLASS" />
+      <option name="VM_PARAMETERS" value="-ea" />
+      <option name="PARAMETERS" />
+      <option name="WORKING_DIRECTORY" value="$MODULE_DIR$" />
+      <option name="OUTPUT_DIRECTORY" />
+      <option name="ANNOTATION_TYPE" />
+      <option name="ENV_VARIABLES" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <option name="TEST_SEARCH_SCOPE">
+        <value defaultName="singleModule" />
+      </option>
+      <option name="USE_DEFAULT_REPORTERS" value="false" />
+      <option name="PROPERTIES_FILE" />
+      <envs />
+      <properties />
+      <listeners />
+      <method />
+    </configuration>
+  </component>
+  <component name="ShelveChangesManager" show_recycled="false">
+    <option name="remove_strategy" value="false" />
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="d7f5be35-7ab4-4ca0-887c-ae2d45b445fb" name="Default" comment="" />
+      <created>1498126141120</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1498126141120</updated>
+      <workItem from="1498126142342" duration="2024000" />
+      <workItem from="1498128272486" duration="816000" />
+      <workItem from="1498184180369" duration="3903000" />
+      <workItem from="1498188632246" duration="10809000" />
+      <workItem from="1498443882630" duration="13126000" />
+      <workItem from="1498460826053" duration="15944000" />
+      <workItem from="1498529244158" duration="9679000" />
+      <workItem from="1498615793575" duration="18663000" />
+      <workItem from="1498653486784" duration="9000" />
+      <workItem from="1498703528073" duration="16154000" />
+      <workItem from="1498789384655" duration="21411000" />
+      <workItem from="1499063111641" duration="14354000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TimeTrackingManager">
+    <option name="totallyTimeSpent" value="126892000" />
+  </component>
+  <component name="ToolWindowManager">
+    <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
+    <editor active="true" />
+    <layout>
+      <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Nl-Palette" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Palette&#9;" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Image Layers" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Capture Analysis" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.20801733" sideWeight="0.5127932" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32959402" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Properties" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Capture Tool" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Designer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.10714286" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.20801733" sideWeight="0.48720682" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="UI Designer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Theme Preview" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
+      <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
+      <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Remote Host" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32995737" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
+      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
+      <window_info id="LuaJ" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+    </layout>
+    <layout-to-restore>
+      <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
+      <window_info id="Nl-Palette" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
+      <window_info id="Properties" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Capture Tool" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Remote Host" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32995737" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
+      <window_info id="Designer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
+      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
+      <window_info id="LuaJ" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="UI Designer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Palette&#9;" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
+      <window_info id="Image Layers" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Capture Analysis" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
+      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.1380597" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3091518" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Theme Preview" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
+      <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
+    </layout-to-restore>
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="processedProjectFiles" value="true" />
+  </component>
+  <component name="VcsContentAnnotationSettings">
+    <option name="myLimit" value="2678400000" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <option name="time" value="7" />
+    </breakpoint-manager>
+    <watches-manager />
+  </component>
+  <component name="antWorkspaceConfiguration">
+    <option name="IS_AUTOSCROLL_TO_SOURCE" value="false" />
+    <option name="FILTER_TARGETS" value="false" />
+  </component>
+  <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/libcontainerd/remote_unix.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="10449">
+          <caret line="414" column="27" lean-forward="false" selection-start-line="414" selection-start-column="15" selection-end-line="414" selection-end-column="27" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/daemon/info_unix.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="270">
+          <caret line="21" column="45" lean-forward="false" selection-start-line="21" selection-start-column="45" selection-end-line="21" selection-end-column="45" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../../time/time.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1053">
+          <caret line="39" column="5" lean-forward="false" selection-start-line="39" selection-start-column="5" selection-end-line="39" selection-end-column="5" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/docs/reference/commandline/dockerd.md">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="648">
+          <caret line="24" column="68" lean-forward="false" selection-start-line="24" selection-start-column="46" selection-end-line="24" selection-end-column="68" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/cmd/dockerd/config_common_unix.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="392">
+          <caret line="30" column="28" lean-forward="true" selection-start-line="30" selection-start-column="28" selection-end-line="30" selection-end-column="28" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/cmd/dockerd/config_experimental.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="108">
+          <caret line="7" column="5" lean-forward="false" selection-start-line="7" selection-start-column="5" selection-end-line="7" selection-end-column="5" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/opts/ulimit.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="270">
+          <caret line="14" column="5" lean-forward="false" selection-start-line="14" selection-start-column="5" selection-end-line="14" selection-end-column="5" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/vendor.conf">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="513">
+          <caret line="19" column="18" lean-forward="false" selection-start-line="19" selection-start-column="18" selection-end-line="19" selection-end-column="18" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/opts/runtime.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="999">
+          <caret line="42" column="30" lean-forward="false" selection-start-line="42" selection-start-column="30" selection-end-line="42" selection-end-column="30" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../../strings/strings.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="12339">
+          <caret line="460" column="63" lean-forward="false" selection-start-line="460" selection-start-column="63" selection-end-line="460" selection-end-column="63" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/daemon/names.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="729">
+          <caret line="37" column="36" lean-forward="false" selection-start-line="37" selection-start-column="36" selection-end-line="37" selection-end-column="36" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pkg/registrar/registrar.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1134">
+          <caret line="45" column="17" lean-forward="false" selection-start-line="45" selection-start-column="17" selection-end-line="45" selection-end-column="17" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/container/mounts_unix.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="324">
+          <caret line="12" column="0" lean-forward="true" selection-start-line="12" selection-start-column="0" selection-end-line="12" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/vendor/cloud.google.com/go/logging/apiv2/config_client.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="251">
+          <caret line="106" column="5" lean-forward="false" selection-start-line="106" selection-start-column="5" selection-end-line="106" selection-end-column="5" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../../os/env.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="251">
+          <caret line="79" column="5" lean-forward="false" selection-start-line="79" selection-start-column="5" selection-end-line="79" selection-end-column="5" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/cli/command/cli.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="191">
+          <caret line="217" column="5" lean-forward="false" selection-start-line="217" selection-start-column="5" selection-end-line="217" selection-end-column="5" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pkg/term/term.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="191">
+          <caret line="34" column="5" lean-forward="false" selection-start-line="34" selection-start-column="5" selection-end-line="34" selection-end-column="5" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/cli/cobra.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="189">
+          <caret line="14" column="55" lean-forward="false" selection-start-line="14" selection-start-column="55" selection-end-line="14" selection-end-column="55" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/cmd/dockerd/daemon_unix.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="189">
+          <caret line="21" column="6" lean-forward="false" selection-start-line="21" selection-start-column="6" selection-end-line="21" selection-end-column="6" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/cli/flags/common.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="191">
+          <caret line="34" column="5" lean-forward="false" selection-start-line="34" selection-start-column="5" selection-end-line="34" selection-end-column="5" />
+          <folding>
+            <element signature="e#15#240#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/cmd/dockerd/config_unix.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="189">
+          <caret line="12" column="5" lean-forward="false" selection-start-line="12" selection-start-column="5" selection-end-line="12" selection-end-column="5" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../../fmt/print.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="4617">
+          <caret line="178" column="5" lean-forward="false" selection-start-line="178" selection-start-column="5" selection-end-line="178" selection-end-column="5" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/vendor/github.com/docker/libnetwork/ipvs/netlink.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="4644">
+          <caret line="187" column="0" lean-forward="false" selection-start-line="187" selection-start-column="0" selection-end-line="187" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/cmd/docker/docker.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="4104">
+          <caret line="171" column="29" lean-forward="false" selection-start-line="171" selection-start-column="22" selection-end-line="171" selection-end-column="29" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pkg/reexec/reexec.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="540">
+          <caret line="25" column="20" lean-forward="false" selection-start-line="25" selection-start-column="20" selection-end-line="25" selection-end-column="20" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/版本说明.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/vendor/github.com/docker/libnetwork/service_linux.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="54">
+          <caret line="2" column="7" lean-forward="false" selection-start-line="2" selection-start-column="7" selection-end-line="2" selection-end-column="7" />
+          <folding>
+            <element signature="e#20#435#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/cmd/dockerd/service_windows.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="8559">
+          <caret line="338" column="24" lean-forward="false" selection-start-line="338" selection-start-column="24" selection-end-line="338" selection-end-column="24" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../../cmd/api/run.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/cmd/dockerd/docker.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1458">
+          <caret line="69" column="24" lean-forward="false" selection-start-line="69" selection-start-column="24" selection-end-line="69" selection-end-column="24" />
+          <folding>
+            <element signature="e#14#387#0" expanded="false" />
+            <element signature="e#792#871#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/daemon/keys.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="486">
+          <caret line="24" column="51" lean-forward="false" selection-start-line="24" selection-start-column="51" selection-end-line="24" selection-end-column="51" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/api/server/server.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="465">
+          <caret line="201" column="22" lean-forward="true" selection-start-line="201" selection-start-column="22" selection-end-line="201" selection-end-column="22" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/cmd/dockerd/daemon_linux.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="324">
+          <caret line="12" column="5" lean-forward="false" selection-start-line="12" selection-start-column="5" selection-end-line="12" selection-end-column="5" />
+          <folding>
+            <element signature="e#31#89#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/cmd/dockerd/daemon.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="185">
+          <caret line="401" column="22" lean-forward="false" selection-start-line="401" selection-start-column="22" selection-end-line="401" selection-end-column="22" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/daemon/daemon_unix.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="249">
+          <caret line="1270" column="5" lean-forward="false" selection-start-line="1270" selection-start-column="5" selection-end-line="1270" selection-end-column="5" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/container/container_unix.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="508">
+          <caret line="353" column="28" lean-forward="false" selection-start-line="353" selection-start-column="28" selection-end-line="353" selection-end-column="28" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/container/container.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="222">
+          <caret line="303" column="35" lean-forward="true" selection-start-line="303" selection-start-column="35" selection-end-line="303" selection-end-column="35" />
+          <folding>
+            <element signature="e#19#1397#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../../path/filepath/path.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="234">
+          <caret line="225" column="5" lean-forward="false" selection-start-line="225" selection-start-column="5" selection-end-line="225" selection-end-column="5" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pkg/fileutils/fileutils.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="315">
+          <caret line="267" column="41" lean-forward="true" selection-start-line="267" selection-start-column="41" selection-end-line="267" selection-end-column="41" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pkg/idtools/idtools.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="234">
+          <caret line="39" column="5" lean-forward="false" selection-start-line="39" selection-start-column="5" selection-end-line="39" selection-end-column="5" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/daemon/container.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="423">
+          <caret line="115" column="27" lean-forward="true" selection-start-line="115" selection-start-column="27" selection-end-line="115" selection-end-column="27" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/daemon/create.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="423">
+          <caret line="40" column="73" lean-forward="false" selection-start-line="40" selection-start-column="73" selection-end-line="40" selection-end-column="73" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/daemon/graphdriver/plugin.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="126">
+          <caret line="20" column="9" lean-forward="true" selection-start-line="20" selection-start-column="9" selection-end-line="20" selection-end-column="9" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/daemon/graphdriver/driver.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="234">
+          <caret line="202" column="5" lean-forward="false" selection-start-line="202" selection-start-column="5" selection-end-line="202" selection-end-column="5" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/cmd/dockerd/config.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="234">
+          <caret line="33" column="35" lean-forward="false" selection-start-line="33" selection-start-column="35" selection-end-line="33" selection-end-column="35" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/plugin/manager.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="234">
+          <caret line="46" column="8" lean-forward="false" selection-start-line="46" selection-start-column="8" selection-end-line="46" selection-end-column="8" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/docs/reference/commandline/cli.md">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="234">
+          <caret line="63" column="3" lean-forward="false" selection-start-line="63" selection-start-column="3" selection-end-line="63" selection-end-column="3" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/daemon/config/config.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="234">
+          <caret line="102" column="8" lean-forward="false" selection-start-line="102" selection-start-column="8" selection-end-line="102" selection-end-column="8" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/daemon/daemon.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="386">
+          <caret line="625" column="42" lean-forward="false" selection-start-line="625" selection-start-column="42" selection-end-line="625" selection-end-column="42" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/layer/filestore.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="234">
+          <caret line="42" column="5" lean-forward="false" selection-start-line="42" selection-start-column="5" selection-end-line="42" selection-end-column="5" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/layer/layer_store.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="477">
+          <caret line="81" column="23" lean-forward="true" selection-start-line="81" selection-start-column="23" selection-end-line="81" selection-end-column="23" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+  </component>
+  <component name="masterDetails">
+    <states>
+      <state key="ArtifactsStructureConfigurable.UI">
+        <settings>
+          <artifact-editor />
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+      <state key="FacetStructureConfigurable.UI">
+        <settings>
+          <last-edited>No facets are configured</last-edited>
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+      <state key="GlobalLibrariesConfigurable.UI">
+        <settings>
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+      <state key="JdkListConfigurable.UI">
+        <settings>
+          <last-edited>Go 1.6.2</last-edited>
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+      <state key="ModuleStructureConfigurable.UI">
+        <settings>
+          <last-edited>docker</last-edited>
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+                <option value="0.6" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+      <state key="ProjectJDKs.UI">
+        <settings>
+          <last-edited>Go 1.8.3</last-edited>
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+      <state key="ProjectLibrariesConfigurable.UI">
+        <settings>
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+      <state key="ScopeChooserConfigurable.UI">
+        <settings>
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+    </states>
+  </component>
+</project>

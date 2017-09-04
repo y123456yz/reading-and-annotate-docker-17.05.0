@@ -29,10 +29,18 @@ func (daemon *Daemon) CreateManagedContainer(params types.ContainerCreateConfig)
 }
 
 // ContainerCreate creates a regular container
+//客户端通过 createContainer 组api请求，服务端通过postContainersCreate->ContainerCreate(daemon\create.go)处理
 func (daemon *Daemon) ContainerCreate(params types.ContainerCreateConfig) (containertypes.ContainerCreateCreatedBody, error) {
 	return daemon.containerCreate(params, false)
 }
 
+/*
+root@fd-mesos-master04.gz01:/var/lib/docker/containers/9be24974a6a7cf064f4a238f70260b13b15359248b3267602bfc49e00f13d670$ ls
+9be24974a6a7cf064f4a238f70260b13b15359248b3267602bfc49e00f13d670-json.log  checkpoints  config.v2.json  hostconfig.json  hostname  hosts  resolv.conf  resolv.conf.hash  shm
+
+这些配置文件包含了9be24974a6a7cf064f4a238f70260b13b15359248b3267602bfc49e00f13d670这个容器的所有元数据
+*/
+//走进docker(06)：docker create命令背后发生了什么？
 func (daemon *Daemon) containerCreate(params types.ContainerCreateConfig, managed bool) (containertypes.ContainerCreateCreatedBody, error) {
 	start := time.Now()
 	if params.Config == nil {
@@ -56,8 +64,8 @@ func (daemon *Daemon) containerCreate(params types.ContainerCreateConfig, manage
 	if err != nil {
 		return containertypes.ContainerCreateCreatedBody{Warnings: warnings}, err
 	}
-
-	container, err := daemon.create(params, managed)
+	//实例化一个新的container
+	container, err := daemon.create(params, managed) //这里真正创建
 	if err != nil {
 		return containertypes.ContainerCreateCreatedBody{Warnings: warnings}, daemon.imageNotExistToErrcode(err)
 	}
@@ -66,6 +74,7 @@ func (daemon *Daemon) containerCreate(params types.ContainerCreateConfig, manage
 	return containertypes.ContainerCreateCreatedBody{ID: container.ID, Warnings: warnings}, nil
 }
 
+//实例化一个新的container
 // Create creates a new container from the given configuration with a given name.
 func (daemon *Daemon) create(params types.ContainerCreateConfig, managed bool) (retC *container.Container, retErr error) {
 	var (
@@ -95,6 +104,7 @@ func (daemon *Daemon) create(params types.ContainerCreateConfig, managed bool) (
 		return nil, err
 	}
 
+	//获取一个container实例
 	if container, err = daemon.newContainer(params.Name, params.Config, params.HostConfig, imgID, managed); err != nil {
 		return nil, err
 	}
@@ -113,10 +123,12 @@ func (daemon *Daemon) create(params types.ContainerCreateConfig, managed bool) (
 	container.HostConfig.StorageOpt = params.HostConfig.StorageOpt
 
 	// Set RWLayer for container after mount labels have been set
+	//创建读写层文件夹相关信息
 	if err := daemon.setRWLayer(container); err != nil {
 		return nil, err
 	}
 
+	//以root uid gid的属性创建目录
 	rootUID, rootGID, err := idtools.GetRootUIDGID(daemon.uidMaps, daemon.gidMaps)
 	if err != nil {
 		return nil, err
@@ -128,6 +140,12 @@ func (daemon *Daemon) create(params types.ContainerCreateConfig, managed bool) (
 		return nil, err
 	}
 
+	/*
+	①　daemon.registerMountPoints注册所有挂载到容器的数据卷
+	②　daemon.registerLinks，load所有links（包括父子关系），写入host配置至文件（ 注册互联容器，容器可以通过 ip:端口访问，可以通过--link互联。）
+	③　container.ToDisk将container持久化至disk。路径为如下所示
+	/var/lib/Docker/containers/$containerID
+	*/
 	if err := daemon.setHostConfig(container, params.HostConfig); err != nil {
 		return nil, err
 	}
@@ -146,6 +164,8 @@ func (daemon *Daemon) create(params types.ContainerCreateConfig, managed bool) (
 
 	daemon.updateContainerNetworkSettings(container, endpointsConfigs)
 
+	//这段代码就是将container中的config和hostconfig结构体存储到磁盘上，存储的路径是/var/lib/docker/container/containerId/config.json
+	// 和 /var/lib/docker/container/containerId/hostConfig.json
 	if err := container.ToDisk(); err != nil {
 		logrus.Errorf("Error saving new container to disk: %v", err)
 		return nil, err
@@ -207,9 +227,11 @@ func (daemon *Daemon) generateSecurityOpt(hostConfig *containertypes.HostConfig)
 	return nil, nil
 }
 
+//创建读写层  create.go中的create函数调用
 func (daemon *Daemon) setRWLayer(container *container.Container) error {
 	var layerID layer.ChainID
 	if container.ImageID != "" {
+		//获取image
 		img, err := daemon.imageStore.Get(container.ImageID)
 		if err != nil {
 			return err
@@ -219,7 +241,7 @@ func (daemon *Daemon) setRWLayer(container *container.Container) error {
 
 	rwLayerOpts := &layer.CreateRWLayerOpts{
 		MountLabel: container.MountLabel,
-		InitFunc:   daemon.getLayerInit(),
+		InitFunc:   daemon.getLayerInit(),  //setupInitLayer(initPath)；创建初始化层，就是创建一个容器需要的基本目录和文
 		StorageOpt: container.HostConfig.StorageOpt,
 	}
 

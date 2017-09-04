@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="acb9d5ae-7c82-4bea-ae52-7c105db9a430" name="192.168.41.193" url="http://192.168.41.193">
+        <fileTransfer host="192.168.41.193" port="22" rootFolder="/root/yyz/docker-src/src/docker-v17.05.0" accessType="SFTP">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" />
+          </advancedOptions>
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
