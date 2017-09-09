@@ -44,7 +44,7 @@ func CloseStreams(streams ...interface{}) {
 }
 
 // CheckForJSON makes sure that the request's Content-Type is application/json.
-func CheckForJSON(r *http.Request) error {
+func CheckForJSON(r *http.Request) error { //http头部字段Content-Type匹配检查
 	ct := r.Header.Get("Content-Type")
 
 	// No Content-Type header is ok as long as there's no Body

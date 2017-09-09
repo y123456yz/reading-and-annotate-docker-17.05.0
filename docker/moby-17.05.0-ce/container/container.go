@@ -60,14 +60,14 @@ var (
 
 // CommonContainer holds the fields for a container which are
 // applicable across all platforms supported by the daemon.
-//type Container struct包含该结构
-type CommonContainer struct { //主要结构赋值见newContainer
+//type Container struct包含该结构, 该结构是windows平台和unix平台公用的结构，见container_unix.go和container_windows.go中的type Container struct
+type CommonContainer struct { //主要结构赋值见 newContainer
 	StreamConfig *stream.Config
 	// embed for Container to support states directly.
 	*State          `json:"State"` // Needed for Engine API version <= 1.11
 	Root            string         `json:"-"` // Path to the "home" of the container, including metadata.
 	BaseFS          string         `json:"-"` // Path to the graphdriver mountpoint
-	//赋值见 setRWLayer
+	//赋值见 create.go中的create函数调用 setRWLayer，使用见docker start的时候执行到的 daemon/daemon.go中的 Mount
 	RWLayer         layer.RWLayer  `json:"-"`
 	ID              string
 	Created         time.Time
@@ -81,8 +81,10 @@ type CommonContainer struct { //主要结构赋值见newContainer
 	Name            string
 	Driver          string
 	// MountLabel contains the options for the 'mount' command
-	MountLabel             string
-	ProcessLabel           string
+	//daemon/start.go中的 containerStart->saveApparmorConfig->parseSecurityOpt中执行
+	MountLabel             string  //赋值见 parseSecurityOpt
+	//daemon/start.go中的 containerStart->saveApparmorConfig->parseSecurityOpt中执行
+	ProcessLabel           string  //赋值见 parseSecurityOpt
 	RestartCount           int
 	HasBeenStartedBefore   bool
 	HasBeenManuallyStopped bool // used for unless-stopped restart policy

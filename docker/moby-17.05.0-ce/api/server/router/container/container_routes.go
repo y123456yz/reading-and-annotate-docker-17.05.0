@@ -130,6 +130,7 @@ func (s *containerRouter) getContainersExport(ctx context.Context, w http.Respon
 	return s.backend.ContainerExport(vars["name"], w)
 }
 
+////docker create(postContainersCreate)  docker start(postContainersStart)
 func (s *containerRouter) postContainersStart(ctx context.Context, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
 	// If contentLength is -1, we can assumed chunked encoding
 	// or more technically that the length is unknown
@@ -138,10 +139,14 @@ func (s *containerRouter) postContainersStart(ctx context.Context, w http.Respon
 	// including r.TransferEncoding
 	// allow a nil body for backwards compatibility
 
-	version := httputils.VersionFromContext(ctx)
+	version := httputils.VersionFromContext(ctx) //获取api version
+	logrus.Debugf("yang add, postContainersStart api version:%s", version);
+
 	var hostConfig *container.HostConfig
 	// A non-nil json object is at least 7 characters.
-	if r.ContentLength > 7 || r.ContentLength == -1 {
+
+	if r.ContentLength > 7 || r.ContentLength == -1 { //如果不走进来，hostConfig为NULL
+
 		if versions.GreaterThanOrEqualTo(version, "1.24") {
 			return validationError{fmt.Errorf("starting container with non-empty request body was deprecated since v1.10 and removed in v1.12")}
 		}
@@ -149,12 +154,14 @@ func (s *containerRouter) postContainersStart(ctx context.Context, w http.Respon
 		if err := httputils.CheckForJSON(r); err != nil {
 			return err
 		}
-
-		c, err := s.decoder.DecodeHostConfig(r.Body)
+		// 解析客户端的docker start中的包体内容反序列号，然后存到该结构中，见 //postContainersStart->DecodeHostConfig
+		c, err := s.decoder.DecodeHostConfig(r.Body) //postContainersStart->DecodeHostConfig
 		if err != nil {
 			return err
 		}
-		hostConfig = c
+
+		//这里的hostConfig内容是从docker start的http包体中获取的，
+		hostConfig = c //docker start客户端发起请求的配置信息放入http的包体中，通过DecodeHostConfig反序列号存入hostConfig中
 	}
 
 	if err := httputils.ParseForm(r); err != nil {
@@ -163,7 +170,7 @@ func (s *containerRouter) postContainersStart(ctx context.Context, w http.Respon
 
 	checkpoint := r.Form.Get("checkpoint")
 	checkpointDir := r.Form.Get("checkpoint-dir")
-	////启动容器
+	//启动容器   执行 daemon/start.go 中的 ContainerStart
 	if err := s.backend.ContainerStart(vars["name"], hostConfig, checkpoint, checkpointDir); err != nil {
 		return err
 	}
@@ -362,7 +369,8 @@ func (s *containerRouter) postContainerUpdate(ctx context.Context, w http.Respon
 
 /*
 docker run命令直接创建并运行一个容器，它的背后其实包含独立的两步，一步是docker create创建容器，另一步是docker start启动容器
-docker create命令干的活比较少，主要是准备container的layer和配置文件
+docker create命令干的活比较少，主要是准备container的layer和配置文件，通过客户端提交信息构建一个
+container对象出来。        //docker create(postContainersCreate)  docker start(postContainersStart)
 */
 func (s *containerRouter) postContainersCreate(ctx context.Context, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
 	if err := httputils.ParseForm(r); err != nil {
@@ -386,14 +394,15 @@ func (s *containerRouter) postContainersCreate(ctx context.Context, w http.Respo
 		hostConfig.AutoRemove = false
 	}
 
-	//客户端通过 createContainer 组api请求，服务端通过postContainersCreate->ContainerCreate(daemon\create.go)处理
-	ccr, err := s.backend.ContainerCreate(types.ContainerCreateConfig{
+	//客户端通过 createContainer 组api请求，服务端通过 postContainersCreate->ContainerCreate(daemon\create.go)处理
+	ccr, err := s.backend.ContainerCreate(types.ContainerCreateConfig {
 		Name:             name,
 		Config:           config,
 		HostConfig:       hostConfig,
 		NetworkingConfig: networkingConfig,
 		AdjustCPUShares:  adjustCPUShares,
 	})
+
 	if err != nil {
 		return err
 	}

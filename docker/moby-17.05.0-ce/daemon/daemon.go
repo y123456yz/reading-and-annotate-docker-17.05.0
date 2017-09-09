@@ -71,25 +71,42 @@ var (
 
 // Daemon holds information about the Docker daemon.
 type Daemon struct { //赋值见NewDaemon 见 NewDaemon
+	//根据传入的证书生成的容器ID，若没有传入则自动使用ECDSA加密算法生成
 	ID                        string
+	//部署所有docker容器的路径，当dockerd重启的时候，会去查看在daemon.repository也就是在/var/lib/docker/container
+	//中的内容。若有已经存在的docker容器，则将相应的信息收集并进行维护，同时重启restart policy为always的容器
 	repository                string   //  /var/log/docker/container
+	//用于存储具体docker容器信息的对象
 	containers                container.Store
+	//docker容器所执行的命令
 	execCommands              *exec.Store
+	//存储docker容器仓库名和镜像ID的映射
 	referenceStore            refstore.Store
 	downloadManager           *xfer.LayerDownloadManager
 	uploadManager             *xfer.LayerUploadManager
+	//V2版registry相关的元数据存储
 	distributionMetadataStore dmetadata.Store
+	//可信任证书
 	trustKey                  libtrust.PrivateKey
+	//用于通过简短有效的字符串前缀定位唯一的镜像
 	idIndex                   *truncindex.TruncIndex
+	//docker所需要的配置信息
 	configStore               *config.Config
+	//收集容器网络及cgroup状态信息
 	statsCollector            *stats.Collector
+	//提供日志的默认配置信息
 	defaultLogConfig          containertypes.LogConfig
+	//镜像存储服务相关信息
 	RegistryService           registry.Service
+	//事件服务相关信息
 	EventsService             *events.Events
 	netController             libnetwork.NetworkController
+	//volume所使用的驱动，默认为local类型
 	volumes                   *store.VolumeStore
 	discoveryWatcher          discovery.Reloader
+	//docker运行的工作跟目录
 	root                      string
+	//释放使用secompute
 	seccompEnabled            bool
 	apparmorEnabled           bool
 	shutdown                  bool
@@ -99,7 +116,9 @@ type Daemon struct { //赋值见NewDaemon 见 NewDaemon
 	imageStore                image.Store
 	PluginStore               *plugin.Store // todo: remove
 	pluginManager             *plugin.Manager
+	//记录键和其名字的对应关系
 	nameIndex                 *registrar.Registrar
+	//容器的link目录，记录容器的link关系
 	linkIndex                 *linkIndex
 	containerd                libcontainerd.Client
 	containerdRemote          libcontainerd.Remote
@@ -484,7 +503,7 @@ func (daemon *Daemon) IsSwarmCompatible() error {
 // NewDaemon sets up everything for the daemon to be able to service
 // requests from the webserver.
 //dockerd\daemon.go中start函数和daemon\daemon.go中的NewDaemon是理解的主线
-//dockerd\daemon.go中start中执行该函数
+//dockerd\daemon.go中start  func (cli *DaemonCli) start中执行该函数    各个客户端请求，daemon 对应的处理见 initRouter
 func NewDaemon(config *config.Config, registryService registry.Service, containerdRemote libcontainerd.Remote, pluginStore *plugin.Store) (daemon *Daemon, err error) {
 	setDefaultMtu(config)//  设置默认MTU 1500
 

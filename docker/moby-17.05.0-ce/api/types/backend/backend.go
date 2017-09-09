@@ -84,10 +84,10 @@ type ExecInspect struct {
 
 // ExecProcessConfig holds information about the exec process
 // running on the host.
-type ExecProcessConfig struct {
+type ExecProcessConfig struct {  //容器中要运行的进程信息
 	Tty        bool     `json:"tty"`
-	Entrypoint string   `json:"entrypoint"`
-	Arguments  []string `json:"arguments"`
+	Entrypoint string   `json:"entrypoint"`   //docker里指定的entrypoint，默认为/bin/bash -c
+	Arguments  []string `json:"arguments"`    //用户指定的cmd会作为entrypoint的执行参数
 	Privileged *bool    `json:"privileged,omitempty"`
 	User       string   `json:"user,omitempty"`
 }

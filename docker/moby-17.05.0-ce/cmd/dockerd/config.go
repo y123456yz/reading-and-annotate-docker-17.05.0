@@ -19,6 +19,10 @@ func installCommonConfigFlags(conf *config.Config, flags *pflag.FlagSet) {
 
 	flags.Var(opts.NewNamedListOptsRef("storage-opts", &conf.GraphOptions, nil), "storage-opt", "Storage driver options")
 	flags.Var(opts.NewNamedListOptsRef("authorization-plugins", &conf.AuthorizationPlugins, nil), "authorization-plugin", "Authorization plugins to load")
+	/*
+	CgroupDriver变量表示使用哪个Cgroup驱动，有两种驱动，分别是cgroupfs和systemd，默认使用cgroupfs，下面的例子是使用systemd：
+	sudo docker daemon –exec-opt native.cgroupdriver=system
+	*/
 	flags.Var(opts.NewNamedListOptsRef("exec-opts", &conf.ExecOptions, nil), "exec-opt", "Runtime execution options")
 	flags.StringVarP(&conf.Pidfile, "pidfile", "p", defaultPidFile, "Path to use for daemon PID file")
 	flags.StringVarP(&conf.Root, "graph", "g", defaultDataRoot, "Root of the Docker runtime")

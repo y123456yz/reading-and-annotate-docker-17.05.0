@@ -89,7 +89,7 @@ func (s *Server) serveAPI() error {
 
 	//每一个地址开启一个新的goroutine 启动一个server来对外提供服务，如果启动过程中有错误，则将错误信息放入chErrors通道中。
 	// //最后便利chErrors的通道，如果有错误，则将错误作为返回值返回；
-	for _, srv := range s.servers {
+	for _, srv := range s.servers { //相应的客户端post请求的回调见 initRouter
 		srv.srv.Handler = s.routerSwapper
 		go func(srv *HTTPServer) {
 			var err error

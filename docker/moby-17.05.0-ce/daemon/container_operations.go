@@ -338,6 +338,7 @@ func (daemon *Daemon) updateNetwork(container *container.Container) error {
 	return nil
 }
 
+//借助lib
 func (daemon *Daemon) findAndAttachNetwork(container *container.Container, idOrName string, epConfig *networktypes.EndpointSettings) (libnetwork.Network, *networktypes.NetworkingConfig, error) {
 	n, err := daemon.FindNetwork(idOrName)
 	if err != nil {
@@ -492,9 +493,10 @@ func (daemon *Daemon) updateContainerNetworkSettings(container *container.Contai
 	}
 }
 
+//使用libnetwork  通过allocateNetwork函数为容器分配网络接口设备需要的资源信息（包括IP、bridge、Gateway等），并赋值给container对象的NetworkSettings
 func (daemon *Daemon) allocateNetwork(container *container.Container) error {
 	start := time.Now()
-	controller := daemon.netController
+	controller := daemon.netController   //使用libnetwork
 
 	if daemon.netController == nil {
 		return nil
@@ -523,6 +525,7 @@ func (daemon *Daemon) allocateNetwork(container *container.Container) error {
 	defaultNetName := runconfig.DefaultDaemonNetworkMode().NetworkName()
 	if nConf, ok := container.NetworkSettings.Networks[defaultNetName]; ok {
 		cleanOperationalData(nConf)
+		//通过libnetwork进行内核相关的配置
 		if err := daemon.connectToNetwork(container, defaultNetName, nConf.EndpointSettings, updateSettings); err != nil {
 			return err
 		}
@@ -682,6 +685,7 @@ func (daemon *Daemon) updateNetworkConfig(container *container.Container, n libn
 	return nil
 }
 
+//通过libnetwork进行内核相关的配置
 func (daemon *Daemon) connectToNetwork(container *container.Container, idOrName string, endpointConfig *networktypes.EndpointSettings, updateSettings bool) (err error) {
 	start := time.Now()
 	if container.HostConfig.NetworkMode.IsContainer() {
@@ -879,8 +883,7 @@ func (daemon *Daemon) tryDetachContainerFromClusterNetwork(network libnetwork.Ne
 
 /*
 initializeNetworking() 对网络进行初始化，docker网络模式有三种，分别是 bridge模式（每个容器用户单独的网络栈），host模式（与宿主机共用一个网络栈），
-contaier模式（与其他容器共用一个网络栈，猜测kubernate中的pod所用的模式）；根据config和hostConfig中的参数来确定容器的网络模式，然后调动libnetwork
-包来建立网络，关于docker网络的部分后面会单独拿出一章出来梳理；
+contaier模式（与其他容器共用一个网络栈）；根据config和hostConfig中的参数来确定容器的网络模式，然后调动libnetwork包来建立网络
 */
 func (daemon *Daemon) initializeNetworking(container *container.Container) error {
 	var err error

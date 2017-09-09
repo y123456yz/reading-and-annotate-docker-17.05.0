@@ -26,7 +26,9 @@ const (
 
 var (
 	// All registered drivers
-	drivers map[string]InitFunc
+	//可以搜索 graphdriver.Register，例如devicemapper driver对应的driver注册见 graphdriver\devmapper\driver.go
+	//overlay 对应的为 graphdriver\overlay\driver.go
+	drivers map[string]InitFunc    //下面的 Register 中注册map信息    InitFunc执行见 GetDriver () 见graphdriver\driver.go中的init
 
 	// ErrNotSupported returned when driver is not supported.
 	ErrNotSupported = errors.New("driver not supported")
@@ -157,6 +159,8 @@ func init() {
 }
 
 // Register registers an InitFunc for the driver.
+//可以搜索 graphdriver.Register，例如devicemapper driver对应的driver注册见 graphdriver\devmapper\driver.go
+//overlay 对应的为 graphdriver\overlay\driver.go
 func Register(name string, initFunc InitFunc) error {
 	if _, exists := drivers[name]; exists {
 		return fmt.Errorf("Name already registered %s", name)
@@ -166,9 +170,12 @@ func Register(name string, initFunc InitFunc) error {
 	return nil
 }
 
-// GetDriver initializes and returns the registered driver
+// GetDriver initializes and returns the registered driver     name 为 devicemapper  overlay  vfs等
 func GetDriver(name string, pg plugingetter.PluginGetter, config Options) (Driver, error) {
 	if initFunc, exists := drivers[name]; exists {
+		//  /var/lib/docker/devicemapper    devicemapper 这里的initfunc对应的就是 graphdriver.Register("devicemapper", Init)中
+		// 的init，见graphdriver\devmapper\driver.go中的init
+		//执行对应driver的init函数
 		return initFunc(filepath.Join(config.Root, name), config.DriverOptions, config.UIDMaps, config.GIDMaps)
 	}
 
@@ -199,7 +206,7 @@ type Options struct {
 }
 
 // New creates the driver and initializes it at the specified root.
-//NewStoreFromOptions->graphdriver.New
+//NewStoreFromOptions->graphdriver.New    name 为 devicemapper  overlay  vfs等
 func New(name string, pg plugingetter.PluginGetter, config Options) (Driver, error) {
 	if name != "" {
 		logrus.Debugf("[graphdriver] trying provided driver: %s", name) // so the logs show specified driver

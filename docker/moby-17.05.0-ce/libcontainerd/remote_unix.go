@@ -395,6 +395,12 @@ func (r *remote) runContainerdDaemon() error {
 	if goruntime.GOOS == "solaris" {
 		args = append(args, "--shim", "containerd-shim", "--runtime", "runc")
 	} else {
+		/*
+		docker-containerd-shim 9be24974a6a7cf064f4a238f70260b13b15359248b3267602bfc49e00f13d670
+		/var/run/docker/libcontainerd/9be24974a6a7cf064f4a238f70260b13b15359248b3267602bfc49e00f13d670 docker-runc
+
+		docker-container 进程(container 组件)会创建 docker-containerd-shim 进程. 其中 2b9251bcc7a4484662c8b69174d92b3183f0f09a59264b412f14341ebb759626 就是要启动容器的 ID
+		*/
 		args = append(args, "--shim", "docker-containerd-shim")
 		if r.runtime != "" {
 			args = append(args, "--runtime")
@@ -412,6 +418,8 @@ func (r *remote) runContainerdDaemon() error {
 		logrus.Debugf("libcontainerd: runContainerdDaemon: runtimeArgs: %s", args)
 	}
 
+	// docker-containerd -l unix:///var/run/docker/libcontainerd/docker-containerd.sock --metrics-interval=0 --start-timeout 2m
+	// --state-dir /var/run/docker/libcontainerd/containerd --shim docker-containerd-shim --runtime docker-runc
 	cmd := exec.Command(containerdBinary, args...) //启动docker-containerd进程
 	// redirect containerd logs to docker logs
 	cmd.Stdout = os.Stdout

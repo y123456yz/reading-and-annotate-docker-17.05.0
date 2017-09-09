@@ -98,8 +98,13 @@ type CommonConfig struct { //包含在config\config_unix.go中的Config结构中
 	DNSOptions           []string                  `json:"dns-opts,omitempty"`
 	//DNS查找地址
 	DNSSearch            []string                  `json:"dns-search,omitempty"`
+	//exec-opts配置项  getCD中解析使用,配置解析见installCommonConfigFlags
+	/*
+	CgroupDriver变量表示使用哪个Cgroup驱动，有两种驱动，分别是cgroupfs和systemd，默认使用cgroupfs，下面的例子是使用systemd：
+	sudo docker daemon –exec-opt native.cgroupdriver=system
+	*/
 	ExecOptions          []string                  `json:"exec-opts,omitempty"`
-	//Daemon运行时使用的特定存储驱动
+	//Daemon运行时使用的特定存储驱动   例如aufs devicedriver  overlay等，storage-driver配置
 	GraphDriver          string                    `json:"storage-driver,omitempty"`
 	//可设置的存储驱动选项
 	GraphOptions         []string                  `json:"storage-opts,omitempty"`

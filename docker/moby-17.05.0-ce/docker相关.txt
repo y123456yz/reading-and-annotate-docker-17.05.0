@@ -1,0 +1,1 @@
+yum安装:yum --enablerepo=docker_main install docker-engine-1.13.1 docker-engine-selinux-1.13.1 -y

@@ -495,10 +495,12 @@ func initRouter(s *apiserver.Server, d *daemon.Daemon, c *cluster.Cluster) {
 
 	/*
 	pull命令对应的restful api是"/images/create"， 会调用 imageRouter 的postImagesCreate 函数，函数位于image包的image_routes.go
+
+	所有的client端的请求都使用api/client/请求名称.go文件来定义，在daemon端，所有请求的处理过程也放在daemon/请求名称.go文件中来定义。
 	*/
 	routers := []router.Router{
 		// we need to add the checkpoint router before the container router or the DELETE gets masked
-		checkpointrouter.NewRouter(d, decoder),
+		checkpointrouter.NewRouter(d, decoder),    //NewRouter中的initRoutes会定义各个客户端post请求的相应回调
 		container.NewRouter(d, decoder),
 		image.NewRouter(d, decoder),
 		systemrouter.NewRouter(d, c),

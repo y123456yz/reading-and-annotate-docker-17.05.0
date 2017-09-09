@@ -51,7 +51,7 @@ type volumeDriver interface {
 }
 
 type driverExtpoint struct {
-	extensions map[string]volume.Driver
+	extensions map[string]volume.Driver   //下面的Register函数中赋值
 	sync.Mutex
 	driverLock   *locker.Locker
 	plugingetter getter.PluginGetter

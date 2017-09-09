@@ -34,7 +34,11 @@ type HealthConfig struct {
 // Non-portable information *should* appear in HostConfig.
 // All fields added to this struct must be marked `omitempty` to keep getting
 // predictable hashes from the old `v1Compatibility` configuration.
-//*container.config与*container.hostConfig都是配置的结构，区别是config是只与container相关的配置，hostConfig属于与宿主机相关的配置选项；
+
+//在docker create的时候，解析出 *ContainerCreateConfig.config与*ContainerCreateConfig.hostConfig 后，然后在 postContainersCreate->containerCreate 中实例化 Container 结构
+
+//*ContainerCreateConfig.config与*ContainerCreateConfig.hostConfig都是配置的结构，区别是config是只与container相关的配置，hostConfig属于与宿主机相关的配置选项；
+// 他们都包含在ContainerCreateConfig结构中,见postContainersCreate
 type Config struct {
 	Hostname        string              // Hostname
 	Domainname      string              // Domainname

@@ -54,7 +54,7 @@ func (r *containerRouter) initRoutes() {
 
 
 		// POST
-		router.NewPostRoute("/containers/create", r.postContainersCreate),
+		router.NewPostRoute("/containers/create", r.postContainersCreate),  //docker create(postContainersCreate)  docker start(postContainersStart)
 		router.NewPostRoute("/containers/{name:.*}/kill", r.postContainersKill),
 		router.NewPostRoute("/containers/{name:.*}/pause", r.postContainersPause),
 		router.NewPostRoute("/containers/{name:.*}/unpause", r.postContainersUnpause),

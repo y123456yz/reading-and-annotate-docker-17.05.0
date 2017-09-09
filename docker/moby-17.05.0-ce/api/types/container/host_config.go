@@ -325,11 +325,25 @@ type UpdateConfig struct {
 	RestartPolicy RestartPolicy
 }
 
+
+/* hostConfig数据内容参考：  内容格式可以参考daemon/daemon_test.go
+hostConfig := `{"Binds":[],"ContainerIDFile":"","Memory":0,"MemorySwap":0,"CpuShares":0,"CpusetCpus":"",
+"Privileged":false,"PortBindings":{},"Links":null,"PublishAllPorts":false,"Dns":null,"DnsOptions":null,"DnsSearch":null,"ExtraHosts":null,"VolumesFrom":null,
+"Devices":[],"NetworkMode":"bridge","IpcMode":"","PidMode":"","CapAdd":null,"CapDrop":null,"RestartPolicy":{"Name":"no","MaximumRetryCount":0},
+"SecurityOpt":null,"ReadonlyRootfs":false,"Ulimits":null,"LogConfig":{"Type":"","Config":null},"CgroupParent":""}`
+
+或者参考container_config_1_17.json
+*/
 // HostConfig the non-portable Config structure of a container.
 // Here, "non-portable" means "dependent of the host we are running on".
 // Portable information *should* appear in Config.
-//*container.config与*container.hostConfig都是配置的结构，区别是config是只与container相关的配置，hostConfig属于与宿主机相关的配置选项；
-type HostConfig struct {
+// 解析客户端的docker start中的包体内容反序列号，然后存到该结构中，见 //postContainersStart->DecodeHostConfig
+//docker create(postContainersCreate)  docker start(postContainersStart)
+//*ContainerCreateConfig.config与*ContainerCreateConfig.hostConfig都是配置的结构，区别是config是只与container相关的配置，hostConfig属于与宿主机相关的配置选项；
+// 他们都包含在 ContainerCreateConfig 结构中，见 postContainersCreate， docker create的时候会在 GetContainer(daemon/container.go) 中创建 Container 实例
+
+//在docker create的时候，解析出 *ContainerCreateConfig.config与*ContainerCreateConfig.hostConfig 后，然后在 postContainersCreate->containerCreate 中实例化 Container 结构
+type HostConfig struct {//生效使用见 postContainersStart->ContainerStart
 	// Applicable to all platforms
 	Binds           []string      // List of volume bindings for this container
 	ContainerIDFile string        // File (path) where the containerId is written

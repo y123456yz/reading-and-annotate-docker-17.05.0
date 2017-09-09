@@ -1,4 +1,4 @@
-// +build linux,cgo
+// +build linux,cgo       http://www.cnblogs.com/sevenyuan/p/4544294.html    GO和C语言的互操作   http://blog.csdn.net/grace_yi/article/details/51582073
 
 package devicemapper
 

@@ -59,6 +59,10 @@ const (
 	defaultIDSpecifier string = "default"
 	defaultRemappedID  string = "dockremap"
 
+	/*
+	CgroupDriver变量表示使用哪个Cgroup驱动，有两种驱动，分别是cgroupfs和systemd，默认使用cgroupfs，下面的例子是使用systemd：
+	sudo docker daemon –exec-opt native.cgroupdriver=system
+	*/
 	// constant for cgroup drivers
 	cgroupFsDriver      = "cgroupfs"
 	cgroupSystemdDriver = "systemd"
@@ -167,6 +171,7 @@ func (daemon *Daemon) parseSecurityOpt(container *container.Container, hostConfi
 	return parseSecurityOpt(container, hostConfig)
 }
 
+//   daemon/start.go中的 containerStart->saveApparmorConfig 中执行
 func parseSecurityOpt(container *container.Container, config *containertypes.HostConfig) error {
 	var (
 		labelOpts []string
@@ -178,7 +183,6 @@ func parseSecurityOpt(container *container.Container, config *containertypes.Hos
 			container.NoNewPrivileges = true
 			continue
 		}
-
 		var con []string
 		if strings.Contains(opt, "=") {
 			con = strings.SplitN(opt, "=", 2)

@@ -57,7 +57,7 @@ type layerStore struct {
 type StoreOptions struct { //初始化赋值见NewDaemon
 	StorePath                 string
 	MetadataStorePathTemplate string
-	//生效使用见NewStoreFromOptions
+	//生效使用见NewStoreFromOptions   --storage-driver 配置，有 devicemapper  aufs  overlay 等
 	GraphDriver               string
 	GraphDriverOptions        []string
 	UIDMaps                   []idtools.IDMap

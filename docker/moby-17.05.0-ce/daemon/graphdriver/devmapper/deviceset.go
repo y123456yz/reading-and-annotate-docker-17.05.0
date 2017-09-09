@@ -88,7 +88,7 @@ type metaData struct {
 }
 
 // DeviceSet holds information about list of devices
-type DeviceSet struct {
+type DeviceSet struct {  //初始化及赋值见 NewDeviceSet
 	metaData      `json:"-"`
 	sync.Mutex    `json:"-"` // Protects all fields of DeviceSet and serializes calls into libdevmapper
 	root          string

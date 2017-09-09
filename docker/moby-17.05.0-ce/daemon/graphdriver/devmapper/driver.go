@@ -20,11 +20,11 @@ import (
 )
 
 func init() {
-	graphdriver.Register("devicemapper", Init)
+	graphdriver.Register("devicemapper", Init)   //Init在 GetDriver中执行 见graphdriver\driver.go
 }
 
 // Driver contains the device set mounted and the home directory
-type Driver struct {
+type Driver struct {  //初始化赋值见下面的 Init 函数
 	*DeviceSet
 	home    string
 	uidMaps []idtools.IDMap
@@ -34,6 +34,8 @@ type Driver struct {
 }
 
 // Init creates a driver with the given home and the set of options.
+//Init在 GetDriver中执行 见graphdriver\driver.go
+//这里的home默认为/var/lib/docker/devicemapper
 func Init(home string, options []string, uidMaps, gidMaps []idtools.IDMap) (graphdriver.Driver, error) {
 	deviceSet, err := NewDeviceSet(home, true, options, uidMaps, gidMaps)
 	if err != nil {

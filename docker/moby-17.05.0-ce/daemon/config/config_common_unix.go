@@ -13,7 +13,9 @@ import (
 type CommonUnixConfig struct {
 	ExecRoot          string                   `json:"exec-root,omitempty"`
 	ContainerdAddr    string                   `json:"containerd,omitempty"`
+	//runc成员赋值见 verifyDaemonSettings
 	Runtimes          map[string]types.Runtime `json:"runtimes,omitempty"`
+	//赋值见verifyDaemonSettings
 	DefaultRuntime    string                   `json:"default-runtime,omitempty"`
 	DefaultInitBinary string                   `json:"default-init,omitempty"`
 }

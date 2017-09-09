@@ -29,7 +29,7 @@ func (daemon *Daemon) CreateManagedContainer(params types.ContainerCreateConfig)
 }
 
 // ContainerCreate creates a regular container
-//客户端通过 createContainer 组api请求，服务端通过postContainersCreate->ContainerCreate(daemon\create.go)处理
+//客户端通过 docker create请求， createContainer 组api请求，服务端通过 postContainersCreate->ContainerCreate(daemon\create.go)处理
 func (daemon *Daemon) ContainerCreate(params types.ContainerCreateConfig) (containertypes.ContainerCreateCreatedBody, error) {
 	return daemon.containerCreate(params, false)
 }
@@ -84,7 +84,7 @@ func (daemon *Daemon) create(params types.ContainerCreateConfig, managed bool) (
 		err       error
 	)
 
-	if params.Config.Image != "" {
+	if params.Config.Image != "" { //获取请求中的imageid
 		img, err = daemon.GetImage(params.Config.Image)
 		if err != nil {
 			return nil, err

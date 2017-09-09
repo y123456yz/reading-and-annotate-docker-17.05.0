@@ -48,6 +48,7 @@ func (clnt *client) Create(containerID string, checkpoint string, checkpointDir 
 	clnt.lock(containerID)
 	defer clnt.unlock(containerID)
 
+	fmt.Errorf("yang test, client_unitx.go create:Container %s begin to run", containerID)
 	if _, err := clnt.getContainer(containerID); err == nil { //查看该id对应的容器是否已经启动
 		return fmt.Errorf("Container %s is already active", containerID)
 	}

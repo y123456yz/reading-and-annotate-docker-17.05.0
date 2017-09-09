@@ -27,17 +27,24 @@ const (
 
 // Container holds the fields specific to unixen implementations.
 // See CommonContainer for standard fields common to all containers.
-type Container struct {
-	CommonContainer
+
+/*
+客户端提交post表单，服务端受到Http请求后解析出其中的参数然后构建一个container实体，实例构建见 daemon/create.go中的start
+该container可以理解为dockerd和docker-containerd (libcontainer)之间进行信息交换的标准格式，之后，libcontainer就能根据这份
+配置知道它需要在宿主机上创建MOUNT UTS IPC PID NET这些namespace以及相应的cgroups配置，从而创建出docker容器。
+*/  //在docker create的时候  postContainersCreate->containerCreate中实例化该结构
+//在docker create的时候，解析出 *ContainerCreateConfig.config与*ContainerCreateConfig.hostConfig 后，然后在 postContainersCreate->containerCreate->create 中实例化 Container 结构
+type Container struct {  //客户端提交post表单，服务端受到Http请求后解析出其中的参数然后构建一个container实体，实例构建见 daemon/create.go中的start
+	CommonContainer   //这个是unix平台和windows平台共有的属性
 
 	// Fields below here are platform specific.
-	AppArmorProfile string
+	AppArmorProfile string  //赋值见saveApparmorConfig parseSecurityOpt
 	HostnamePath    string
 	HostsPath       string
 	ShmPath         string
 	ResolvConfPath  string
-	SeccompProfile  string
-	NoNewPrivileges bool
+	SeccompProfile  string //赋值见saveApparmorConfig
+	NoNewPrivileges bool //parseSecurityOpt
 }
 
 // ExitStatus provides exit reasons for a container.

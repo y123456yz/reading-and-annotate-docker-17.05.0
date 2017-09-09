@@ -17,12 +17,12 @@ import (
 	"github.com/docker/docker/container"
 )
 
-// ContainerStart starts a container.
+// ContainerStart starts a container.  docker start的时候 postContainersStart->ContainerStart 中执行
 func (daemon *Daemon) ContainerStart(name string, hostConfig *containertypes.HostConfig, checkpoint string, checkpointDir string) error {
 	if checkpoint != "" && !daemon.HasExperimental() {
 		return apierrors.NewBadRequestError(fmt.Errorf("checkpoint is only supported in experimental mode"))
 	}
-
+	logrus.Debugf("yang add, ContainerStart name:%s, checkpoint:%s, checkpointDir:%s， OS:%s", name, checkpoint, checkpointDir, runtime.GOOS);
 	container, err := daemon.GetContainer(name)
 	if err != nil {
 		return err
@@ -41,7 +41,7 @@ func (daemon *Daemon) ContainerStart(name string, hostConfig *containertypes.Hos
 	if runtime.GOOS != "windows" {
 		// This is kept for backward compatibility - hostconfig should be passed when
 		// creating a container, not during start.
-		if hostConfig != nil {
+		if hostConfig != nil { //一般不会进来
 			logrus.Warn("DEPRECATED: Setting host configuration options when the container starts is deprecated and has been removed in Docker 1.12")
 			oldNetworkMode := container.HostConfig.NetworkMode
 			if err := daemon.setSecurityOptions(container, hostConfig); err != nil {
@@ -139,6 +139,7 @@ func (daemon *Daemon) containerStart(container *container.Container, checkpoint 
 		return err
 	}
 
+	//根据config和hostConfig中的参数来确定容器的网络模式，然后调动libnetwork包来建立网络
 	if err := daemon.initializeNetworking(container); err != nil {
 		return err
 	}
