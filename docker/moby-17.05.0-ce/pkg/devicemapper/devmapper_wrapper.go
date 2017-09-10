@@ -1,4 +1,17 @@
 // +build linux,cgo       http://www.cnblogs.com/sevenyuan/p/4544294.html    GO和C语言的互操作   http://blog.csdn.net/grace_yi/article/details/51582073
+//https://github.com/steven676/lvm2  libdm源码实现见这里
+// Linux中LVM2原理及制作LVM2见: http://blog.csdn.net/u013008795/article/details/51151624
+//http://blog.csdn.net/bobpen/article/details/68924208  Docker学习（7）------配置Docker使用Devicemapper
+//https://docs.docker.com/engine/userguide/storagedriver/device-mapper-driver/#configure-direct-lvm-mode-for-production
+//http://blog.csdn.net/nerdx/article/details/38109931  graph driver-device mapper-01driver初始化
+//docker高级应用之动态扩展容器空间大小  http://www.linuxeye.com/Linux/2114.html
+//devicemapper 最佳实践  https://my.oschina.net/hippora/blog/681496
+//dmsetup   linux内核dm thin pool分析   http://www.cnblogs.com/boring-codeer/p/6187879.html
+//http://blog.csdn.net/felix_yujing/article/details/54344251  docker的devicemapper存储驱动    devicemapper驱动官方翻译
+//Docker loop volume VS direct LVM 选型和分析    http://blog.csdn.net/gushenbusi/article/details/49494629   devicemapper loop  direct模式和主机的读写性能测试
+//devicemapper thinpool配置 http://blog.csdn.net/a85880819/article/details/52457702
+//理解docker镜像，容器和存储驱动  http://blog.csdn.net/a85880819/article/details/52448654
+//linux下磁盘进行分区、文件系统创建、挂载和卸载    http://www.cnblogs.com/ljy2013/p/4620691.html      文件存储先要把磁盘/dev/sdx设备格式化、分区，然后通过mke2fs制作文件系统，文件存储就是通过目录结构存储文件
 
 package devicemapper
 
@@ -53,7 +66,7 @@ const (
 )
 
 // DeviceMapper mapped functions.
-var (
+var (  //结合lvm2中的 dmsetup.c 阅读
 	DmGetLibraryVersion       = dmGetLibraryVersionFct
 	DmGetNextTarget           = dmGetNextTargetFct
 	DmLogInitVerbose          = dmLogInitVerboseFct
@@ -234,6 +247,7 @@ func logWithErrnoInitFct() {
 	C.log_with_errno_init()
 }
 
+//设置   libdm库的 _dm_dir 为/dev/mapper，参考libdm代码 https://github.com/steven676/lvm2
 func dmSetDevDirFct(dir string) int {
 	Cdir := C.CString(dir)
 	defer free(Cdir)

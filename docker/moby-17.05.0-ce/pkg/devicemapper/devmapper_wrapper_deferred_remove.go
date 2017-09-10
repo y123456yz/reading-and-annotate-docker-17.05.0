@@ -9,7 +9,7 @@ package devicemapper
 import "C"
 
 // LibraryDeferredRemovalSupport is supported when statically linked.
-const LibraryDeferredRemovalSupport = true
+const LibraryDeferredRemovalSupport = true   //libdm是否支持Deferred removal
 
 func dmTaskDeferredRemoveFct(task *cdmTask) int {
 	return int(C.dm_task_deferred_remove((*C.struct_dm_task)(task)))

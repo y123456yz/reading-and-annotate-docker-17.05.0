@@ -33,7 +33,7 @@ import (
 	"github.com/opencontainers/runc/libcontainer/label"
 )
 
-var (
+var (  //devicemapper存储驱动相关的默认配置信息，可以在NewDeviceSet 中通过解析命令行配置来修改
 	defaultDataLoopbackSize     int64  = 100 * 1024 * 1024 * 1024
 	defaultMetaDataLoopbackSize int64  = 2 * 1024 * 1024 * 1024
 	defaultBaseFsSize           uint64 = 10 * 1024 * 1024 * 1024
@@ -45,9 +45,9 @@ var (
 	// will fill up console during normal operation. So only log Fatal
 	// messages by default.
 	logLevel                            = devicemapper.LogLevelFatal
-	driverDeferredRemovalSupport        = false
-	enableDeferredRemoval               = false
-	enableDeferredDeletion              = false
+	driverDeferredRemovalSupport        = false   //determineDriverCapabilities 中赋值，libdm版本号大于4.27.0 置位true
+	enableDeferredRemoval               = false   //dm.use_deferred_removal 配置
+	enableDeferredDeletion              = false   //dm.use_deferred_deletion配置
 	userBaseSize                        = false
 	defaultMinFreeSpacePercent   uint32 = 10
 )
@@ -91,30 +91,32 @@ type metaData struct {
 type DeviceSet struct {  //初始化及赋值见 NewDeviceSet
 	metaData      `json:"-"`
 	sync.Mutex    `json:"-"` // Protects all fields of DeviceSet and serializes calls into libdevmapper
-	root          string
-	devicePrefix  string
+	root          string   //初始化及赋值见 NewDeviceSet   默认/var/lib/docker/devicemapper
+	devicePrefix  string  //赋值为 docker-%d:%d-%d   根据stat /var/lib/docker/devicemapper 获取到，见initDevmapper ，
 	TransactionID uint64 `json:"-"`
 	NextDeviceID  int    `json:"next_device_id"`
 	deviceIDMap   []byte
 
-	// Options
-	dataLoopbackSize      int64
+	// Options    devicemapper存储驱动相关的配置信息，赋值见 NewDeviceSet     devicemapper两种配置模式:loop-lvm和direct-lvm
+	//Docker loop volume VS direct LVM 选型和分析    http://blog.csdn.net/gushenbusi/article/details/49494629
+	dataLoopbackSize      int64   //默认值defaultDataLoopbackSize
 	metaDataLoopbackSize  int64
 	baseFsSize            uint64
-	filesystem            string
+	filesystem            string   //可以通过 dm.fs 配置，如果不配置 createFilesystem->determineDefaultFS 中会进行默认设置
 	mountOptions          string
 	mkfsArgs              []string
-	dataDevice            string // block or loop dev
+	dataDevice            string // block or loop dev   dm.datadev配置项配置
 	dataLoopFile          string // loopback file, if used
 	metadataDevice        string // block or loop dev
 	metadataLoopFile      string // loopback file, if used
-	doBlkDiscard          bool
+	//释放见 deleteDevice->issueDiscard->BlockDeviceDiscard
+	doBlkDiscard          bool  // docker还提供这个参数，默认值为true，即删除image后，会调用DISCARD，真正释放HOST上空间。
 	thinpBlockSize        uint32
-	thinPoolDevice        string
+	thinPoolDevice        string  //dm.thinpooldev 配置，如果不配置默认为devices.devicePrefix + "-pool"，见getPoolName  GetInfo中检查改device是否存在
 	transaction           `json:"-"`
 	overrideUdevSyncCheck bool
-	deferredRemove        bool   // use deferred removal
-	deferredDelete        bool   // use deferred deletion
+	deferredRemove        bool   // use deferred removal   赋值见enableDeferredRemovalDeletion
+	deferredDelete        bool   // use deferred deletion  赋值见enableDeferredRemovalDeletion
 	BaseDeviceUUID        string // save UUID of base device
 	BaseDeviceFilesystem  string // save filesystem of base device
 	nrDeletedDevices      uint   // number of deleted devices
@@ -210,6 +212,7 @@ func (info *devInfo) DevName() string {
 	return getDevName(info.Name())
 }
 
+//  /var/lib/docker/devicemapper/devicemapper
 func (devices *DeviceSet) loopbackDir() string {
 	return path.Join(devices.root, "devicemapper")
 }
@@ -249,6 +252,7 @@ func (devices *DeviceSet) getPoolDevName() string {
 	return getDevName(devices.getPoolName())
 }
 
+// /var/lib/docker/devicemapper/devicemapper是否存在
 func (devices *DeviceSet) hasImage(name string) bool {
 	dirname := devices.loopbackDir()
 	filename := path.Join(dirname, name)
@@ -261,9 +265,11 @@ func (devices *DeviceSet) hasImage(name string) bool {
 // <root>/devicemapper/<name>.
 // If the file already exists and new size is larger than its current size, it grows to the new size.
 // Either way it returns the full path.
+
+//在/var/lib/docker/devicemapper/devicemapper目录下面创建name文件并设置name文件大小为size
 func (devices *DeviceSet) ensureImage(name string, size int64) (string, error) {
-	dirname := devices.loopbackDir()
-	filename := path.Join(dirname, name)
+	dirname := devices.loopbackDir() //  /var/lib/docker/devicemapper/devicemapper
+	filename := path.Join(dirname, name) // /var/lib/docker/devicemapper/devicemapper/$name
 
 	uid, gid, err := idtools.GetRootUIDGID(devices.uidMaps, devices.gidMaps)
 	if err != nil {
@@ -284,7 +290,8 @@ func (devices *DeviceSet) ensureImage(name string, size int64) (string, error) {
 		}
 		defer file.Close()
 
-		if err := file.Truncate(size); err != nil {
+		//在/var/lib/docker/devicemapper/devicemapper目录下面创建name文件并设置name文件大小为size
+		if err := file.Truncate(size); err != nil { //ftruncate()会将参数fd指定的文件大小改为参数length指定的大小。
 			return "", err
 		}
 	} else {
@@ -1076,18 +1083,19 @@ func (devices *DeviceSet) createBaseImage() error {
 	return nil
 }
 
+
 // Returns if thin pool device exists or not. If device exists, also makes
 // sure it is a thin pool device and not some other type of device.
 func (devices *DeviceSet) thinPoolExists(thinPoolDevice string) (bool, error) {
 	logrus.Debugf("devmapper: Checking for existence of the pool %s", thinPoolDevice)
 
-	info, err := devicemapper.GetInfo(thinPoolDevice)
+	info, err := devicemapper.GetInfo(thinPoolDevice) //判断thinPoolDevice是否已创建
 	if err != nil {
 		return false, fmt.Errorf("devmapper: GetInfo() on device %s failed: %v", thinPoolDevice, err)
 	}
 
 	// Device does not exist.
-	if info.Exists == 0 {
+	if info.Exists == 0 { //没有创建直接返回false
 		return false, nil
 	}
 
@@ -1096,7 +1104,7 @@ func (devices *DeviceSet) thinPoolExists(thinPoolDevice string) (bool, error) {
 		return false, fmt.Errorf("devmapper: GetStatus() on device %s failed: %v", thinPoolDevice, err)
 	}
 
-	if deviceType != "thin-pool" {
+	if deviceType != "thin-pool" { //类型必须为thin-pool
 		return false, fmt.Errorf("devmapper: Device %s is not a thin pool", thinPoolDevice)
 	}
 
@@ -1256,6 +1264,7 @@ func (devices *DeviceSet) setupBaseImage() error {
 	return nil
 }
 
+//关闭/proc/self/fd下的fd
 func setCloseOnExec(name string) {
 	if fileInfos, _ := ioutil.ReadDir("/proc/self/fd"); fileInfos != nil {
 		for _, i := range fileInfos {
@@ -1501,6 +1510,12 @@ func (devices *DeviceSet) closeTransaction() error {
 	return nil
 }
 
+/*
+解析版本号信息
+[root@localhost lvm2]# ./tools/dmsetup version
+Library version:   1.02.135-RHEL7 (2016-11-16)
+Driver version:    4.34.0
+*/
 func determineDriverCapabilities(version string) error {
 	/*
 	 * Driver version 4.27.0 and greater support deferred activation
@@ -1673,6 +1688,7 @@ func (devices *DeviceSet) enableDeferredRemovalDeletion() error {
 			return fmt.Errorf("devmapper: Deferred removal can not be enabled as libdm does not support it")
 		}
 		logrus.Debug("devmapper: Deferred removal support enabled.")
+		//必须配置命令行参数dm.use_deferred_removal 并且 libdm版本号大于4.27.0
 		devices.deferredRemove = true
 	}
 
@@ -1690,12 +1706,13 @@ func (devices *DeviceSet) initDevmapper(doInit bool) error {
 	// give ourselves to libdm as a log handler
 	devicemapper.LogInit(devices)
 
-	version, err := devicemapper.GetDriverVersion()
+	version, err := devicemapper.GetDriverVersion()  //获取libdm版本信息
 	if err != nil {
 		// Can't even get driver version, assume not supported
 		return graphdriver.ErrNotSupported
 	}
 
+	//determineDriverCapabilities 中赋值，libdm版本号大于4.27.0 置位true
 	if err := determineDriverCapabilities(version); err != nil {
 		return graphdriver.ErrNotSupported
 	}
@@ -1704,9 +1721,9 @@ func (devices *DeviceSet) initDevmapper(doInit bool) error {
 		return err
 	}
 
-	// https://github.com/docker/docker/issues/4036
+	// https://github.com/docker/docker/issues/4036    udev sync支持参考http://blog.csdn.net/nullzeng/article/details/51003964
 	if supported := devicemapper.UdevSetSyncSupport(true); !supported {
-		if dockerversion.IAmStatic == "true" {
+		if dockerversion.IAmStatic == "true" { //可以通过docker info     查看是否支持udev sync
 			logrus.Error("devmapper: Udev sync is not supported. This will lead to data loss and unexpected behavior. Install a dynamic binary to use devicemapper or select a different storage driver. For more information, see https://docs.docker.com/engine/reference/commandline/dockerd/#storage-driver-options")
 		} else {
 			logrus.Error("devmapper: Udev sync is not supported. This will lead to data loss and unexpected behavior. Install a more recent version of libdevmapper or select a different storage driver. For more information, see https://docs.docker.com/engine/reference/commandline/dockerd/#storage-driver-options")
@@ -1723,9 +1740,13 @@ func (devices *DeviceSet) initDevmapper(doInit bool) error {
 	if err != nil {
 		return err
 	}
+
+	//创建/var/lib/docker/devicemapper目录
 	if err := idtools.MkdirAs(devices.root, 0700, uid, gid); err != nil && !os.IsExist(err) {
 		return err
 	}
+
+	//创建/var/lib/docker/devicemapper/metadata
 	if err := os.MkdirAll(devices.metadataDir(), 0700); err != nil && !os.IsExist(err) {
 		return err
 	}
@@ -1743,11 +1764,26 @@ func (devices *DeviceSet) initDevmapper(doInit bool) error {
 	//	- Managed by docker
 	//	- The target of this device is at major <maj> and minor <min>
 	//	- If <inode> is defined, use that file inside the device as a loopback image. Otherwise use the device itself.
+
+	/*
+	root@ob-slave-465.gz01:/var/lib/docker/devicemapper$ stat /var/lib/docker/devicemapper/
+	  File: '/var/lib/docker/devicemapper/'
+	  Size: 4096            Blocks: 8          IO Block: 4096   directory
+	Device: 804h/2052d      Inode: 1184401     Links: 4
+	Access: (0700/drwx------)  Uid: (    0/    root)   Gid: (    0/    root)
+	Access: 2017-09-09 20:29:19.132701333 +0800
+	Modify: 2017-09-09 17:40:37.186525331 +0800
+	Change: 2017-09-09 20:26:25.989772228 +0800
+	 Birth: -
+	*/
 	devices.devicePrefix = fmt.Sprintf("docker-%d:%d-%d", major(sysSt.Dev), minor(sysSt.Dev), sysSt.Ino)
+	//DEBU[0001] devmapper: Generated prefix: docker-8:4-1184401
 	logrus.Debugf("devmapper: Generated prefix: %s", devices.devicePrefix)
 
 	// Check for the existence of the thin-pool device
-	poolExists, err := devices.thinPoolExists(devices.getPoolName())
+
+	//GetInfo中检查device是否存在
+	poolExists, err := devices.thinPoolExists(devices.getPoolName()) //pool释放存在
 	if err != nil {
 		return err
 	}
@@ -1763,7 +1799,8 @@ func (devices *DeviceSet) initDevmapper(doInit bool) error {
 	createdLoopback := false
 
 	// If the pool doesn't exist, create it
-	if !poolExists && devices.thinPoolDevice == "" {
+	//dockerd -D -s devicemapper，并且不要配置/etc/docker/daemon.json的时候会走到这个流程
+	if !poolExists && devices.thinPoolDevice == "" { //如果pool不存在，并且没有配thinPoolDevice
 		logrus.Debug("devmapper: Pool doesn't exist. Creating it.")
 
 		var (
@@ -1774,16 +1811,17 @@ func (devices *DeviceSet) initDevmapper(doInit bool) error {
 		if devices.dataDevice == "" {
 			// Make sure the sparse images exist in <root>/devicemapper/data
 
+			// /var/lib/docker/devicemapper/devicemapper是否存在
 			hasData := devices.hasImage("data")
 
 			if !doInit && !hasData {
 				return errors.New("loopback data file not found")
 			}
 
-			if !hasData {
-				createdLoopback = true
+			if !hasData {//  /var/lib/docker/devicemapper/devicemapper不存在说明需要创建
+				createdLoopback = true  //loop模式创建   两种配置模式:loop-lvm和direct-lvm
 			}
-
+			//在/var/lib/docker/devicemapper/devicemapper/data目录下面创建name文件并设置data文件大小为size
 			data, err := devices.ensureImage("data", devices.dataLoopbackSize)
 			if err != nil {
 				logrus.Debugf("devmapper: Error device ensureImage (data): %s", err)
@@ -2023,7 +2061,7 @@ func (devices *DeviceSet) deleteTransaction(info *devInfo, syncDelete bool) erro
 	return nil
 }
 
-// Issue discard only if device open count is zero.
+// Issue discard only if device open count is zero.  deleteDevice->issueDiscard->BlockDeviceDiscard
 func (devices *DeviceSet) issueDiscard(info *devInfo) error {
 	logrus.Debugf("devmapper: issueDiscard START(device: %s).", info.Hash)
 	defer logrus.Debugf("devmapper: issueDiscard END(device: %s).", info.Hash)
@@ -2074,6 +2112,7 @@ func (devices *DeviceSet) deleteDevice(info *devInfo, syncDelete bool) error {
 // DeleteDevice will return success if device has been marked for deferred
 // removal. If one wants to override that and want DeleteDevice() to fail if
 // device was busy and could not be deleted, set syncDelete=true.
+//DeleteDevice->deleteDevice->issueDiscard->BlockDeviceDiscard
 func (devices *DeviceSet) DeleteDevice(hash string, syncDelete bool) error {
 	logrus.Debugf("devmapper: DeleteDevice START(hash=%v syncDelete=%v)", hash, syncDelete)
 	defer logrus.Debugf("devmapper: DeleteDevice END(hash=%v syncDelete=%v)", hash, syncDelete)
@@ -2586,9 +2625,9 @@ func (devices *DeviceSet) exportDeviceMetadata(hash string) (*deviceMetadata, er
 
 // NewDeviceSet creates the device set based on the options provided.
 func NewDeviceSet(root string, doInit bool, options []string, uidMaps, gidMaps []idtools.IDMap) (*DeviceSet, error) {
-	devicemapper.SetDevDir("/dev")
+	devicemapper.SetDevDir("/dev")  //设置   libdm库的 _dm_dir 为/dev/mapper，参考libdm代码 https://github.com/steven676/lvm2
 
-	devices := &DeviceSet{
+	devices := &DeviceSet{   //devicemapper存储驱动相关的默认配置信息，可以在NewDeviceSet 中通过解析命令行配置来修改
 		root:                  root,
 		metaData:              metaData{Devices: make(map[string]*devInfo)},
 		dataLoopbackSize:      defaultDataLoopbackSize,
@@ -2605,7 +2644,7 @@ func NewDeviceSet(root string, doInit bool, options []string, uidMaps, gidMaps [
 	}
 
 	foundBlkDiscard := false
-	for _, option := range options {
+	for _, option := range options { //如果命令行中携带了相关配置信息，则使用命令行真的配置信息
 		key, val, err := parsers.ParseKeyValueOpt(option)
 		if err != nil {
 			return nil, err
@@ -2632,6 +2671,12 @@ func NewDeviceSet(root string, doInit bool, options []string, uidMaps, gidMaps [
 			}
 			devices.metaDataLoopbackSize = size
 		case "dm.fs":
+			/*
+			参数dm.fs可以指定容器的rootfs的文件系统，但只支持ext4/xfs：
+			因为ext4/xfs支持DISCARD。这样，如果容器中删除了文件，空间就会马上还给Thin pool，因为Thin provisioning是支持DISCARD操作的。
+			但是，默认情况下Thin pool是底层是稀疏文件/var/lib/docker/devicemapper/devicemapper/data，所以，只有Host的文件系统支持DISCARD，
+			才能保证稀疏文件空间释放。   参考https://hustcat.github.io/docker-devicemapper3/
+			*/
 			if val != "ext4" && val != "xfs" {
 				return nil, fmt.Errorf("devmapper: Unsupported filesystem %s\n", val)
 			}
@@ -2647,7 +2692,7 @@ func NewDeviceSet(root string, doInit bool, options []string, uidMaps, gidMaps [
 		case "dm.thinpooldev":
 			devices.thinPoolDevice = strings.TrimPrefix(val, "/dev/mapper/")
 		case "dm.blkdiscard":
-			foundBlkDiscard = true
+			foundBlkDiscard = true  //docker还提供这个参数，默认值为true，即删除image后，会调用DISCARD，真正释放HOST上空间。
 			devices.doBlkDiscard, err = strconv.ParseBool(val)
 			if err != nil {
 				return nil, err

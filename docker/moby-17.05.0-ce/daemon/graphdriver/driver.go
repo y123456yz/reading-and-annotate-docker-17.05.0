@@ -196,10 +196,10 @@ func getBuiltinDriver(name, home string, options []string, uidMaps, gidMaps []id
 	return nil, ErrNotSupported
 }
 
-// Options is used to initialize a graphdriver
-type Options struct {
+// Options is used to initialize a graphdriver    --storage-opt dm.basesize=20G命令行参数配置
+type Options struct {  //命令行中写带的graphdriver storage相关参数在 NewDeviceSet 中生效
 	Root                string
-	DriverOptions       []string
+	DriverOptions       []string   //options选项可以为 dm.basesize dm.loopdatasize等，见NewDeviceSet
 	UIDMaps             []idtools.IDMap
 	GIDMaps             []idtools.IDMap
 	ExperimentalEnabled bool

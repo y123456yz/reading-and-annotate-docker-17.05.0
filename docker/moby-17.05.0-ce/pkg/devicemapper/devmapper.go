@@ -18,7 +18,7 @@ type DevmapperLogger interface {
 	DMLog(level int, file string, line int, dmError int, message string)
 }
 
-const (
+const ( //枚举
 	deviceCreate TaskType = iota
 	deviceReload
 	deviceRemove
@@ -271,7 +271,7 @@ func LogInitVerbose(level int) {
 var dmLogger DevmapperLogger
 
 // LogInit initializes the logger for the device mapper library.
-func LogInit(logger DevmapperLogger) {
+func LogInit(logger DevmapperLogger) {  //initDevmapper 中执行
 	dmLogger = logger
 	LogWithErrnoInit()
 }
@@ -304,7 +304,7 @@ func UdevSyncSupported() bool {
 
 // UdevSetSyncSupport allows setting whether the udev sync should be enabled.
 // The return bool indicates the state of whether the sync is enabled.
-func UdevSetSyncSupport(enable bool) bool {
+func UdevSetSyncSupport(enable bool) bool { //initDevmapper中执行
 	if enable {
 		DmUdevSetSyncSupport(1)
 	} else {
@@ -429,7 +429,7 @@ func GetBlockDeviceSize(file *os.File) (uint64, error) {
 // BlockDeviceDiscard runs discard for the given path.
 // This is used as a workaround for the kernel not discarding block so
 // on the thin pool when we remove a thinp device, so we do it
-// manually
+// manually  deleteDevice->issueDiscard->BlockDeviceDiscard
 func BlockDeviceDiscard(path string) error {
 	file, err := os.OpenFile(path, os.O_RDWR, 0)
 	if err != nil {
@@ -526,7 +526,24 @@ func GetDeps(name string) (*Deps, error) {
 
 // GetInfo is the programmatic example of "dmsetup info".
 // It outputs some brief information about the device.
-func GetInfo(name string) (*Info, error) {
+/*
+    service docker stop
+    #if [ "$?" -eq 1 ]; then
+    #    umount $dm_path
+    #    pvcreate $dm_dev -y
+    #    vgcreate docker $dm_dev
+    #    lvcreate --wipesignatures y -n thinpool docker -l 95%VG
+    #    lvcreate --wipesignatures y -n thinpoolmeta docker -l 1%VG
+    #    lvconvert -y --zero n -c 512K --thinpool docker/thinpool --poolmetadata docker/thinpoolmeta
+
+    #    echo "activation {" > /etc/lvm/profile/docker-thinpool.profile
+    #    echo "thin_pool_autoextend_threshold=80" >> /etc/lvm/profile/docker-thinpool.profile
+    #    echo "thin_pool_autoextend_percent=20" >> /etc/lvm/profile/docker-thinpool.profile
+    #    echo "}" >> /etc/lvm/profile/docker-thinpool.profile
+    #    lvchange --metadataprofile docker-thinpool docker/thinpool
+    #fi
+*/ //thinpooldevice创建过程如上注释
+func GetInfo(name string) (*Info, error) { //检查 thinPoolDevice(dm.thinpooldev配置) name是否存在
 	task, err := TaskCreateNamed(deviceInfo, name)
 	if task == nil {
 		return nil, err
@@ -552,12 +569,18 @@ func GetInfoWithDeferred(name string) (*Info, error) {
 
 // GetDriverVersion is the programmatic example of "dmsetup version".
 // It outputs version information of the driver.
+
+/*
+[root@localhost lvm2]# ./tools/dmsetup version
+Library version:   1.02.135-RHEL7 (2016-11-16)
+Driver version:    4.34.0
+*/
 func GetDriverVersion() (string, error) {
-	task := TaskCreate(deviceVersion)
+	task := TaskCreate(deviceVersion)  //调用libdm创建一个task结构
 	if task == nil {
 		return "", fmt.Errorf("devicemapper: Can't create deviceVersion task")
 	}
-	if err := task.run(); err != nil {
+	if err := task.run(); err != nil { //获取dm的version
 		return "", err
 	}
 	return task.getDriverVersion()
