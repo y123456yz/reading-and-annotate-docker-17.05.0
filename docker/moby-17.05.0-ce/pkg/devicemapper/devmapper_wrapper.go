@@ -12,6 +12,7 @@
 //devicemapper thinpool配置 http://blog.csdn.net/a85880819/article/details/52457702
 //理解docker镜像，容器和存储驱动  http://blog.csdn.net/a85880819/article/details/52448654
 //linux下磁盘进行分区、文件系统创建、挂载和卸载    http://www.cnblogs.com/ljy2013/p/4620691.html      文件存储先要把磁盘/dev/sdx设备格式化、分区，然后通过mke2fs制作文件系统，文件存储就是通过目录结构存储文件
+//Thin Provisioning Snapshot 演示   http://blog.csdn.net/leo_is_ant/article/details/52935304?locationNum=6&fps=1
 
 package devicemapper
 

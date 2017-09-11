@@ -55,20 +55,30 @@ var (  //devicemapper存储驱动相关的默认配置信息，可以在NewDevic
 const deviceSetMetaFile string = "deviceset-metadata"
 const transactionMetaFile string = "transaction-metadata"
 
+//DeviceSet 中的 transaction 成员，值来源是/var/lib/docker/devicemapper/metadata/transaction-metadata 反序列化后的值存入transaction
 type transaction struct {
+	////如果transaction-metadata文件不存在则直接 OpenTransactionID = TransactionID,赋值见loadTransactionMetaData
 	OpenTransactionID uint64 `json:"open_transaction_id"`
 	DeviceIDHash      string `json:"device_hash"`
 	DeviceID          int    `json:"device_id"`
 }
 
-type devInfo struct {
-	Hash          string `json:"-"`
+/*
+root@fd-mesos-slave38.gz01:/var/lib/docker/devicemapper/metadata$ cat 73566c5a5e7f6cb18378dac0f4f0415b9d982f4231418fc2321de9395d386ab2-init
+{"device_id":39,"size":42949672960,"transaction_id":61,"initialized":false,"deleted":false}
+root@fd-mesos-slave38.gz01:/var/lib/docker/devicemapper/metadata$
+*/
+//  /var/lib/docker/devicemapper/metadata 文件夹中的json文件内容反序列号后存入devInfo结构的各个变量中，赋值初始化见 loadMetadata
+type devInfo struct {  //
+	Hash          string `json:"-"`   //文件名
+
+	//下面的这些成员值来源是metadata下面的json文件内容
 	DeviceID      int    `json:"device_id"`
 	Size          uint64 `json:"size"`
 	TransactionID uint64 `json:"transaction_id"`
 	Initialized   bool   `json:"initialized"`
 	Deleted       bool   `json:"deleted"`
-	devices       *DeviceSet
+	devices       *DeviceSet   //  /var/lib/docker/devicemapper/metadata 下面的json文件对应同一个DeviceSet,见loadDeviceFilesOnStart
 
 	// The global DeviceSet lock guarantees that we serialize all
 	// the calls to libdevmapper (which is not threadsafe), but we
@@ -83,8 +93,10 @@ type devInfo struct {
 	lock sync.Mutex
 }
 
-type metaData struct {
-	Devices map[string]*devInfo `json:"Devices"`
+// /var/lib/docker/devicemapper/metadata 目录下的 文件存入下面map中的string中，对应一个devInfo，见 lookupDevice
+//metadata文件夹下面的所有文件对应同一个DeviceSet
+type metaData struct {  //lookupDevice  函数中赋值
+	Devices map[string]*devInfo `json:"Devices"`    // 遍历可以参考 constructDeviceIDMap
 }
 
 // DeviceSet holds information about list of devices
@@ -93,7 +105,7 @@ type DeviceSet struct {  //初始化及赋值见 NewDeviceSet
 	sync.Mutex    `json:"-"` // Protects all fields of DeviceSet and serializes calls into libdevmapper
 	root          string   //初始化及赋值见 NewDeviceSet   默认/var/lib/docker/devicemapper
 	devicePrefix  string  //赋值为 docker-%d:%d-%d   根据stat /var/lib/docker/devicemapper 获取到，见initDevmapper ，
-	TransactionID uint64 `json:"-"`
+	TransactionID uint64 `json:"-"`   //赋值见 initMetaData     devicemapper  poll TransactionID
 	NextDeviceID  int    `json:"next_device_id"`
 	deviceIDMap   []byte
 
@@ -113,12 +125,14 @@ type DeviceSet struct {  //初始化及赋值见 NewDeviceSet
 	doBlkDiscard          bool  // docker还提供这个参数，默认值为true，即删除image后，会调用DISCARD，真正释放HOST上空间。
 	thinpBlockSize        uint32
 	thinPoolDevice        string  //dm.thinpooldev 配置，如果不配置默认为devices.devicePrefix + "-pool"，见getPoolName  GetInfo中检查改device是否存在
-	transaction           `json:"-"`
+	transaction           `json:"-"`  //  /var/lib/docker/devicemapper/metadata/transaction-metadata 反序列化后的值存入transaction
 	overrideUdevSyncCheck bool
 	deferredRemove        bool   // use deferred removal   赋值见enableDeferredRemovalDeletion
 	deferredDelete        bool   // use deferred deletion  赋值见enableDeferredRemovalDeletion
 	BaseDeviceUUID        string // save UUID of base device
 	BaseDeviceFilesystem  string // save filesystem of base device
+
+	//countDeletedDevices
 	nrDeletedDevices      uint   // number of deleted devices
 	deletionWorkerTicker  *time.Ticker
 	uidMaps               []idtools.IDMap
@@ -229,6 +243,7 @@ func (devices *DeviceSet) metadataFile(info *devInfo) string {
 	return path.Join(devices.metadataDir(), file)
 }
 
+//  /var/lib/docker/devicemapper/metadata/transaction-metadata
 func (devices *DeviceSet) transactionMetaFile() string {
 	return path.Join(devices.metadataDir(), transactionMetaFile)
 }
@@ -369,6 +384,7 @@ func (devices *DeviceSet) saveMetadata(info *devInfo) error {
 	return nil
 }
 
+//标记DeviceID已经使用
 func (devices *DeviceSet) markDeviceIDUsed(deviceID int) {
 	var mask byte
 	i := deviceID % 8
@@ -413,19 +429,26 @@ func (devices *DeviceSet) lookupDeviceWithLock(hash string) (*devInfo, error) {
 
 // This function relies on that device hash map has been loaded in advance.
 // Should be called with devices.Lock() held.
+
+//标记/var/lib/docker/devicemapper/metadata目录下面的json文件中的deviceID已经使用
 func (devices *DeviceSet) constructDeviceIDMap() {
 	logrus.Debug("devmapper: constructDeviceIDMap()")
 	defer logrus.Debug("devmapper: constructDeviceIDMap() END")
 
-	for _, info := range devices.Devices {
+	for _, info := range devices.Devices { //标记该map中对应的deviceID已经使用
 		devices.markDeviceIDUsed(info.DeviceID)
 		logrus.Debugf("devmapper: Added deviceId=%d to DeviceIdMap", info.DeviceID)
 	}
 }
 
+//loadDeviceFilesOnStart 扫描/var/lib/docker/devicemapper/metadata文件夹下面的所有文件 ，然后执行scan，也就是前面的func
+//path为/var/lib/docker/devicemapper/metadata , finfo 为该目录下面的文件
+
+//把path目录下的所有finfo文件组到 devices.Devices[hash] 中
 func (devices *DeviceSet) deviceFileWalkFunction(path string, finfo os.FileInfo) error {
 
 	// Skip some of the meta files which are not device files.
+	//以下几个文件类型不是设备文件，跳过扫描
 	if strings.HasSuffix(finfo.Name(), ".migrated") {
 		logrus.Debugf("devmapper: Skipping file %s", path)
 		return nil
@@ -446,10 +469,11 @@ func (devices *DeviceSet) deviceFileWalkFunction(path string, finfo os.FileInfo)
 		return nil
 	}
 
+	//level=debug msg="devmapper: Loading data for file /var/lib/docker/devicemapper/metadata/2f7861878ca438122fe6e2c46d3334aa75b6adcee61d67aaeb6d2b584dd96769"
 	logrus.Debugf("devmapper: Loading data for file %s", path)
 
 	hash := finfo.Name()
-	if hash == "base" {
+	if hash == "base" { //如果是base文件  hash为空
 		hash = ""
 	}
 
@@ -462,11 +486,12 @@ func (devices *DeviceSet) deviceFileWalkFunction(path string, finfo os.FileInfo)
 	return nil
 }
 
+////把 /var/lib/docker/devicemapper/metadata 目录下的所有finfo文件组到 devices.Devices[hash] 中
 func (devices *DeviceSet) loadDeviceFilesOnStart() error {
 	logrus.Debug("devmapper: loadDeviceFilesOnStart()")
 	defer logrus.Debug("devmapper: loadDeviceFilesOnStart() END")
 
-	var scan = func(path string, info os.FileInfo, err error) error {
+	var scan = func(path string, info os.FileInfo, err error) error { //下面的walk中执行
 		if err != nil {
 			logrus.Debugf("devmapper: Can't walk the file %s", path)
 			return nil
@@ -480,6 +505,7 @@ func (devices *DeviceSet) loadDeviceFilesOnStart() error {
 		return devices.deviceFileWalkFunction(path, info)
 	}
 
+	//loadDeviceFilesOnStart 扫描/var/lib/docker/devicemapper/metadata文件夹下面的所有文件 ，然后执行scan，也就是前面的func
 	return filepath.Walk(devices.metadataDir(), scan)
 }
 
@@ -627,6 +653,8 @@ func (devices *DeviceSet) createFilesystem(info *devInfo) (err error) {
 func (devices *DeviceSet) migrateOldMetaData() error {
 	// Migrate old metadata file
 	jsonData, err := ioutil.ReadFile(devices.oldMetadataFile())
+	logrus.Debug("migrateOldMetaData run, old metadatafile: %s", devices.filesystem, info.Name())
+
 	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
@@ -686,6 +714,7 @@ func (devices *DeviceSet) cleanupDeletedDevices() error {
 	return nil
 }
 
+//deleted的计算
 func (devices *DeviceSet) countDeletedDevices() {
 	for _, info := range devices.Devices {
 		if !info.Deleted {
@@ -715,6 +744,7 @@ func (devices *DeviceSet) initMetaData() error {
 		return err
 	}
 
+	//获取thin pool信息
 	_, transactionID, _, _, _, _, err := devices.poolStatus()
 	if err != nil {
 		return err
@@ -722,10 +752,12 @@ func (devices *DeviceSet) initMetaData() error {
 
 	devices.TransactionID = transactionID
 
+	////把 /var/lib/docker/devicemapper/metadata 目录下的所有finfo文件组到 type metaData struct   中
 	if err := devices.loadDeviceFilesOnStart(); err != nil {
 		return fmt.Errorf("devmapper: Failed to load device files:%v", err)
 	}
 
+	//标记/var/lib/docker/devicemapper/metadata目录下面的json文件中的deviceID已经使用
 	devices.constructDeviceIDMap()
 	devices.countDeletedDevices()
 
@@ -945,15 +977,17 @@ func (devices *DeviceSet) createRegisterSnapDevice(hash string, baseInfo *devInf
 }
 
 func (devices *DeviceSet) loadMetadata(hash string) *devInfo {
+
 	info := &devInfo{Hash: hash, devices: devices}
 
+	//读取/var/lib/docker/devicemapper/metadata 下面的 hash 文件
 	jsonData, err := ioutil.ReadFile(devices.metadataFile(info))
 	if err != nil {
 		logrus.Debugf("devmapper: Failed to read %s with err: %v", devices.metadataFile(info), err)
 		return nil
 	}
 
-	if err := json.Unmarshal(jsonData, &info); err != nil {
+	if err := json.Unmarshal(jsonData, &info); err != nil { //把json内容反序列
 		logrus.Debugf("devmapper: Failed to unmarshal devInfo from %s with err: %v", devices.metadataFile(info), err)
 		return nil
 	}
@@ -1380,12 +1414,13 @@ func (devices *DeviceSet) ResizePool(size int64) error {
 	return nil
 }
 
+//  /var/lib/docker/devicemapper/metadata/transaction-metadata 反序列化后的值存入transaction
 func (devices *DeviceSet) loadTransactionMetaData() error {
 	jsonData, err := ioutil.ReadFile(devices.transactionMetaFile())
 	if err != nil {
 		// There is no active transaction. This will be the case
 		// during upgrade.
-		if os.IsNotExist(err) {
+		if os.IsNotExist(err) { //如果transaction-metadata文件不存在则直接 OpenTransactionID = TransactionID
 			devices.OpenTransactionID = devices.TransactionID
 			return nil
 		}
@@ -1434,12 +1469,14 @@ func (devices *DeviceSet) rollbackTransaction() error {
 }
 
 func (devices *DeviceSet) processPendingTransaction() error {
+	//  /var/lib/docker/devicemapper/metadata/transaction-metadata 反序列化后的值存入 DeviceSet.transaction
 	if err := devices.loadTransactionMetaData(); err != nil {
 		return err
 	}
 
 	// If there was open transaction but pool transaction ID is same
 	// as open transaction ID, nothing to roll back.
+	//transaction-metadata文件不存在则直接 OpenTransactionID = TransactionID,赋值见loadTransactionMetaData
 	if devices.TransactionID == devices.OpenTransactionID {
 		return nil
 	}
@@ -1782,7 +1819,7 @@ func (devices *DeviceSet) initDevmapper(doInit bool) error {
 
 	// Check for the existence of the thin-pool device
 
-	//GetInfo中检查device是否存在
+	//GetInfo中检查 thinpool 是否存在
 	poolExists, err := devices.thinPoolExists(devices.getPoolName()) //pool释放存在
 	if err != nil {
 		return err
@@ -1800,6 +1837,17 @@ func (devices *DeviceSet) initDevmapper(doInit bool) error {
 
 	// If the pool doesn't exist, create it
 	//dockerd -D -s devicemapper，并且不要配置/etc/docker/daemon.json的时候会走到这个流程
+	/*
+	root@ob-slave-465.gz01:/home/odin/yangyazhou$ cat /etc/docker/daemon.json
+	{
+	  "storage-driver": "devicemapper",
+	   "storage-opts": [
+	     "dm.thinpooldev=/dev/mapper/docker-thinpool",
+	     "dm.use_deferred_removal=true",
+	     "dm.use_deferred_deletion=true"
+	   ]
+	} 如何已配置，则不会进入该循环
+	*/
 	if !poolExists && devices.thinPoolDevice == "" { //如果pool不存在，并且没有配thinPoolDevice
 		logrus.Debug("devmapper: Pool doesn't exist. Creating it.")
 
@@ -1893,7 +1941,7 @@ func (devices *DeviceSet) initDevmapper(doInit bool) error {
 
 	// If we didn't just create the data or metadata image, we need to
 	// load the transaction id and migrate old metadata
-	if !createdLoopback {
+	if !createdLoopback { //配置了thinpooldevice则进入该流程
 		if err := devices.initMetaData(); err != nil {
 			return err
 		}
