@@ -6,12 +6,21 @@ import (
 
 	"github.com/docker/distribution"
 	"github.com/opencontainers/go-digest"
-	"database/sql/driver"
+	//"database/sql/driver"
 )
 //参考http://licyhust.com/%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF/2016/09/27/docker-image-data-structure/
 //store本质上是磁盘上保存了各个layer的元数据信息，当docker初始化时，它会利用
 //这些元数据文件在内存中构造各个layer，每个Layer都用一个roLayer结构体表示，即只读(ro)的layer
 //注意roLayer 和 layerStore 的关系
+
+
+/*
+docker中定义了 Layer 和 RWLayer 两种接口，分别用来定义只读层和可读写层的一些操作，又定义了roLayer和mountedLayer,分别实现这两种接口。
+其中 roLayer 用于表视不可改变的镜像层，mountedLayer 用于表视可读写的容器层
+
+docker镜像管理部分和存储驱动在设计上完全分离了，镜像层或者容器层在存储驱动中拥有一个新的标示ID，在镜像层(roLayer)中称为
+cacheID,容器层(mountedLayer)中为mountID。 mountID是随机生成的并保存在mountedLayer的元数据mountID中，持久化到
+*/
 
 //roLayer是只读的layer原信息，mounts是运行容器的时候可写layer
 type roLayer struct { //对应/var/lib/docker/image/overlay/layerdb/sha256/目录相关

@@ -556,6 +556,8 @@ func GetInfo(name string) (*Info, error) { //检查 thinPoolDevice(dm.thinpoolde
 
 // GetInfoWithDeferred is the programmatic example of "dmsetup info", but deferred.
 // It outputs some brief information about the device.
+
+//takeSnapshot 或者  cancelDeferredRemovalIfNeeded 中执行
 func GetInfoWithDeferred(name string) (*Info, error) {
 	task, err := TaskCreateNamed(deviceInfo, name)
 	if task == nil {

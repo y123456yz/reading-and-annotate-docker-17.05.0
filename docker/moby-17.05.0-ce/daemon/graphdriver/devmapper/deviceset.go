@@ -52,13 +52,14 @@ var (  //devicemapper存储驱动相关的默认配置信息，可以在NewDevic
 	defaultMinFreeSpacePercent   uint32 = 10
 )
 
-const deviceSetMetaFile string = "deviceset-metadata"
-const transactionMetaFile string = "transaction-metadata"
+const deviceSetMetaFile string = "deviceset-metadata"    // saveDeviceSetMetaData 会写该文件
+const transactionMetaFile string = "transaction-metadata"   //saveTransactionMetaData 会写该文件
 
-//DeviceSet 中的 transaction 成员，值来源是/var/lib/docker/devicemapper/metadata/transaction-metadata 反序列化后的值存入transaction
+//DeviceSet 中的 transaction 成员，值来源是/var/lib/docker/devicemapper/metadata/transaction-metadata 反序列化后的值存入transaction ,
+//在openTransaction 中也会用该类型，并赋值
 type transaction struct {
 	////如果transaction-metadata文件不存在则直接 OpenTransactionID = TransactionID,赋值见loadTransactionMetaData
-	OpenTransactionID uint64 `json:"open_transaction_id"`
+	OpenTransactionID uint64 `json:"open_transaction_id"`  //allocateTransactionID 中devices.OpenTransactionID = devices.TransactionID + 1
 	DeviceIDHash      string `json:"device_hash"`
 	DeviceID          int    `json:"device_id"`
 }
@@ -100,13 +101,13 @@ type metaData struct {  //lookupDevice  函数中赋值
 }
 
 // DeviceSet holds information about list of devices
-type DeviceSet struct {  //初始化及赋值见 NewDeviceSet
+type DeviceSet struct {  //初始化及赋值见 NewDeviceSet ，部分成员赋值见 loadDeviceSetMetaData
 	metaData      `json:"-"`
 	sync.Mutex    `json:"-"` // Protects all fields of DeviceSet and serializes calls into libdevmapper
 	root          string   //初始化及赋值见 NewDeviceSet   默认/var/lib/docker/devicemapper
 	devicePrefix  string  //赋值为 docker-%d:%d-%d   根据stat /var/lib/docker/devicemapper 获取到，见initDevmapper ，
 	TransactionID uint64 `json:"-"`   //赋值见 initMetaData     devicemapper  poll TransactionID
-	NextDeviceID  int    `json:"next_device_id"`
+	NextDeviceID  int    `json:"next_device_id"`  //赋值见 loadDeviceSetMetaData 反序列化 /var/lib/docker/devicemapper/metadata/deviceset-metadata内容next_device_id
 	deviceIDMap   []byte
 
 	// Options    devicemapper存储驱动相关的配置信息，赋值见 NewDeviceSet     devicemapper两种配置模式:loop-lvm和direct-lvm
@@ -127,8 +128,8 @@ type DeviceSet struct {  //初始化及赋值见 NewDeviceSet
 	thinPoolDevice        string  //dm.thinpooldev 配置，如果不配置默认为devices.devicePrefix + "-pool"，见getPoolName  GetInfo中检查改device是否存在
 	transaction           `json:"-"`  //  /var/lib/docker/devicemapper/metadata/transaction-metadata 反序列化后的值存入transaction
 	overrideUdevSyncCheck bool
-	deferredRemove        bool   // use deferred removal   赋值见enableDeferredRemovalDeletion
-	deferredDelete        bool   // use deferred deletion  赋值见enableDeferredRemovalDeletion
+	deferredRemove        bool   // use deferred removal   赋值见 enableDeferredRemovalDeletion
+	deferredDelete        bool   // use deferred deletion  赋值见 enableDeferredRemovalDeletion    生效见 startDeviceDeletionWorker
 	BaseDeviceUUID        string // save UUID of base device
 	BaseDeviceFilesystem  string // save filesystem of base device
 
@@ -248,6 +249,7 @@ func (devices *DeviceSet) transactionMetaFile() string {
 	return path.Join(devices.metadataDir(), transactionMetaFile)
 }
 
+// /var/lib/docker/devicemapper/metadata/deviceset-metadata
 func (devices *DeviceSet) deviceSetMetaFile() string {
 	return path.Join(devices.metadataDir(), deviceSetMetaFile)
 }
@@ -263,6 +265,7 @@ func (devices *DeviceSet) getPoolName() string {
 	return devices.thinPoolDevice
 }
 
+///dev/mapper/$poolname
 func (devices *DeviceSet) getPoolDevName() string {
 	return getDevName(devices.getPoolName())
 }
@@ -653,7 +656,7 @@ func (devices *DeviceSet) createFilesystem(info *devInfo) (err error) {
 func (devices *DeviceSet) migrateOldMetaData() error {
 	// Migrate old metadata file
 	jsonData, err := ioutil.ReadFile(devices.oldMetadataFile())
-	logrus.Debug("migrateOldMetaData run, old metadatafile: %s", devices.filesystem, info.Name())
+	logrus.Debug("migrateOldMetaData run, old metadatafile: %s", devices.filesystem)
 
 	if err != nil && !os.IsNotExist(err) {
 		return err
@@ -736,6 +739,7 @@ func (devices *DeviceSet) startDeviceDeletionWorker() {
 	}
 }
 
+//  获取/var/lib/docker/devicemapper/metadata/目录下面的文件及其相关内容存入相关结构
 func (devices *DeviceSet) initMetaData() error {
 	devices.Lock()
 	defer devices.Unlock()
@@ -761,6 +765,7 @@ func (devices *DeviceSet) initMetaData() error {
 	devices.constructDeviceIDMap()
 	devices.countDeletedDevices()
 
+	logrus.Warnf("devmapper: initMetaData, transactionID:%v, devices.OpenTransactionID:%v", transactionID, devices.OpenTransactionID);
 	if err := devices.processPendingTransaction(); err != nil {
 		return err
 	}
@@ -776,7 +781,7 @@ func (devices *DeviceSet) incNextDeviceID() {
 }
 
 func (devices *DeviceSet) getNextFreeDeviceID() (int, error) {
-	devices.incNextDeviceID()
+	devices.incNextDeviceID()  //NextDeviceID + 1
 	for i := 0; i <= maxDeviceID; i++ {
 		if devices.isDeviceIDFree(devices.NextDeviceID) {
 			devices.markDeviceIDUsed(devices.NextDeviceID)
@@ -829,6 +834,7 @@ func (devices *DeviceSet) createRegisterDevice(hash string) (*devInfo, error) {
 		return nil, err
 	}
 
+	//devices.transaction内容写入 /var/lib/docker/devicemapper/metadata/transaction-metadata
 	if err := devices.openTransaction(hash, deviceID); err != nil {
 		logrus.Debugf("devmapper: Error opening transaction hash = %s deviceID = %d", hash, deviceID)
 		devices.markDeviceIDFree(deviceID)
@@ -1086,7 +1092,7 @@ func (devices *DeviceSet) saveBaseDeviceUUID(baseInfo *devInfo) error {
 }
 
 func (devices *DeviceSet) createBaseImage() error {
-	logrus.Debug("devmapper: Initializing base device-mapper thin volume")
+	logrus.Debugf("devmapper: Initializing base device-mapper thin volume")
 
 	// Create initial device
 	info, err := devices.createRegisterDevice("")
@@ -1094,7 +1100,7 @@ func (devices *DeviceSet) createBaseImage() error {
 		return err
 	}
 
-	logrus.Debug("devmapper: Creating filesystem on base device-mapper thin volume")
+	logrus.Debugf("devmapper: Creating filesystem on base device-mapper thin volume")
 
 	if err := devices.activateDeviceIfNeeded(info, false); err != nil {
 		return err
@@ -1150,6 +1156,7 @@ func (devices *DeviceSet) checkThinPool() error {
 	if err != nil {
 		return err
 	}
+	logrus.Debugf("yang test.....devmapper: checkThinPool transactionID:%v, dataUsed:%v", transactionID, dataUsed)
 	if dataUsed != 0 {
 		return fmt.Errorf("devmapper: Unable to take ownership of thin-pool (%s) that already has used data blocks",
 			devices.thinPoolDevice)
@@ -1431,6 +1438,7 @@ func (devices *DeviceSet) loadTransactionMetaData() error {
 	return nil
 }
 
+//devices.transaction内容写入 /var/lib/docker/devicemapper/metadata/transaction-metadata
 func (devices *DeviceSet) saveTransactionMetaData() error {
 	jsonData, err := json.Marshal(&devices.transaction)
 	if err != nil {
@@ -1476,7 +1484,7 @@ func (devices *DeviceSet) processPendingTransaction() error {
 
 	// If there was open transaction but pool transaction ID is same
 	// as open transaction ID, nothing to roll back.
-	//transaction-metadata文件不存在则直接 OpenTransactionID = TransactionID,赋值见loadTransactionMetaData
+	//transaction-metadata文件不存在则直接 OpenTransactionID = TransactionID,赋值见 loadTransactionMetaData
 	if devices.TransactionID == devices.OpenTransactionID {
 		return nil
 	}
@@ -1498,6 +1506,7 @@ func (devices *DeviceSet) processPendingTransaction() error {
 	return nil
 }
 
+////  反序列号 /var/lib/docker/devicemapper/metadata/deviceset-metadata内容存入devices
 func (devices *DeviceSet) loadDeviceSetMetaData() error {
 	jsonData, err := ioutil.ReadFile(devices.deviceSetMetaFile())
 	if err != nil {
@@ -1512,6 +1521,7 @@ func (devices *DeviceSet) loadDeviceSetMetaData() error {
 	return json.Unmarshal(jsonData, devices)
 }
 
+// DeviceSet 信息序列化写入 /var/lib/docker/devicemapper/metadata/deviceset-metadata
 func (devices *DeviceSet) saveDeviceSetMetaData() error {
 	jsonData, err := json.Marshal(devices)
 	if err != nil {
@@ -1714,15 +1724,16 @@ func (devices *DeviceSet) loadThinPoolLoopBackInfo() error {
 }
 
 func (devices *DeviceSet) enableDeferredRemovalDeletion() error {
-
+	logrus.Debugf("yang test: devmapper: enableDeferredRemovalDeletion, driverDeferredRemovalSupport:%v, LibraryDeferredRemovalSupport:%v",
+		driverDeferredRemovalSupport, devicemapper.LibraryDeferredRemovalSupport)
 	// If user asked for deferred removal then check both libdm library
 	// and kernel driver support deferred removal otherwise error out.
 	if enableDeferredRemoval {
-		if !driverDeferredRemovalSupport {
-			return fmt.Errorf("devmapper: Deferred removal can not be enabled as kernel does not support it")
+		if !driverDeferredRemovalSupport { //参考 https://github.com/moby/moby/issues/34298
+			return fmt.Errorf("devmapper: driverDeferredRemovalSupport Deferred removal can not be enabled as kernel does not support it")
 		}
 		if !devicemapper.LibraryDeferredRemovalSupport {
-			return fmt.Errorf("devmapper: Deferred removal can not be enabled as libdm does not support it")
+			return fmt.Errorf("devmapper: LibraryDeferredRemovalSupport Deferred removal can not be enabled as libdm does not support it")
 		}
 		logrus.Debug("devmapper: Deferred removal support enabled.")
 		//必须配置命令行参数dm.use_deferred_removal 并且 libdm版本号大于4.27.0
@@ -1942,7 +1953,7 @@ func (devices *DeviceSet) initDevmapper(doInit bool) error {
 	// If we didn't just create the data or metadata image, we need to
 	// load the transaction id and migrate old metadata
 	if !createdLoopback { //配置了thinpooldevice则进入该流程
-		if err := devices.initMetaData(); err != nil {
+		if err := devices.initMetaData(); err != nil { //  获取/var/lib/docker/devicemapper/metadata/目录下面的文件及其相关内容存入相关结构
 			return err
 		}
 	}
@@ -1955,6 +1966,8 @@ func (devices *DeviceSet) initDevmapper(doInit bool) error {
 
 	// Right now this loads only NextDeviceID. If there is more metadata
 	// down the line, we might have to move it earlier.
+
+	// 反序列化 /var/lib/docker/devicemapper/metadata/deviceset-metadata内容存入 DeviceSet 结构相应成员
 	if err := devices.loadDeviceSetMetaData(); err != nil {
 		return err
 	}
@@ -2560,6 +2573,7 @@ func (devices *DeviceSet) GetDeviceStatus(hash string) (*DevStatus, error) {
 	return status, nil
 }
 
+// 获取devicemapper   pool信息
 func (devices *DeviceSet) poolStatus() (totalSizeInSectors, transactionID, dataUsed, dataTotal, metadataUsed, metadataTotal uint64, err error) {
 	var params string
 	if _, totalSizeInSectors, _, params, err = devicemapper.GetStatus(devices.getPoolName()); err == nil {

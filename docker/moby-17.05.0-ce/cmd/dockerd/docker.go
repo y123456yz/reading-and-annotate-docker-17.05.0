@@ -104,7 +104,7 @@ func showVersion() {
 	fmt.Printf("Dockerd version %s, build %s\n", dockerversion.Version, dockerversion.GitCommit)
 }
 
-func main() {  //dockerd入口程序在这个main
+func main() {  //dockerd入口程序在这个main　　　yang add main入口
 	if reexec.Init() { //reexec.Init()（在pkg/reexec/reexec.go文件中），看有没有注册的初始化函数，如果有，就直接return了；
 		return
 	}

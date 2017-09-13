@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
+#相关库 驱动是否支持，可以参考http://blog.csdn.net/donglizhang/article/details/71038505
+
 # This script builds various binary artifacts from a checkout of the docker
 # source code.
 #
@@ -128,13 +130,15 @@ if \
 	DOCKER_BUILDTAGS+=' btrfs_noversion'
 fi
 
+#是否支持延迟remove：   可以参考http://blog.csdn.net/donglizhang/article/details/71038505
+
 # test whether "libdevmapper.h" is new enough to support deferred remove
 # functionality.
 if \
 	command -v gcc &> /dev/null \
 	&& ! ( echo -e  '#include <libdevmapper.h>\nint main() { dm_task_deferred_remove(NULL); }'| gcc -xc - -o /dev/null -ldevmapper &> /dev/null ) \
 ; then
-       DOCKER_BUILDTAGS+=' libdm_no_deferred_remove'
+       #DOCKER_BUILDTAGS+=' libdm_no_deferred_remove'  #yang add yang test change
 fi
 
 # Use these flags when compiling the tests and final binary

@@ -14,6 +14,9 @@
 //linux下磁盘进行分区、文件系统创建、挂载和卸载    http://www.cnblogs.com/ljy2013/p/4620691.html      文件存储先要把磁盘/dev/sdx设备格式化、分区，然后通过mke2fs制作文件系统，文件存储就是通过目录结构存储文件
 //Thin Provisioning Snapshot 演示   http://blog.csdn.net/leo_is_ant/article/details/52935304?locationNum=6&fps=1
 
+//http://www.csdn.net/article/2015-08-21/2825511   深入分析Docker镜像原理
+//Docker有两方面的技术非常重要，第一是Linux 容器方面的技术，第二是Docker镜像的技术。
+
 package devicemapper
 
 /*

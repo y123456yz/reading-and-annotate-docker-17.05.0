@@ -54,57 +54,70 @@ type InitFunc func(root string, options []string, uidMaps, gidMaps []idtools.IDM
 // interface and use the NaiveDiffDriver wrapper constructor.
 //
 // Use of ProtoDriver directly by client code is not recommended.
-type ProtoDriver interface {
+type ProtoDriver interface {  //包含在 NaiveDiffDriver 结构中
 	// String returns a string representation of this driver.
-	String() string
+	String() string   //代表这个驱动的字符串
 	// CreateReadWrite creates a new, empty filesystem layer that is ready
 	// to be used as the storage for a container. Additional options can
 	// be passed in opts. parent may be "" and opts may be nil.
+
+	//创建一个可读写层
 	CreateReadWrite(id, parent string, opts *CreateOpts) error
 	// Create creates a new, empty, filesystem layer with the
 	// specified id and parent and options passed in opts. Parent
 	// may be "" and opts may be nil.
+
+	//创建一个新的镜像层，需要调用者传入一个唯一的ID和所需父镜像的ID
 	Create(id, parent string, opts *CreateOpts) error
+
+	//根据指定的ID删除一层
 	// Remove attempts to remove the filesystem layer with this id.
 	Remove(id string) error
 	// Get returns the mountpoint for the layered filesystem referred
 	// to by this id. You can optionally specify a mountLabel or "".
 	// Returns the absolute path to the mounted layered filesystem.
+	//返回指定的层的挂载点的绝对路径
 	Get(id, mountLabel string) (dir string, err error)
 	// Put releases the system resources for the specified id,
 	// e.g, unmounting layered filesystem.
-	Put(id string) error
+	Put(id string) error //释放一个层使用的资源，比如卸载一个已经挂载的层
 	// Exists returns whether a filesystem layer with the specified
 	// ID exists on this driver.
-	Exists(id string) bool
+	Exists(id string) bool  //查找指定的ID对应的层是否存在
 	// Status returns a set of key-value pairs which give low
 	// level diagnostic status about this driver.
-	Status() [][2]string
+	Status() [][2]string  //返回这个驱动的状态，这个状态用一些键值对表示
 	// Returns a set of key-value pairs which give low level information
 	// about the image/container driver is managing.
 	GetMetadata(id string) (map[string]string, error)
 	// Cleanup performs necessary tasks to release resources
 	// held by the driver, e.g., unmounting all layered filesystems
 	// known to this driver.
-	Cleanup() error
+	Cleanup() error   //释放由这个驱动管理的所有资源，比如卸载所有的层
 }
 
 // DiffDriver is the interface to use to implement graph diffs
 type DiffDriver interface {
 	// Diff produces an archive of the changes between the specified
 	// layer and its parent layer which may be "".
+	//将指定ID的层相对父镜像层改动的文件打包并返回
 	Diff(id, parent string) (io.ReadCloser, error)
 	// Changes produces a list of changes between the specified layer
 	// and its parent layer. If parent is "", then all changes will be ADD changes.
+	//返回指定镜像层与父镜像层之间的差异列表
 	Changes(id, parent string) ([]archive.Change, error)
 	// ApplyDiff extracts the changeset from the given diff into the
 	// layer with the specified id and parent, returning the size of the
 	// new layer in bytes.
 	// The archive.Reader must be an uncompressed stream.
+
+	//从差异文件包中提取差异列表，并应用到指定ID的层与父镜像层，返回新镜像层的大小
 	ApplyDiff(id, parent string, diff io.Reader) (size int64, err error)
 	// DiffSize calculates the changes between the specified id
 	// and its parent and returns the size in bytes of the changes
 	// relative to its base filesystem directory.
+
+	//计算指定ID层与其父镜像层的差异，并返回差异相对于基础文件系统的大小
 	DiffSize(id, parent string) (size int64, err error)
 }
 
