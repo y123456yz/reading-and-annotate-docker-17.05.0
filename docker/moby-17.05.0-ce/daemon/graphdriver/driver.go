@@ -221,6 +221,7 @@ type Options struct {  //命令行中写带的graphdriver storage相关参数在
 // New creates the driver and initializes it at the specified root.
 //NewStoreFromOptions->graphdriver.New    name 为 devicemapper  overlay  vfs等
 func New(name string, pg plugingetter.PluginGetter, config Options) (Driver, error) {
+
 	if name != "" {
 		logrus.Debugf("[graphdriver] trying provided driver: %s", name) // so the logs show specified driver
 		return GetDriver(name, pg, config)

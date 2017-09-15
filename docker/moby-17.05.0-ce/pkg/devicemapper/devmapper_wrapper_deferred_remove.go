@@ -11,7 +11,8 @@ if \
 fi
 */
 //需要下载lvm2最新版本，见 https://www.mirrorservice.org/sites/sourceware.org/pub/lvm2/releases/，老版本不支持defer lvm ，
-// 安装新版本LVM2后需要手动替换lib库，注意是替换编译docker代码的容器中，不是主机上的
+// 安装新版本LVM2后需要手动替换lib库，注意是替换编译docker代码的容器中，不是主机上的  注意把/lib/x86_64-linux-gnu/    /lib/下面的 libdevmapper.a相关的库全部替换
+//依赖的是 libdevmapper.a静态库
 
 package devicemapper
 

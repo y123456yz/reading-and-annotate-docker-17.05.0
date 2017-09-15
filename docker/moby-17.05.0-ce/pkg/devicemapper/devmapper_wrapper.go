@@ -12,7 +12,39 @@
 //devicemapper thinpool配置 http://blog.csdn.net/a85880819/article/details/52457702
 //理解docker镜像，容器和存储驱动  http://blog.csdn.net/a85880819/article/details/52448654
 //linux下磁盘进行分区、文件系统创建、挂载和卸载    http://www.cnblogs.com/ljy2013/p/4620691.html      文件存储先要把磁盘/dev/sdx设备格式化、分区，然后通过mke2fs制作文件系统，文件存储就是通过目录结构存储文件
-//Thin Provisioning Snapshot 演示   http://blog.csdn.net/leo_is_ant/article/details/52935304?locationNum=6&fps=1
+//Thin Provisioning Snapshot 演示   https://coolshell.cn/articles/17200.html  http://blog.csdn.net/leo_is_ant/article/details/52935304?locationNum=6&fps=1
+//lvm命令相关 ，创建 ，删除    http://www.linuxprobe.com/one-picture-to-learn-lvm.html
+//LVM图形，比较直观 http://www.cnblogs.com/softidea/p/5147091.html
+//需要下载lvm2最新版本，见 https://www.mirrorservice.org/sites/sourceware.org/pub/lvm2/releases/，老版本不支持defer lvm ，
+//http://blog.csdn.net/u012036443/article/details/13755471  Documentation\device-mapper\thin-provisioning.txt 中文翻译
+/*  devicemapper删除 创建相关
+ 删除：
+	 lvremove thinpool
+	 vgremove docker
+	 pvremove /dev/sdm1
+	 rm -rf /var/lib/docker/*  删除后需要加上这个
+	 如果root@ob-slave-465.gz01:~/yyz/docker/bundles/17.05.0-ce/binary-daemon$ lvremove docker-yyz
+  	Logical volume docker-yyz/thinpool is used by another device.
+  	处理方法：dmsetup ls； dmsetup remove docker-xxx这个docker设备，参考https://forum.proxmox.com/threads/lvremove-logical-volume-is-used-by-another-device.33768/
+
+ 创建devicemapper pool：   通过修改下面的docker为其他可以创建其他的lv
+	 pvcreate /dev/sdl1 -y
+	 vgcreate docker-yyz /dev/sdl1
+	 lvcreate --wipesignatures y -n thinpool docker-yyz -l 95%VG
+	 lvcreate --wipesignatures y -n thinpoolmeta docker-yyz -l 1%VG
+	 lvconvert -y --zero n -c 512K --thinpool docker-yyz/thinpool --poolmetadata docker-yyz/thinpoolmeta
+	  vi /etc/lvm/profile/docker-yyz-thinpool.profile
+		activation {
+		thin_pool_autoextend_threshold=80
+		thin_pool_autoextend_percent=20
+		}
+	 lvchange --metadataprofile docker-yyz-thinpool docker-yyz/thinpool
+
+ 验证方法libdevmapper.so动态库：
+  root@e396cb23e551:/go/src/github.com/docker/docker# echo -e  '#include <libdevmapper.h>\nint main() { dm_task_deferred_remove(NULL); }'| gcc -xc - -o /dev/null -ldevmapper
+  root@e396cb23e551:/go/src/github.com/docker/docker# echo $?
+  0
+*/
 
 //http://www.csdn.net/article/2015-08-21/2825511   深入分析Docker镜像原理
 //Docker有两方面的技术非常重要，第一是Linux 容器方面的技术，第二是Docker镜像的技术。

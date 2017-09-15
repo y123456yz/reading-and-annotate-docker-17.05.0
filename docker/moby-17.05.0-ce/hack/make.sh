@@ -133,12 +133,12 @@ fi
 #是否支持延迟remove：   可以参考http://blog.csdn.net/donglizhang/article/details/71038505
 
 # test whether "libdevmapper.h" is new enough to support deferred remove
-# functionality.
+# functionality.    使用参考https://github.com/moby/moby/pull/21131
 if \
 	command -v gcc &> /dev/null \
 	&& ! ( echo -e  '#include <libdevmapper.h>\nint main() { dm_task_deferred_remove(NULL); }'| gcc -xc - -o /dev/null -ldevmapper &> /dev/null ) \
 ; then
-       #DOCKER_BUILDTAGS+=' libdm_no_deferred_remove'  #yang add yang test change
+       DOCKER_BUILDTAGS+=' libdm_no_deferred_remove'  #yang add yang test change
 fi
 
 # Use these flags when compiling the tests and final binary

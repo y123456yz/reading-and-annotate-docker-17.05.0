@@ -116,7 +116,7 @@ type (
 // Current implementation is little crude as it scans the error string
 // for exact pattern match. Replacing it with more robust implementation
 // is desirable.
-func DeviceIDExists(err error) bool {
+func DeviceIDExists(err error) bool { //createRegisterDevice中使用
 	return fmt.Sprint(err) == fmt.Sprint(ErrDeviceIDExists)
 }
 
@@ -643,6 +643,7 @@ func GetTable(name string) (uint64, uint64, string, string, error) {
 }
 
 // SetTransactionID sets a transaction id for the specified device name.
+//updatePoolTransactionID 中调用
 func SetTransactionID(poolName string, oldID uint64, newID uint64) error {
 	task, err := TaskCreateNamed(deviceTargetMsg, poolName)
 	if task == nil {
@@ -653,6 +654,15 @@ func SetTransactionID(poolName string, oldID uint64, newID uint64) error {
 		return fmt.Errorf("devicemapper: Can't set sector %s", err)
 	}
 
+	/*  参考http://blog.csdn.net/u012036443/article/details/13755471   https://lwn.net/Articles/465740/
+	Userland volume managers, such as LVM, need a way to
+	synchronise their external metadata with the internal metadata of the
+	pool target.  The thin-pool target offers to store an
+	arbitrary 64-bit transaction id and return it on the target's
+	status line.  To avoid races you must provide what you think
+	the current transaction id is when you change it with this
+	compare-and-swap message.
+	*/
 	if err := task.setMessage(fmt.Sprintf("set_transaction_id %d %d", oldID, newID)); err != nil {
 		return fmt.Errorf("devicemapper: Can't set message %s", err)
 	}
@@ -698,6 +708,10 @@ func ResumeDevice(name string) error {
 }
 
 // CreateDevice creates a device with the specified poolName with the specified device id.
+/*
+在pool中创建一个Thin Provisioning 的 thinly-provisioned device., deviceID为改volume  device的ID号，可以参考http://blog.csdn.net/leo_is_ant/article/details/52935304?locationNum=6&fps=1
+*/
+//createRegisterDevice中会调用该函数
 func CreateDevice(poolName string, deviceID int) error {
 	logrus.Debugf("devicemapper: CreateDevice(poolName=%v, deviceID=%v)", poolName, deviceID)
 	task, err := TaskCreateNamed(deviceTargetMsg, poolName)
@@ -709,6 +723,8 @@ func CreateDevice(poolName string, deviceID int) error {
 		return fmt.Errorf("devicemapper: Can't set sector %s", err)
 	}
 
+	//Create a new thinly-provisioned device.   参考http://blog.csdn.net/u012036443/article/details/13755471
+	//<dev id> is an arbitrary unique 24-bit identifier chosen by the caller.
 	if err := task.setMessage(fmt.Sprintf("create_thin %d", deviceID)); err != nil {
 		return fmt.Errorf("devicemapper: Can't set message %s", err)
 	}
@@ -753,6 +769,7 @@ func DeleteDevice(poolName string, deviceID int) error {
 
 // ActivateDevice activates the device identified by the specified
 // poolName, name and deviceID with the specified size.
+//activateDeviceIfNeeded 中调用执行
 func ActivateDevice(poolName string, name string, deviceID int, size uint64) error {
 	return activateDevice(poolName, name, deviceID, size, "")
 }

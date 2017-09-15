@@ -1,0 +1,192 @@
+dockerd -D --data-root=/var/lib/docker-yyz2  --config-file=/daemon.json
+yang test ...main... dockerd mainyang test ............. ExecuteC
+yang test .......2222222222...... ExecuteC
+DEBU[0000] Listener created for HTTP on unix (/var/run/docker.sock)
+INFO[0000] libcontainerd: new containerd process, pid: 21294
+DEBU[0000] containerd: grpc api on /var/run/docker/libcontainerd/docker-containerd.sock
+DEBU[0000] containerd: read past events                  count=0
+DEBU[0000] containerd: supervisor running                cpus=24 memory=63911 runtime=docker-runc runtimeArgs=[] stateDir="/var/run/docker/libcontainerd/containerd"
+DEBU[0000] libcontainerd: containerd health check returned error: rpc error: code = 14 desc = grpc: the connection is unavailable
+DEBU[0001] Using default logging driver json-file
+DEBU[0001] Golang's threads limit set to 459990
+DEBU[0001] [graphdriver] trying provided driver: devicemapper
+DEBU[0001] devicemapper: driver version is 4.34.0
+DEBU[0001] devmapper: enableDeferredRemovalDeletion, driverDeferredRemovalSupport:true, LibraryDeferredRemovalSupport:false
+ERRO[0001] devmapper: Udev sync is not supported. This will lead to data loss and unexpected behavior. Install a dynamic binary to use devicemapper or select a different storage driver. For more information, see https://docs.docker.com/engine/reference/commandline/dockerd/#storage-driver-options
+DEBU[0001] devmapper: Generated prefix: docker-8:4-1311825
+DEBU[0001] devmapper: Checking for existence of the pool docker--yyz-thinpool
+DEBU[0001] devmapper: loadDeviceFilesOnStart()
+DEBU[0001] devmapper: loadDeviceFilesOnStart() END
+DEBU[0001] devmapper: constructDeviceIDMap()
+DEBU[0001] devmapper: constructDeviceIDMap() END
+WARN[0001] devmapper: initMetaData, transactionID:0, devices.OpenTransactionID:0
+DEBU[0001] devmapper: Failed to read /var/lib/docker-yyz2/devicemapper/metadata/base with err: open /var/lib/docker-yyz2/devicemapper/metadata/base: no such file or directory
+DEBU[0001] yang test.....devmapper: checkThinPool transactionID:0, dataUsed:0
+DEBU[0001] devmapper: Initializing base device-mapper thin volume
+DEBU[0001] devicemapper: CreateDevice(poolName=/dev/mapper/docker--yyz-thinpool, deviceID=1)
+DEBU[0001] devmapper: Registering device (id 1) with FS size 10737418240
+DEBU[0001] devmapper: registerDevice(1, )
+DEBU[0001] devmapper: Creating filesystem on base device-mapper thin volume
+DEBU[0001] devmapper: activateDeviceIfNeeded()
+INFO[0001] devmapper: Creating filesystem xfs on device docker-8:4-1311825-base
+INFO[0001] devmapper: Successfully created filesystem xfs on device docker-8:4-1311825-base
+DEBU[0001] devmapper: activateDeviceIfNeeded()
+DEBU[0001] devmapper: UUID for device: /dev/mapper/docker-8:4-1311825-base is:c86bfbc2-bcf7-49c6-8041-58477c2e1e1e
+DEBU[0001] devmapper: deactivateDevice START()
+DEBU[0001] devmapper: removeDevice START(docker-8:4-1311825-base)
+DEBU[0001] devmapper: removeDevice END(docker-8:4-1311825-base)
+DEBU[0001] devmapper: deactivateDevice END()
+DEBU[0001] Using graph driver devicemapper
+DEBU[0001] Max Concurrent Downloads: 3
+DEBU[0001] Max Concurrent Uploads: 5
+INFO[0001] Graph migration to content-addressability took 0.00 seconds
+INFO[0001] Loading containers: start.
+DEBU[0001] Option Experimental: false
+DEBU[0001] Option DefaultDriver: bridge
+DEBU[0001] Option DefaultNetwork: bridge
+DEBU[0001] /sbin/iptables, [--wait -t nat -D PREROUTING -m addrtype --dst-type LOCAL -j DOCKER]
+DEBU[0001] /sbin/iptables, [--wait -t nat -D OUTPUT -m addrtype --dst-type LOCAL ! --dst 127.0.0.0/8 -j DOCKER]
+DEBU[0001] /sbin/iptables, [--wait -t nat -D OUTPUT -m addrtype --dst-type LOCAL -j DOCKER]
+DEBU[0001] /sbin/iptables, [--wait -t nat -D PREROUTING]
+DEBU[0001] /sbin/iptables, [--wait -t nat -D OUTPUT]
+DEBU[0001] /sbin/iptables, [--wait -t nat -F DOCKER]
+DEBU[0001] /sbin/iptables, [--wait -t nat -X DOCKER]
+DEBU[0001] /sbin/iptables, [--wait -t filter -F DOCKER]
+DEBU[0001] /sbin/iptables, [--wait -t filter -X DOCKER]
+DEBU[0001] /sbin/iptables, [--wait -t filter -F DOCKER-ISOLATION]
+DEBU[0001] /sbin/iptables, [--wait -t filter -X DOCKER-ISOLATION]
+DEBU[0001] /sbin/iptables, [--wait -t nat -n -L DOCKER]
+DEBU[0001] /sbin/iptables, [--wait -t nat -N DOCKER]
+DEBU[0001] /sbin/iptables, [--wait -t filter -n -L DOCKER]
+DEBU[0001] /sbin/iptables, [--wait -t filter -n -L DOCKER-ISOLATION]
+DEBU[0001] /sbin/iptables, [--wait -t filter -C DOCKER-ISOLATION -j RETURN]
+DEBU[0001] /sbin/iptables, [--wait -I DOCKER-ISOLATION -j RETURN]
+INFO[0001] Default bridge (docker0) is assigned with an IP address 172.17.0.0/16. Daemon option --bip can be used to set a preferred IP address
+DEBU[0001] Allocating IPv4 pools for network bridge (0f5e503b1847be0c29320ff8fecaa29f3c8c0b1b290f4e762ee30d7f2c7f9cb9)
+DEBU[0001] RequestPool(LocalDefault, 172.17.0.0/16, , map[], false)
+DEBU[0001] RequestAddress(LocalDefault/172.17.0.0/16, 172.17.0.1, map[RequestAddressType:com.docker.network.gateway])
+DEBU[0001] /sbin/iptables, [--wait -t nat -C POSTROUTING -s 172.17.0.0/16 ! -o docker0 -j MASQUERADE]
+DEBU[0001] /sbin/iptables, [--wait -t nat -C DOCKER -i docker0 -j RETURN]
+DEBU[0001] /sbin/iptables, [--wait -t nat -I DOCKER -i docker0 -j RETURN]
+DEBU[0001] /sbin/iptables, [--wait -D FORWARD -i docker0 -o docker0 -j DROP]
+DEBU[0001] /sbin/iptables, [--wait -t filter -C FORWARD -i docker0 -o docker0 -j ACCEPT]
+DEBU[0001] /sbin/iptables, [--wait -t filter -C FORWARD -i docker0 ! -o docker0 -j ACCEPT]
+DEBU[0001] /sbin/iptables, [--wait -t nat -C PREROUTING -m addrtype --dst-type LOCAL -j DOCKER]
+DEBU[0001] /sbin/iptables, [--wait -t nat -A PREROUTING -m addrtype --dst-type LOCAL -j DOCKER]
+DEBU[0001] /sbin/iptables, [--wait -t nat -C OUTPUT -m addrtype --dst-type LOCAL -j DOCKER ! --dst 127.0.0.0/8]
+DEBU[0001] /sbin/iptables, [--wait -t nat -A OUTPUT -m addrtype --dst-type LOCAL -j DOCKER ! --dst 127.0.0.0/8]
+DEBU[0001] /sbin/iptables, [--wait -t filter -C FORWARD -o docker0 -j DOCKER]
+DEBU[0001] /sbin/iptables, [--wait -t filter -C FORWARD -o docker0 -j DOCKER]
+DEBU[0001] /sbin/iptables, [--wait -t filter -C FORWARD -o docker0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT]
+DEBU[0001] /sbin/iptables, [--wait -t filter -C FORWARD -o docker0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT]
+DEBU[0001] /sbin/iptables, [--wait -t filter -C FORWARD -j DOCKER-ISOLATION]
+DEBU[0001] /sbin/iptables, [--wait -D FORWARD -j DOCKER-ISOLATION]
+DEBU[0001] /sbin/iptables, [--wait -I FORWARD -j DOCKER-ISOLATION]
+INFO[0001] Loading containers: done.
+INFO[0001] Daemon has completed initialization
+INFO[0001] Docker daemon                                 commit=89658be-unsupported graphdriver=devicemapper version=17.05.0-ce
+DEBU[0001] Registering routers
+DEBU[0001] Registering GET, /containers/{name:.*}/checkpoints
+DEBU[0001] Registering POST, /containers/{name:.*}/checkpoints
+DEBU[0001] Registering DELETE, /containers/{name}/checkpoints/{checkpoint}
+DEBU[0001] Registering HEAD, /containers/{name:.*}/archive
+DEBU[0001] Registering GET, /containers/json
+DEBU[0001] Registering GET, /containers/{name:.*}/export
+DEBU[0001] Registering GET, /containers/{name:.*}/changes
+DEBU[0001] Registering GET, /containers/{name:.*}/json
+DEBU[0001] Registering GET, /containers/{name:.*}/top
+DEBU[0001] Registering GET, /containers/{name:.*}/logs
+DEBU[0001] Registering GET, /containers/{name:.*}/stats
+DEBU[0001] Registering GET, /containers/{name:.*}/attach/ws
+DEBU[0001] Registering GET, /exec/{id:.*}/json
+DEBU[0001] Registering GET, /containers/{name:.*}/archive
+DEBU[0001] Registering POST, /containers/create
+DEBU[0001] Registering POST, /containers/{name:.*}/kill
+DEBU[0001] Registering POST, /containers/{name:.*}/pause
+DEBU[0001] Registering POST, /containers/{name:.*}/unpause
+DEBU[0001] Registering POST, /containers/{name:.*}/restart
+DEBU[0001] Registering POST, /containers/{name:.*}/start
+DEBU[0001] Registering POST, /containers/{name:.*}/stop
+DEBU[0001] Registering POST, /containers/{name:.*}/wait
+DEBU[0001] Registering POST, /containers/{name:.*}/resize
+DEBU[0001] Registering POST, /containers/{name:.*}/attach
+DEBU[0001] Registering POST, /containers/{name:.*}/copy
+DEBU[0001] Registering POST, /containers/{name:.*}/exec
+DEBU[0001] Registering POST, /exec/{name:.*}/start
+DEBU[0001] Registering POST, /exec/{name:.*}/resize
+DEBU[0001] Registering POST, /containers/{name:.*}/rename
+DEBU[0001] Registering POST, /containers/{name:.*}/update
+DEBU[0001] Registering POST, /containers/prune
+DEBU[0001] Registering PUT, /containers/{name:.*}/archive
+DEBU[0001] Registering DELETE, /containers/{name:.*}
+DEBU[0001] Registering GET, /images/json
+DEBU[0001] Registering GET, /images/search
+DEBU[0001] Registering GET, /images/get
+DEBU[0001] Registering GET, /images/{name:.*}/get
+DEBU[0001] Registering GET, /images/{name:.*}/history
+DEBU[0001] Registering GET, /images/{name:.*}/json
+DEBU[0001] Registering POST, /commit
+DEBU[0001] Registering POST, /images/load
+DEBU[0001] Registering POST, /images/create
+DEBU[0001] Registering POST, /images/{name:.*}/push
+DEBU[0001] Registering POST, /images/{name:.*}/tag
+DEBU[0001] Registering POST, /images/prune
+DEBU[0001] Registering DELETE, /images/{name:.*}
+DEBU[0001] Registering OPTIONS, /{anyroute:.*}
+DEBU[0001] Registering GET, /_ping
+DEBU[0001] Registering GET, /events
+DEBU[0001] Registering GET, /info
+DEBU[0001] Registering GET, /version
+DEBU[0001] Registering GET, /system/df
+DEBU[0001] Registering POST, /auth
+DEBU[0001] Registering GET, /volumes
+DEBU[0001] Registering GET, /volumes/{name:.*}
+DEBU[0001] Registering POST, /volumes/create
+DEBU[0001] Registering POST, /volumes/prune
+DEBU[0001] Registering DELETE, /volumes/{name:.*}
+DEBU[0001] Registering POST, /build
+DEBU[0001] Registering POST, /swarm/init
+DEBU[0001] Registering POST, /swarm/join
+DEBU[0001] Registering POST, /swarm/leave
+DEBU[0001] Registering GET, /swarm
+DEBU[0001] Registering GET, /swarm/unlockkey
+DEBU[0001] Registering POST, /swarm/update
+DEBU[0001] Registering POST, /swarm/unlock
+DEBU[0001] Registering GET, /services
+DEBU[0001] Registering GET, /services/{id}
+DEBU[0001] Registering POST, /services/create
+DEBU[0001] Registering POST, /services/{id}/update
+DEBU[0001] Registering DELETE, /services/{id}
+DEBU[0001] Registering GET, /services/{id}/logs
+DEBU[0001] Registering GET, /nodes
+DEBU[0001] Registering GET, /nodes/{id}
+DEBU[0001] Registering DELETE, /nodes/{id}
+DEBU[0001] Registering POST, /nodes/{id}/update
+DEBU[0001] Registering GET, /tasks
+DEBU[0001] Registering GET, /tasks/{id}
+DEBU[0001] Registering GET, /tasks/{id}/logs
+DEBU[0001] Registering GET, /secrets
+DEBU[0001] Registering POST, /secrets/create
+DEBU[0001] Registering DELETE, /secrets/{id}
+DEBU[0001] Registering GET, /secrets/{id}
+DEBU[0001] Registering POST, /secrets/{id}/update
+DEBU[0001] Registering GET, /plugins
+DEBU[0001] Registering GET, /plugins/{name:.*}/json
+DEBU[0001] Registering GET, /plugins/privileges
+DEBU[0001] Registering DELETE, /plugins/{name:.*}
+DEBU[0001] Registering POST, /plugins/{name:.*}/enable
+DEBU[0001] Registering POST, /plugins/{name:.*}/disable
+DEBU[0001] Registering POST, /plugins/pull
+DEBU[0001] Registering POST, /plugins/{name:.*}/push
+DEBU[0001] Registering POST, /plugins/{name:.*}/upgrade
+DEBU[0001] Registering POST, /plugins/{name:.*}/set
+DEBU[0001] Registering POST, /plugins/create
+DEBU[0001] Registering GET, /networks
+DEBU[0001] Registering GET, /networks/
+DEBU[0001] Registering GET, /networks/{id:.+}
+DEBU[0001] Registering POST, /networks/create
+DEBU[0001] Registering POST, /networks/{id:.*}/connect
+DEBU[0001] Registering POST, /networks/{id:.*}/disconnect
+DEBU[0001] Registering POST, /networks/prune
+DEBU[0001] Registering DELETE, /networks/{id:.*}
+INFO[0001] API listen on /var/run/docker.sock
