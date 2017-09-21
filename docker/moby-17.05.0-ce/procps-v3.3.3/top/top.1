@@ -1,0 +1,2028 @@
+.ig
+. manual page for NEW and IMPROVED linux top
+.
+. Copyright (c) 2002-2012, by: James C. Warner
+.    All rights reserved.      8921 Hilloway Road
+.                              Eden Prairie, Minnesota 55347 USA
+.
+. Permission is granted to copy, distribute and/or modify this document
+. under the terms of the GNU Free Documentation License, Version 1.1 or
+. any later version published by the Free Software Foundation;
+. with no Front-Cover Texts, no Back-Cover Texts, and with the following
+. Invariant Sections (and any sub-sections therein):
+.   all .ig sections, including this one
+.   STUPID TRICKS Sampler
+.   AUTHOR
+.
+. A copy of the Free Documentation License is included in the section
+. entitled "GNU Free Documentation License".
+.
+. [ that section is found near the end of this document & ]
+. [ can be made printable by disabling the .ig directive! ]
+.
+..
+\#  Setup ////////////////////////////////////////////////////////////////
+\#  ** Comment out '.nr' or set to 0 to eliminate WIDTH fiddlin' !
+.nr half_xtra 4
+.
+.ll +(\n[half_xtra] + \n[half_xtra])
+.
+\#  ** we use single quote char (') alot, so change the no-break ctrl char
+.c2 `
+.
+\#                      Our own Bullet style(s) --------------------------
+.de jBu
+.IP "o" 3
+..
+.
+\#                      Commonly used strings (for consistency) ----------
+\#                           - our em-dashes
+.ds Em \fR\ \--\ \fR
+.ds EM \fB\ \--\ \fR
+\#                           - our program name (makes great grammer)
+.ds We top
+.ds WE \fBtop\fR
+\#                           - other misc strs for consistent usage
+.ds F \fIOff\fR
+.ds O \fIOn\fR
+.
+.ds AK asterisk (\'*\')
+.ds AM alternate\-display mode
+.ds AS auxiliary storage
+.ds CF configuration file
+.ds CG \'current\' window/field group
+.ds CI interactive command
+.ds CO command\-line option
+.ds CT command toggle
+.ds CW \'current\' window
+.ds FG field group
+.ds FM full\-screen mode
+.ds KA arrow key
+.ds KS scrolling key
+.ds MP physical memory
+.ds MS shared memory
+.ds MV virtual memory
+.ds NT \fBNote\fR:
+.ds PU CPU
+.ds Pu cpu
+.ds SA summary area
+.ds TA task area
+.ds TD task display
+.ds TT \fBprocesses\fR or \fBthreads\fR
+.ds TW task window
+\#                      Reference to the various widths/sizes ------------
+\#                           - the max screen width limit
+.ds WX 512
+\#                           - the header width w/ all fields
+.ds WF approximately 250
+\#                           - pid monitoring limit
+.ds WP 20
+\#                      Xref's that depend on/mention other stuff --------
+.ds Xa see
+.ds XC See the
+.ds Xc see the
+.ds XT See topic
+.ds Xt see topic
+.
+.\" Document /////////////////////////////////////////////////////////////
+.\" ----------------------------------------------------------------------
+.TH TOP 1 "April 2011" "procps-ng" "User Commands"
+.\" ----------------------------------------------------------------------
+
+.\" ----------------------------------------------------------------------
+.SH NAME
+.\" ----------------------------------------------------------------------
+top \- display Linux processes
+
+.\" ----------------------------------------------------------------------
+.SH SYNOPSIS
+.\" ----------------------------------------------------------------------
+\*(WE \-\fBhv\fR|\-\fBbcHisS\fR \-\fBd\fI delay\fR \-\fBn\fI limit\fR
+\-\fBu\fR|\fBU\fI user\fR \-\fBp\fI pid\fR \-\fBw\fR [\fIcols\fR] \fR
+
+The traditional switches '-' and whitespace are optional.
+
+.\" ----------------------------------------------------------------------
+.SH DESCRIPTION
+.\" ----------------------------------------------------------------------
+The \*(WE program provides a dynamic real-time view of a running system.
+It can display\fB system\fR summary information as well as a list of
+\*(TT currently being managed by the Linux kernel.
+The types of system summary information shown and the types, order and
+size of information displayed for processes are all user configurable
+and that configuration can be made persistent across restarts.
+
+The program provides a limited interactive interface for process
+manipulation as well as a much more extensive interface for personal
+configuration \*(Em encompassing every aspect of its operation.
+And while \*(WE is referred to throughout this document, you are free
+to name the program anything you wish.
+That new name, possibly an alias, will then be reflected on \*(We's
+display and used when reading and writing a \*(CF.
+
+.\" ----------------------------------------------------------------------
+.SH OVERVIEW
+.\" ----------------------------------------------------------------------
+.\" ......................................................................
+.SS Documentation
+.\" ----------------------------------------------------------------------
+The remaining Table of Contents
+
+.Bd -literal
+    1. COMMAND\-LINE Options
+    2. SUMMARY Display
+       a. UPTIME and LOAD Averages
+       b. TASK and CPU States
+       c. MEMORY Usage
+    3. FIELDS / Columns Display
+       a. DESCRIPTIONS of Fields
+       b. MANAGING Fields
+    4. INTERACTIVE Commands
+       a. GLOBAL Commands
+       b. SUMMARY AREA Commands
+       c. TASK AREA Commands
+          1. Appearance
+          2. Content
+          3. Size
+          4. Sorting
+       d. COLOR Mapping
+    5. ALTERNATE\-DISPLAY Provisions
+       a. WINDOWS Overview
+       b. COMMANDS for Windows
+       c. SCROLLING a Window
+       d. SEARCHING in a Window
+    6. FILES
+       a. SYSTEM Configuration File
+       b. PERSONAL Configuration File
+    7. STUPID TRICKS Sampler
+       a. Kernel Magic
+       b. Bouncing Windows
+       c. The Big Bird Window
+    8. BUGS, 9. HISTORY Former top, 10. AUTHOR, 11. SEE Also
+.Ed
+
+.\" ......................................................................
+.SS Operation
+.\" ----------------------------------------------------------------------
+When operating \*(We, the two most important keys are the help ('h' or '?')
+key and quit ('q') key.
+Alternatively, you could simply use the traditional interrupt key ('^C')
+when you're done.
+
+Some of \*(We's screens or functions require the use of cursor motion
+keys like the standard \*(KAs plus the Home, End, PgUp and PgDn keys.
+If your terminal or emulator does not provide those keys, the following
+keys are accepted for compatibility:
+.Bd -literal -compact
+      \fI key      equivalents \fR
+       Up       alt +\fB \\ \fR  or   alt +\fB k \fR
+       Down     alt +\fB / \fR  or   alt +\fB j \fR
+       Left     alt +\fB < \fR  or   alt +\fB h \fR
+       Right    alt +\fB > \fR  or   alt +\fB l \fR (lower case L)
+       PgUp     alt +\fB Up \fR
+       PgDn     alt +\fB Down \fR
+       Home     alt +\fB Left \fR
+       End      alt +\fB Right \fR
+.Ed
+
+When you start \*(We for the first time, you'll be presented with these
+traditional screen elements: 1) Summary Area; 2) Fields/Columns Header;
+3) Task Area.
+These areas will be explored in the sections that follow.
+There is also an Input/Message line between the Summary Area and Columns
+Header which needs no further explanation.
+
+\*(NT the width of \*(We's display will be limited to \*(WX positions.
+Displaying all fields requires \*(WF characters.
+Remaining screen width is usually allocated to any variable width columns
+currently visible.
+The variable width columns, such as COMMAND, are noted in topic
+3a. DESCRIPTIONS of Fields.
+Actual output width may also be influenced by the -w switch, which is
+discussed in topic 1. COMMAND\-LINE Options.
+
+.\" ......................................................................
+.SS Startup Defaults
+.\" ----------------------------------------------------------------------
+The following startup defaults assume no \*(CF, thus no user customizations.
+Even so, items shown with an \*(AK could be overridden through the
+command-line.
+All are explained in detail in the sections that follow.
+
+.Bd -literal
+    \fIGlobal-defaults\fR
+       'A' - Alt display      Off (full-screen)
+     * 'd' - Delay time       3.0 seconds
+     * 'H' - Threads mode     Off (summarize as tasks)
+       'I' - Irix mode        On\ \ (no, 'solaris' smp)
+     * 'p' - PID monitoring   Off (show all processes)
+     * 's' - Secure mode      Off (unsecured)
+       'B' - Bold enable      On\ \ (yes, bold globally)
+    \fISummary-Area-defaults\fR
+       'l' - Load Avg/Uptime  On\ \ (thus program name)
+       't' - Task/Cpu states  On\ \ (1+1 lines, see '1')
+       'm' - Mem/Swap usage   On\ \ (2 lines worth)
+       '1' - Single Cpu       On\ \ (thus 1 line if smp)
+    \fITask-Area-defaults\fR
+       'b' - Bold hilite      On\ \ (not 'reverse')
+     * 'c' - Command line     Off (name, not cmdline)
+     * 'i' - Idle tasks       On\ \ (show all tasks)
+       'R' - Reverse sort     On\ \ (pids high-to-low)
+     * 'S' - Cumulative time  Off (no, dead children)
+     * 'u' - User filter      Off (show euid only)
+     * 'U' - User filter      Off (show any uid)
+       'x' - Column hilite    Off (no, sort field)
+       'y' - Row hilite       On\ \ (yes, running tasks)
+       'z' - color/mono       Off (no, colors)
+.Ed
+
+.\" ----------------------------------------------------------------------
+.SH 1. COMMAND-LINE Options
+.\" ----------------------------------------------------------------------
+The command-line syntax for \*(We consists of:
+
+  \-\fBhv\fR | \-\fBbcHisS\fR \-\fBd\fI delay\fR \-\fBn\fI limit\fR
+\-\fBu\fR|\fBU\fI user\fR | \-\fBp\fI pid\fR \-\fBw\fR [\fIcols\fR] \fR
+
+The typically mandatory switches ('-') and even whitespace are completely
+optional.
+
+.TP 5
+\-\fBh\fR | \-\fBv\fR :\fI Help/Version \fR
+Show library version and the usage prompt, then quit.
+
+.TP 5
+\-\fBb\fR :\fI Batch-mode\fR operation \fR
+Starts \*(We in 'Batch' mode, which could be useful for sending output
+from \*(We to other programs or to a file.
+In this mode, \*(We will not accept input and runs until the iterations
+limit you've set with the '-n' \*(CO or until killed.
+
+.TP 5
+\-\fBc\fR :\fI Command-line/Program-name\fR toggle \fR
+Starts \*(We with the last remembered 'c' state reversed.
+Thus, if \*(We was displaying command lines, now that field will show program
+names, and visa versa.
+\*(XC 'c' \*(CI for additional information.
+
+.TP 5
+\-\fBd\fR :\fI Delay-time\fR interval as:\ \ \fB-d ss.tt\fR (\fIsecs\fR.\fItenths\fR) \fR
+Specifies the delay between screen updates, and overrides the corresponding
+value in one's personal \*(CF or the startup default.
+Later this can be changed with the 'd' or 's' \*(CIs.
+
+Fractional seconds are honored, but a negative number is not allowed.
+In all cases, however, such changes are prohibited if \*(We is running
+in 'Secure mode', except for root (unless the 's' \*(CO was used).
+For additional information on 'Secure mode' \*(Xt 6a. SYSTEM Configuration File.
+
+.TP 5
+\-\fBH\fR :\fI Threads-mode\fR operation \fR
+Instructs \*(We to display individual threads.
+Without this \*(CO a summation of all threads in each process is shown.
+Later this can be changed with the 'H' \*(CI.
+
+.TP 5
+\-\fBi\fR :\fI Idle-process\fR toggle \fR
+Starts \*(We with the last remembered 'i' state reversed.
+When this toggle is \*F, tasks that have not used any \*(PU since the
+last update will not be displayed.
+For additional information regarding this toggle
+\*(Xt 4c. TASK AREA Commands, SIZE.
+
+.TP 5
+\-\fBn\fR :\fI Number-of-iterations\fR limit as:\fB\ \ -n number \fR
+Specifies the maximum number of iterations, or frames, \*(We should
+produce before ending.
+
+.TP 5
+\-\fBp\fR :\fI Monitor-PIDs\fR mode as:\fB\ \ -pN1 -pN2 ...\fR\ \ or\fB\ \ -pN1,N2,N3 ... \fR
+Monitor only processes with specified process IDs.
+This option can be given up to \*(WP times, or you can provide a comma delimited
+list with up to \*(WP pids.
+Co-mingling both approaches is permitted.
+
+A pid value of zero will be treated as the process id of the \*(We program
+itself once it is running.
+
+This is a \*(CO only and should you wish to return to normal operation,
+it is not necessary to quit and and restart \*(We \*(Em just issue any
+of these \*(CIs: '=', 'u' or 'U'.
+
+The 'p', 'u' and 'U' \*(COs are mutually exclusive.
+
+.TP 5
+\-\fBs\fR :\fI Secure-mode\fR operation \fR
+Starts \*(We with secure mode forced, even for root.
+This mode is far better controlled through the system \*(CF
+(\*(Xt 6. FILES).
+
+.TP 5
+\-\fBS\fR :\fI Cumulative-time\fR toggle \fR
+Starts \*(We with the last remembered 'S' state reversed.
+When 'Cumulative time' mode is \*O, each process is listed with the \*(Pu
+time that it and its dead children have used.
+\*(XC 'S' \*(CI for additional information regarding this mode.
+
+.TP 5
+\-\fBu\fR | \-\fBU\fR :\fI User-filter-mode\fR as:\ \ \fB-u\fR | \fB-U number\fR or\fB name \fR
+Display only processes with a user id or user name matching that given.
+The '-u' option matches on \fI effective\fR user whereas the '-U' option
+matches on\fI any\fR user (real, effective, saved, or filesystem).
+
+The 'p', 'u' and 'U' \*(COs are mutually exclusive.
+
+.TP 5
+\-\fBw\fR :\fI Output-width-override\fR as:\ \ \fB-w\fR [\fB number\fR ] \fR
+In 'Batch' mode, when used without an argument \*(We will format
+output using the COLUMNS= and LINES= environment variables, if set.
+Otherwise, width will be fixed at the maximum \*(WX columns.
+With an argument, output width can be decreased or increased (up to \*(WX)
+but the number of rows is considered unlimited.
+
+In normal display mode, when used without an argument \*(We will\fI attempt\fR
+to format output using the COLUMNS= and LINES= environment variables, if set.
+With an argument, output width can only be decreased, not increased.
+Whether using environment variables or an argument with -w, when\fI not\fR
+in 'Batch' mode actual terminal dimensions can never be exceeded.
+
+\*(NT Without the use of this \*(CO, output width is always based on the
+terminal at which \*(We was invoked whether or not in 'Batch' mode.
+
+.\" ----------------------------------------------------------------------
+.SH 2. SUMMARY Display
+.\" ----------------------------------------------------------------------
+Each of the following three areas are individually controlled through
+one or more \*(CIs.
+\*(XT 4b. SUMMARY AREA Commands for additional information regarding
+these provisions.
+
+.\" ......................................................................
+.SS 2a. UPTIME and LOAD Averages
+.\" ----------------------------------------------------------------------
+This portion consists of a single line containing:
+.Bd -literal -compact
+    \fBprogram\fR or\fB window\fR name, depending on display mode
+    current time and length of time since last boot
+    total number of users
+    system load avg over the last 1, 5 and 15 minutes
+.Ed
+
+.\" ......................................................................
+.SS 2b. TASK and CPU States
+.\" ----------------------------------------------------------------------
+This portion consists of a minimum of two lines.
+In an SMP environment, additional lines can reflect individual \*(PU
+state percentages.
+
+Line 1 shows total\fB tasks\fR or\fB threads\fR, depending on the state
+of the Threads-mode toggle.
+That total is further classified as:
+.Bd -literal -compact
+    running; sleeping; stopped; zombie
+.Ed
+
+Line 2 shows \*(PU state percentages based on the interval since the
+last refresh.  Where two labels are shown below, those for more recent
+kernel versions are shown first.
+.Bd -literal -compact
+    \fBus\fR,\fB user\fR    : time running un-niced user processes
+    \fBsy\fR,\fB system\fR  : time running kernel processes
+    \fBni\fR,\fB nice\fR    : time running niced user processes
+    \fBwa\fR,\fB IO-wait\fR : time waiting for I/O completion
+    \fBhi\fR : time spent servicing hardware interrupts
+    \fBsi\fR : time spent servicing software interrupts
+    \fBst\fR : time stolen from this vm by the hypervisor
+.Ed
+
+.\" ......................................................................
+.SS 2c. MEMORY Usage
+.\" ----------------------------------------------------------------------
+This portion consists of two lines which may express values in kibibytes (KiB),
+mebibytes (MiB) or gibibytes (GiB) depending on the amount of currently
+installed \*(MP.
+
+Line 1 reflects \*(MP, classified as:
+    total, used, free, buffers
+
+Line 2 reflects \*(MV, classified as:
+    total, used, free, cached
+
+.\" ----------------------------------------------------------------------
+.SH 3. FIELDS / Columns
+.\" ----------------------------------------------------------------------
+.\" ......................................................................
+.SS 3a. DESCRIPTIONS of Fields
+.\" ----------------------------------------------------------------------
+Listed below are \*(We's available process fields (columns).
+They are shown in alphabetical order.
+You may customize their position and whether or not they are displayable
+with the 'f' or 'F' (Fields Management) \*(CIs.
+
+Any field is selectable as the sort field, and you control whether they
+are sorted high-to-low or low-to-high.
+For additional information on sort provisions
+\*(Xt 4c. TASK AREA Commands, SORTING.
+
+.TP 4
+ 1.\fB CGROUPS \*(Em Control Groups \fR
+The names of the control group(s) to which a process belongs,
+or '-' if not applicable for that process.
+
+Control Groups provide for allocating resources (cpu, memory, network
+bandwidth, etc.) among installation-defined groups of processes.
+They enable fine-grained control over allocating, denying, prioritizing,
+managing and monitoring those resources.
+
+Many different hierarchies of cgroups can exist simultaneously on a system
+and each hierarchy is attached to one or more subsystems.
+A subsystem represents a single resource.
+
+\*(NT The 'CGROUPS' field, unlike most columns, is not fixed-width.
+When displayed, it plus any other variable width columns will be allocated
+all remaining screen width (up to the maximum \*(WX characters).
+
+.TP 4
+ 2.\fB CODE \*(Em Code Size (KiB) \fR
+The amount of \*(MP devoted to executable code, also known as
+the 'text resident set' size or TRS.
+
+.TP 4
+ 3.\fB COMMAND \*(Em Command\fB Name\fR or Command\fB Line \fR
+Display the command line used to start a task or the name of the associated
+program.
+You toggle between command\fI line\fR and\fI name\fR with 'c', which is both
+a \*(CO and an \*(CI.
+
+When you've chosen to display command lines, processes without a command
+line (like kernel threads) will be shown with only the program name in
+brackets, as in this example:
+    \fR[ mdrecoveryd ]
+
+Either form of display is subject to potential truncation if it's too long to
+fit in this field's current width.
+That width depends upon other fields selected, their order and the current
+screen width.
+
+This field may also be impacted by the 'forest view' display mode.
+\*(XC 'V' \*(CI for additional information regarding that mode.
+
+\*(NT The 'COMMAND' field, unlike most columns, is not fixed-width.
+When displayed, it plus any other variable width columns will be allocated
+all remaining screen width (up to the maximum \*(WX characters).
+
+.TP 4
+ 4.\fB %CPU \*(Em \*(PU Usage \fR
+The task's share of the elapsed \*(PU time since the last screen update,
+expressed as a percentage of total \*(PU time.
+In a true SMP environment, if 'Irix mode' is \*F, \*(We will operate
+in 'Solaris mode' where a task's \*(Pu usage will be divided by the total
+number of \*(PUs.
+You toggle 'Irix/Solaris' modes with the 'I' \*(CI.
+
+.TP 4
+ 5.\fB DATA \*(Em Data + Stack Size (KiB) \fR
+The amount of \*(MP devoted to other than executable code, also known as
+the 'data resident set' size or DRS.
+
+.TP 4
+ 6.\fB Flags \*(Em Task Flags \fR
+This column represents the task's current scheduling flags which are
+expressed in hexadecimal notation and with zeros suppressed.
+These flags are officially documented in <linux/sched.h>.
+
+.TP 4
+ 7.\fB GID \*(Em Group Id \fR
+The\fI effective\fR group ID.
+
+.TP 4
+ 8.\fB GROUP \*(Em Group Name \fR
+The\fI effective\fR group name.
+
+.TP 4
+ 9.\fB %MEM \*(Em Memory Usage (RES) \fR
+A task's currently used share of available \*(MP.
+
+.TP 4
+10.\fB NI \*(Em Nice Value \fR
+The nice value of the task.
+A negative nice value means higher priority, whereas a positive nice value
+means lower priority.
+Zero in this field simply means priority will not be adjusted in determining
+a task's dispatch-ability.
+
+.TP 4
+11.\fB nDRT \*(Em Dirty Pages Count \fR
+The number of pages that have been modified since they were last
+written to \*(AS.
+Dirty pages must be written to \*(AS before the corresponding physical
+memory location can be used for some other virtual page.
+
+.TP 4
+12.\fB nMaj \*(Em Major Page Fault Count \fR
+The number of\fB major\fR page faults that have occurred for a task.
+A page fault occurs when a process attempts to read from or write to a
+virtual page that is not currently present in its address space.
+A major page fault is when \*(AS access is involved in making that
+page available.
+
+.TP 4
+13.\fB nMin \*(Em Minor Page Fault count \fR
+The number of\fB minor\fR page faults that have occurred for a task.
+A page fault occurs when a process attempts to read from or write to a
+virtual page that is not currently present in its address space.
+A minor page fault does not involve \*(AS access in making that
+page available.
+
+.TP 4
+14.\fB nTH \*(Em Number of Threads \fR
+The number of threads associated with a process.
+
+.TP 4
+15.\fB P \*(Em Last used \*(PU (SMP) \fR
+A number representing the last used processor.
+In a true SMP environment this will likely change frequently since the kernel
+intentionally uses weak affinity.
+Also, the very act of running \*(We may break this weak affinity and cause more
+processes to change \*(PUs more often (because of the extra demand for
+\*(Pu time).
+
+.TP 4
+16.\fB PGRP \*(Em Process Group Id \fR
+Every process is member of a unique process group which is used for
+distribution of signals and by terminals to arbitrate requests for their
+input and output.
+When a process is created (forked), it becomes a member of the process
+group of its parent.
+By convention, this value equals the process ID (\*(Xa PID) of the first
+member of a process group, called the process group leader.
+
+.TP 4
+17.\fB PID \*(Em Process Id \fR
+The task's unique process ID, which periodically wraps, though never
+restarting at zero.
+In kernel terms, it is a dispatchable entity defined by a 'task_struct'.
+
+This value may also be used as: a process group ID (\*(Xa PGRP);
+a session ID for the session leader (\*(Xa SID);
+a thread group ID for the thread group leader (\*(Xa TGID);
+and a TTY process group ID for the process group leader (\*(Xa TPGID).
+
+.TP 4
+18.\fB PPID \*(Em Parent Process Id \fR
+The process ID (pid) of a task's parent.
+
+.TP 4
+19.\fB PR \*(Em Priority \fR
+The scheduling priority of the task.
+If you see 'rt' in this field, it means the task is running under
+'real time' scheduling priority.
+
+Under linux, real time priority is somewhat misleading since traditionally
+the operating itself was not preemptable.
+And while the 2.6 kernel can be made mostly preemptable, it is not always so.
+
+.TP 4
+20.\fB RES \*(Em Resident Memory Size (KiB) \fR
+The non-swapped \*(MP a task has used.
+
+.TP 4
+21.\fB RUID \*(Em Real User Id \fR
+The\fI real\fR user ID.
+
+.TP 4
+22.\fB RUSER \*(Em Real User Name \fR
+The\fI real\fR user name.
+
+.TP 4
+23.\fB S \*(Em Process Status \fR
+The status of the task which can be one of:
+    '\fBD\fR' = uninterruptible sleep
+    '\fBR\fR' = running
+    '\fBS\fR' = sleeping
+    '\fBT\fR' = traced or stopped
+    '\fBZ\fR' = zombie
+
+Tasks shown as running should be more properly thought of as 'ready to run'
+\*(Em their task_struct is simply represented on the Linux run-queue.
+Even without a true SMP machine, you may see numerous tasks in this state
+depending on \*(We's delay interval and nice value.
+
+.TP 4
+24.\fB SHR \*(Em Shared Memory Size (KiB) \fR
+The amount of \*(MS available to a task, not all of which is
+typically resident.
+It simply reflects memory that could be potentially shared with
+other processes.
+
+.TP 4
+25.\fB SID \*(Em Session Id \fR
+A session is a collection of process groups (\*(Xa PGRP),
+usually established by the login shell.
+A newly forked process joins the session of its creator.
+By convention, this value equals the process ID (\*(Xa PID) of the first
+member of the session, called the session leader, which is usually the
+login shell.
+
+.TP 4
+26.\fB SUID \*(Em Saved User Id \fR
+The\fI saved\fR user ID.
+
+.TP 4
+27.\fB SUPGIDS \*(Em Supplementary Group IDs \fR
+The IDs of any supplementary group(s) established at login or
+inherited from a task's parent.
+They are displayed in a comma delimited list.
+
+\*(NT The 'SUPGIDS' field, unlike most columns, is not fixed-width.
+When displayed, it plus any other variable width columns will be allocated
+all remaining screen width (up to the maximum \*(WX characters).
+
+.TP 4
+28.\fB SUPGRPS \*(Em Supplementary Group Names \fR
+The names of any supplementary group(s) established at login or
+inherited from a task's parent.
+They are displayed in a comma delimited list.
+
+\*(NT The 'SUPGRPS' field, unlike most columns, is not fixed-width.
+When displayed, it plus any other variable width columns will be allocated
+all remaining screen width (up to the maximum \*(WX characters).
+
+.TP 4
+29.\fB SUSER \*(Em Saved User Name \fR
+The\fI saved\fR user name.
+
+.TP 4
+30.\fB SWAP \*(Em Swapped Size (KiB) \fR
+The non-resident portion of a task's address space.
+
+.TP 4
+31.\fB TGID \*(Em Thread Group Id \fR
+The ID of the thread group to which a task belongs.
+It is the PID of the thread group leader.
+In kernel terms, it represents those tasks that share an 'mm_struct'.
+
+.TP 4
+32.\fB TIME \*(Em \*(PU Time \fR
+Total \*(PU time the task has used since it started.
+When 'Cumulative mode' is \*O, each process is listed with the \*(Pu
+time that it and its dead children have used.
+You toggle 'Cumulative mode' with 'S', which is both a \*(CO and an \*(CI.
+\*(XC 'S' \*(CI for additional information regarding this mode.
+
+.TP 4
+33.\fB TIME+ \*(Em \*(PU Time, hundredths \fR
+The same as 'TIME', but reflecting more granularity through hundredths
+of a second.
+
+.TP 4
+34.\fB TPGID \*(Em Tty Process Group Id \fR
+The process group ID of the foreground process for the connected tty,
+or -1 if a process is not connected to a terminal.
+By convention, this value equals the process ID (\*(Xa PID) of the
+the process group leader (\*(Xa PGRP).
+
+.TP 4
+35.\fB TTY \*(Em Controlling Tty \fR
+The name of the controlling terminal.
+This is usually the device (serial port, pty, etc.) from which the
+process was started, and which it uses for input or output.
+However, a task need not be associated with a terminal, in which case
+you'll see '?' displayed.
+
+.TP 4
+36.\fB UID \*(Em User Id \fR
+The\fI effective\fR user ID of the task's owner.
+
+.TP 4
+37.\fB USER \*(Em User Name \fR
+The\fI effective\fR user name of the task's owner.
+
+.TP 4
+38.\fB VIRT \*(Em Virtual Memory Size (KiB) \fR
+The total amount of \*(MV used by the task.
+It includes all code, data and shared libraries plus pages that have been
+swapped out and pages that have been mapped but not used.
+
+.TP 4
+39.\fB WCHAN \*(Em Sleeping in Function \fR
+Depending on the availability of the kernel link map ('System.map'), this
+field will show the name or the address of the kernel function in which the
+task is currently sleeping.
+Running tasks will display a dash ('-') in this column.
+
+By displaying this field, \*(We's own working set could be increased by over
+700Kb, depending on the kernel version.
+Should that occur, your only means of reducing that overhead will be to stop
+and restart \*(We.
+
+\*(NT The 'WCHAN' field, unlike most columns, is not fixed-width.
+When displayed, it plus any other variable width columns will be allocated
+all remaining screen width (up to the maximum \*(WX characters).
+
+.\" ......................................................................
+.SS 3b. MANAGING Fields
+.\" ----------------------------------------------------------------------
+After pressing the \*(CI 'f' or 'F' (Fields Management) you will be presented
+with a screen showing: 1) the \*(CW name; 2) the designated sort field;
+3) all fields in their current order along with descriptions.
+Entries marked with an asterisk are the currently displayed fields,
+screen width permitting.
+
+.RS +4
+.jBu
+As the on screen instructions indicate, you navigate among the fields with
+the\fB Up\fR and\fB Down\fR \*(KAs.
+The PgUp, PgDn, Home and End keys can also be used to quickly reach the
+first or last available field.
+
+.jBu
+The\fB Right\fR \*(KA selects a field for repositioning and
+the\fB Left\fR \*(KA or the <\fBEnter\fR> key commits that field's
+placement.
+
+.jBu
+The '\fBd\fR' key or the <\fBSpace\fR> bar toggles a field's display
+status, and thus the presence or absence of the asterisk.
+
+.jBu
+The '\fBs\fR' key designates a field as the sort field.
+\*(XT 4c. TASK AREA Commands, SORTING for additional information regarding
+your selection of a sort field.
+
+.jBu
+The '\fBa\fR' and '\fBw\fR' keys can be used to cycle through all available
+windows and the '\fBq\fR' or <\fBEsc\fR> keys exit Fields Management.
+.RS -4
+
+.PP
+The Fields Management screen can also be used to change the \*(CG in
+either \*(FM or \*(AM.
+Whatever was targeted when 'q' or <Esc> was pressed will be made current
+as you return to the \*(We display.
+\*(XT 5. ALTERNATE\-DISPLAY Provisions and the 'g' \*(CI for insight
+into \*(CWs and \*(FGs.
+
+.PP
+\*(NT Any window that has been scrolled\fI horizontally\fR will be reset if any
+field changes are made via the Fields Management screen.
+Any\fI vertical\fR scrolled position, however, will not be affected.
+\*(XT 5c. SCROLLING a Window for additional information regarding vertical
+and horizontal scrolling.
+
+.\" ----------------------------------------------------------------------
+.SH 4. INTERACTIVE Commands
+.\" ----------------------------------------------------------------------
+Listed below is a brief index of commands within categories.
+Some commands appear more than once \*(Em their meaning or scope may vary
+depending on the context in which they are issued.
+
+.Bd -literal
+  4a.\fI Global-Commands \fR
+        <Ent/Sp> ?, =, A, B, d, g, h, H, I, k, q, r, s, W, Z
+  4b.\fI Summary-Area-Commands \fR
+        C, l, t, 1, m
+  4c.\fI Task-Area-Commands \fR
+        Appearance:  b, x, y, z
+        Content:     c, f, F, S, u, U, V
+        Size:        #, i, n
+        Sorting:     <, >, f, F, R
+  4d.\fI Color-Mapping \fR
+        <Ret>, a, B, b, H, M, q, S, T, w, z, 0 - 7
+  5b.\fI Commands-for-Windows \fR
+        -, _, =, +, A, a, g, G, w
+  5c.\fI Scrolling-a-Window \fR
+        C, Up, Dn, Left, Right, PgUp, PgDn, Home, End
+  5d.\fI Searching-in-a-Window \fR
+        L, &
+.Ed
+
+.\" ......................................................................
+.SS 4a. GLOBAL Commands
+.\" ----------------------------------------------------------------------
+The global \*(CIs are\fB always\fR available\fR in both \*(FM and \*(AM.
+However, some of these \*(CIs are\fB not available\fR when running
+in 'Secure mode'.
+
+If you wish to know in advance whether or not your \*(We has been
+secured, simply ask for help and view the system summary on the second
+line.
+
+.TP 7
+\ \ <\fBEnter\fR> or <\fBSpace\fR> :\fIRefresh-Display \fR
+These commands awaken \*(We and following receipt of any input
+the entire display will be repainted.
+They also force an update of any hotplugged \*(Pu or \*(MP changes.
+
+Use either of these keys if you have a large delay interval and wish
+to see current status,
+
+.TP 7
+\ \ \'\fB?\fR\' | \'\fBh\fR\' :\fIHelp \fR
+There are two help levels available.
+The first will provide a reminder of all the basic \*(CIs.
+If \*(We is\fI secured\fR, that screen will be abbreviated.
+
+Typing 'h' or '?' on that help screen will take you to help for
+those \*(CIs applicable to \*(AM.
+
+.TP 7
+\ \ \'\fB=\fR\' :\fIExit-Task-Limits \fR
+Removes restrictions on which tasks are shown.
+This command will reverse any 'i' (idle tasks) and 'n' (max tasks)
+commands that might be active.
+It also provides for an 'exit' from pid monitoring\fI and\fR user filtering.
+See the '-p' \*(CO for a discussion of PID monitoring and the 'U' or 'u'
+\*(CIs regarding user filtering.
+
+Additionally, any window that has been scrolled will be reset with
+this command.
+\*(XT 5c. SCROLLING a Window for additional information regarding
+vertical and horizontal scrolling.
+
+When operating in \*(AM this command has a broader meaning.
+
+.TP 7
+\ \ \'\fBA\fR\' :\fIAlternate-Display-Mode\fR toggle \fR
+This command will switch between \*(FM and \*(AM.
+\*(XT 5. ALTERNATE\-DISPLAY Provisions and the 'g' \*(CI for insight
+into \*(CWs and \*(FGs.
+
+.TP 7
+\ \ \'\fBB\fR\' :\fIBold-Disable/Enable\fR toggle \fR
+This command will influence use of the 'bold' terminfo capability and
+alters\fB both\fR the \*(SA and \*(TA for the \*(CW.
+While it is intended primarily for use with dumb terminals, it can be
+applied anytime.
+
+\*(NT When this toggle is \*O and \*(We is operating in monochrome mode,
+the\fB entire display\fR will appear as normal text.
+Thus, unless the 'x' and/or 'y' toggles are using reverse for emphasis,
+there will be no visual confirmation that they are even on.
+
+.TP 7
+*\ \'\fBd\fR\' | \'\fBs\fR\' :\fIChange-Delay-Time-interval \fR
+You will be prompted to enter the delay time, in seconds, between
+display updates.
+
+Fractional seconds are honored, but a negative number is not allowed.
+Entering 0 causes (nearly) continuous updates, with an unsatisfactory
+display as the system and tty driver try to keep up with \*(We's demands.
+The delay value is inversely proportional to system loading,
+so set it with care.
+
+If at any time you wish to know the current delay time, simply ask for
+help and view the system summary on the second line.
+
+.TP 7
+\ \ \'\fBg\fR\' :\fIChoose-Another-Window/Field-Group \fR
+You will be prompted to enter a number between 1 and 4 designating the
+\*(FG which should be made the \*(CW.
+You will soon grow comfortable with these 4 windows, especially after
+experimenting with \*(AM.
+
+.TP 7
+\ \ \'\fBH\fR\' :\fIThreads-mode\fR toggle \fR
+When this toggle is \*O, individual threads will be displayed for all
+processes in all visible \*(TWs.
+Otherwise, \*(We displays a summation of all threads in each process.
+
+.TP 7
+\ \ \'\fBI\fR\' :\fIIrix/Solaris-Mode\fR toggle \fR
+When operating in 'Solaris mode' ('I' toggled \*F), a task's \*(Pu usage
+will be divided by the total number of \*(PUs.
+After issuing this command, you'll be told the new state of this toggle.
+
+.TP 7
+*\ \'\fBk\fR\' :\fIKill-a-task \fR
+You will be prompted for a PID and then the signal to send.
+The default signal, as reflected in the prompt, is SIGTERM.
+However, you can send any signal, via number or name.
+
+If you wish to abort the kill process, do one of the following
+depending on your progress:
+    1) at the pid prompt, just press <Enter>
+    2) at the signal prompt, type 0
+
+.TP 7
+\ \ \'\fBq\fR\' :\fIQuit \fR
+
+.TP 7
+*\ \'\fBr\fR\' :\fIRenice-a-Task \fR
+You will be prompted for a PID and then the value to nice it to.
+Entering a positive value will cause a process to lose priority.
+Conversely, a negative value will cause a process to be viewed more
+favorably by the kernel.
+
+.TP 7
+\ \ \'\fBW\fR\' :\fIWrite-the-Configuration-File \fR
+This will save all of your options and toggles plus the current
+display mode and delay time.
+By issuing this command just before quitting \*(We, you will be able
+restart later in exactly that same state.
+
+.TP 7
+\ \ \'\fBZ\fR\' :\fIChange-Color-Mapping
+This key will take you to a separate screen where you can change the
+colors for the \*(CW, or for all windows.
+For details regarding this \*(CI \*(Xt 4d. COLOR Mapping.
+
+.IP "*" 3
+The commands shown with an \*(AK are not available in 'Secure mode',
+nor will they be shown on the level-1 help screen.
+
+.\" ......................................................................
+.SS 4b. SUMMARY AREA Commands
+.\" ----------------------------------------------------------------------
+The \*(SA \*(CIs are\fB always available\fR in both \*(FM and \*(AM.
+They affect the beginning lines of your display and will determine the
+position of messages and prompts.
+
+These commands always impact just the \*(CG.
+\*(XT 5. ALTERNATE\-DISPLAY Provisions and the 'g' \*(CI for insight into
+\*(CWs and \*(FGs.
+
+.TP 7
+\ \ \'\fBl\fR\' :\fILoad-Average/Uptime\fR toggle \fR
+This is also the line containing the program name (possibly an alias)
+when operating in \*(FM or the \*(CW name when operating in \*(AM.
+
+.TP 7
+\ \ \'\fBt\fR\' :\fITask/Cpu-States\fR toggle \fR
+This command affects from 2 to many \*(SA lines, depending on the state
+of the '1' toggle and whether or not \*(We is running under true SMP.
+
+This portion of the \*(SA is also influenced by the 'H' \*(CI toggle,
+as reflected in the total label which shows either 'Tasks' or 'Threads'.
+
+.TP 7
+\ \ \'\fB1\fR\' :\fISingle/Separate-Cpu-States\fR toggle \fR
+This command affects how the 't' command's Cpu States portion is shown.
+Although this toggle exists primarily to serve massively-parallel SMP
+machines, it is not restricted to solely SMP environments.
+
+When you see '%Cpu(s):' in the \*(SA, the '1' toggle is \*O and all
+\*(Pu information is gathered in a single line.
+Otherwise, each \*(Pu is displayed separately as: '%Cpu0, %Cpu1, ...'
+up to available screen height.
+
+.TP 7
+\ \ \'\fBm\fR\' :\fIMemory/Swap-Usage\fR toggle \fR
+This command affects the two \*(SA lines dealing with physical
+and virtual memory.
+
+.PP
+\*(NT If the entire \*(SA has been toggled \*F for any window, you would
+be left with just the\fB message line\fR.
+In that way, you will have maximized available task rows but (temporarily)
+sacrificed the program name in \*(FM or the \*(CW name when in \*(AM.
+
+.\" ......................................................................
+.SS 4c. TASK AREA Commands
+.\" ----------------------------------------------------------------------
+The \*(TA \*(CIs are\fB always\fR available in \*(FM.
+
+The \*(TA \*(CIs are\fB never available\fR in \*(AM\fI if\fR the \*(CW's
+\*(TD has been toggled \*F (\*(Xt 5. ALTERNATE\-DISPLAY Provisions).
+
+.TP 2
+.\" ..................................................
+.B APPEARANCE\fR of \*(TW
+The following commands will also be influenced by the state of the
+global 'B' (bold enable) toggle.
+
+.TP 7
+\ \ \'\fBb\fR\' :\fIBold/Reverse\fR toggle \fR
+This command will impact how the 'x' and 'y' toggles are displayed.
+Further, it will only be available when at least one of those toggles is \*O.
+
+.TP 7
+\ \ \'\fBx\fR\' :\fIColumn-Highlight\fR toggle \fR
+Changes highlighting for the current sort field.
+If you forget which field is being sorted this command can serve as a quick
+visual reminder, providing the sort field is being displayed.
+The sort field might\fI not\fR be visible because:
+    1) there is insufficient\fI Screen Width \fR
+    2) the 'f' \*(CI turned it \*F
+
+.TP 7
+\ \ \'\fBy\fR\' :\fIRow-Highlight\fR toggle \fR
+Changes highlighting for "running" tasks.
+For additional insight into this task state,
+\*(Xt 3a. DESCRIPTIONS of Fields, the 'S' field (Process Status).
+
+Use of this provision provides important insight into your system's health.
+The only costs will be a few additional tty escape sequences.
+
+.TP 7
+\ \ \'\fBz\fR\' :\fIColor/Monochrome\fR toggle \fR
+Switches the \*(CW between your last used color scheme and the older form
+of black-on-white or white-on-black.
+This command will alter\fB both\fR the \*(SA and \*(TA but does not affect
+the state of the 'x', 'y' or 'b' toggles.
+
+.PP
+.\" ..................................................
+.B CONTENT\fR of \*(TW
+.PD 0
+.TP 7
+\ \ \'\fBc\fR\' :\fICommand-Line/Program-Name\fR toggle \fR
+This command will be honored whether or not the 'COMMAND' column
+is currently visible.
+Later, should that field come into view, the change you applied will be seen.
+
+.TP 7
+\ \ \'\fBf\fR\' | \'\fBF\fR\' :\fIFields-Management \fR
+These keys display a separate screen where you can change which fields are
+displayed, their order and also designate the sort field.
+For additional information on these \*(CIs
+\*(Xt 3b. MANAGING Fields.
+
+.TP 7
+\ \ \'\fBS\fR\' :\fICumulative-Time-Mode\fR toggle \fR
+When 'Cumulative mode' is \*O, each process is listed with the \*(Pu
+time that it and its dead children have used.
+
+When \*F, programs that fork into many separate tasks will appear
+less demanding.
+For programs like 'init' or a shell this is appropriate but for others,
+like compilers, perhaps not.
+Experiment with two \*(TWs sharing the same sort field but with different 'S'
+states and see which representation you prefer.
+
+After issuing this command, you'll be informed of the new state of this toggle.
+If you wish to know in advance whether or not 'Cumulative mode' is in
+effect, simply ask for help and view the window summary on the second line.
+
+.TP 7
+\ \ \'\fBu\fR' | '\fBU\fR' :\fIShow-Specific-User-Only \fR
+You will be prompted for the\fB uid\fR or\fB name\fR of the user to display.
+The '-u' option matches on \fB effective\fR user whereas the '-U' option
+matches on\fB any\fR user (real, effective, saved, or filesystem).
+
+Thereafter, in that \*(TW only matching users will be shown, or possibly
+no processes will be shown.
+Different \*(TWs can can be used to filter different users.
+
+Later, if you wish to monitor all tasks again in the \*(CW, re-issue this
+command but just press <Enter> at the prompt.
+
+.TP 7
+\ \ \'\fBV\fR' :\fIForest-View-Mode\fR toggle \fR
+In this mode, processes are reordered according to their parents and
+the layout of the COMMAND column resembles that of a tree.
+In forest view mode it is still possible to toggle between program
+name and commamd line (\*(Xc 'c' \*(CI) or between processes and
+threads (\*(Xc 'H' \*(CI).
+
+\*(NT Typing any key affecting the sort order will exit forest view
+mode in the \*(CW.
+\*(XT 4c. TASK AREA Commands, SORTING for information on those keys.
+
+.PP
+.\" ..................................................
+.B SIZE\fR of \*(TW
+.PD 0
+.TP 7
+\ \ \'\fBi\fR\' :\fIIdle-Process\fR toggle \fR
+Displays all tasks or just active tasks.
+When this toggle is \*F, tasks that have not used any \*(PU since the
+last update will not be displayed.
+However, due to the granularity of the %CPU and TIME+ fields,
+some processes may still be displayed that\fI appear\fR to have
+used\fI no\fR \*(PU.
+
+If this command is applied to the last \*(TD when in \*(AM, then it will not
+affect the window's size, as all prior \*(TDs will have already been painted.
+
+.TP 7
+\ \ \'\fBn\fR\' | \'\fB#\fR\' :\fISet-Maximum-Tasks \fR
+You will be prompted to enter the number of tasks to display.
+The lessor of your number and available screen rows will be used.
+
+When used in \*(AM, this is the command that gives you precise control over
+the size of each currently visible \*(TD, except for the very last.
+It will not affect the last window's size, as all prior \*(TDs will have
+already been painted.
+
+\*(NT If you wish to increase the size of the last visible \*(TD when in \*(AM,
+simply decrease the size of the \*(TD(s) above it.
+
+.TP 2
+.\" ..................................................
+.B SORTING\fR of \*(TW
+For compatibility, this \*(We supports most of the former \*(We sort keys.
+Since this is primarily a service to former \*(We users, these commands do
+not appear on any help screen.
+.Bd -literal -compact
+  \fI command   sorted-field                  supported \fR
+     A         start time (non-display)     \fB No \fR
+     M         %MEM                          Yes
+     N         PID                           Yes
+     P         %CPU                          Yes
+     T         TIME+                         Yes
+.Ed
+
+Before using any of the following sort provisions, \*(We suggests that you
+temporarily turn on column highlighting using the 'x' \*(CI.
+That will help ensure that the actual sort environment matches your intent.
+
+The following \*(CIs will\fB only\fR be honored when the current sort field
+is\fB visible\fR.
+The sort field might\fI not\fR be visible because:
+     1) there is insufficient\fI Screen Width \fR
+     2) the 'f' \*(CI turned it \*F
+
+.TP 7
+\ \ \'\fB<\fR\' :\fIMove-Sort-Field-Left \fR
+Moves the sort column to the left unless the current sort field is
+the first field being displayed.
+
+.TP 7
+\ \ \'\fB>\fR\' :\fIMove-Sort-Field-Right \fR
+Moves the sort column to the right unless the current sort field is
+the last field being displayed.
+
+.PP
+.in +2
+The following \*(CIs will\fB always\fR be honored whether or not
+the current sort field is visible.
+.in
+
+.TP 7
+\ \ \'\fBf\fR\' | \'\fBF\fR\' :\fIFields-Management \fR
+These keys display a separate screen where you can change which field
+is used as the sort column, among other functions.
+This can be a convenient way to simply verify the current sort field,
+when running \*(We with column highlighting turned \*F.
+
+.TP 7
+\ \ \'\fBR\fR\' :\fIReverse/Normal-Sort-Field\fR toggle \fR
+Using this \*(CI you can alternate between high-to-low and low-to-high sorts.
+
+.PP
+.in +2
+\*(NT Field sorting uses internal values, not those in column display.
+Thus, the TTY and WCHAN fields will violate strict ASCII collating sequence.
+.in
+
+.\" ......................................................................
+.SS 4d. COLOR Mapping
+.\" ----------------------------------------------------------------------
+When you issue the 'Z' \*(CI, you will be presented with a separate screen.
+That screen can be used to change the colors in just the \*(CW or
+in all four windows before returning to the \*(We display.
+
+.P
+The following \*(CIs are available.
+.Bd -literal -compact
+    \fB4\fR upper case letters to select a\fB target \fR
+    \fB8\fR numbers to select a\fB color \fR
+    normal toggles available \fR
+        'B'       :bold disable/enable
+        'b'       :running tasks "bold"/reverse
+        'z'       :color/mono
+    other commands available \fR
+        'a'/'w'   :apply, then go to next/prior
+        <Enter>   :apply and exit
+        'q'       :abandon current changes and exit
+.Ed
+
+If you use 'a' or 'w' to cycle the targeted window, you will
+have applied the color scheme that was displayed when you left that window.
+You can, of course, easily return to any window and reapply different
+colors or turn colors \*F completely with the 'z' toggle.
+
+The Color Mapping screen can also be used to change the \*(CG in
+either \*(FM or \*(AM.
+Whatever was targeted when 'q' or <Enter> was pressed will be made current
+as you return to the \*(We display.
+
+.\" ----------------------------------------------------------------------
+.SH 5. ALTERNATE\-DISPLAY Provisions
+.\" ----------------------------------------------------------------------
+.\" ......................................................................
+.SS 5a. WINDOWS Overview
+.\" ----------------------------------------------------------------------
+.TP 3
+.B Field Groups/Windows\fR:
+In \*(FM there is a single window represented by the entire screen.
+That single window can still be changed to display 1 of 4 different\fB field
+groups\fR (\*(Xc 'g' \*(CI, repeated below).
+Each of the 4 \*(FGs has a unique separately configurable\fB \*(SA \fR
+and its own configurable\fB \*(TA\fR.
+
+In \*(AM, those 4 underlying \*(FGs can now be made visible
+simultaneously, or can be turned \*F individually at your command.
+
+The \*(SA will always exist, even if it's only the message line.
+At any given time only\fI one\fR \*(SA can be displayed.
+However, depending on your commands, there could be from\fI zero \fR
+to\fI four\fR separate \*(TDs currently showing on the screen.
+
+.TP 3
+.B Current Window\fR:
+The \*(CW is the window associated with the \*(SA and the window to which
+task related commands are always directed.
+Since in \*(AM you can toggle the \*(TD \*F, some commands might be
+restricted for the \*(CW.
+
+A further complication arises when you have toggled the first \*(SA
+line \*F.
+With the loss of the window name (the 'l' toggled line), you'll not easily
+know what window is the \*(CW.
+
+.\" ......................................................................
+.SS 5b. COMMANDS for Windows
+.\" ----------------------------------------------------------------------
+.TP 7
+\ \ \'\fB-\fR\' | \'\fB_\fR\' :\fIShow/Hide-Window(s)\fR toggles \fR
+The '-' key turns the \*(CW's \*(TD \*O and \*F.
+When \*O, that \*(TA will show a minimum of the columns header you've
+established with the 'f' \*(CI.
+It will also reflect any other \*(TA options/toggles you've applied
+yielding zero or more tasks.
+
+The '_' key does the same for all \*(TDs.
+In other words, it switches between the currently visible \*(TD(s) and any
+\*(TD(s) you had toggled \*F.
+If all 4 \*(TDs are currently visible, this \*(CI will leave the \*(SA
+as the only display element.
+
+.TP 7
+*\ \'\fB=\fR\' | \'\fB+\fR\' :\fIEqualize-(re-balance)-Window(s) \fR
+The '=' key forces the \*(CW's \*(TD to be visible.
+It also reverses any 'i' (idle tasks), 'n' (max tasks) and 'u'/'U'
+(user filter) commands that might be active.
+Also, if the window had been scrolled, it will be reset with this command.
+\*(XT 5c. SCROLLING a Window for additional information regarding vertical
+and horizontal scrolling.
+
+The '+' key does the same for all windows.
+The four \*(TDs will reappear, evenly balanced.
+They will also have retained any customizations you had previously applied,
+except for the 'i' (idle tasks), 'n' (max tasks), 'u'/'U' (user filter)
+and scrolling \*(CIs.
+
+.TP 7
+*\ \'\fBA\fR\' :\fIAlternate-Display-Mode\fR toggle \fR
+This command will switch between \*(FM and \*(AM.
+
+The first time you issue this command, all four \*(TDs will be shown.
+Thereafter when you switch modes, you will see only the \*(TD(s) you've
+chosen to make visible.
+
+.TP 7
+*\ \'\fBa\fR\' | \'\fBw\fR\' :\fINext-Window-Forward/Backward \fR
+This will change the \*(CW, which in turn changes the window to which
+commands are directed.
+These keys act in a circular fashion so you can reach any desired \*(CW
+using either key.
+
+Assuming the window name is visible (you have not toggled 'l' \*F),
+whenever the \*(CW name loses its emphasis/color, that's a reminder
+the \*(TD is \*F and many commands will be restricted.
+
+.TP 7
+*\ \'\fBg\fR\' :\fIChoose-Another-Window/Field-Group \fR
+You will be prompted to enter a number between 1 and 4 designating the
+\*(FG which should be made the \*(CW.
+
+In \*(FM, this command is necessary to alter the \*(CW.
+In \*(AM, it is simply a less convenient alternative to the 'a' and 'w'
+commands.
+
+.TP 7
+\ \ \'\fBG\fR\' :\fIChange-Window/Field-Group-Name \fR
+You will be prompted for a new name to be applied to the \*(CW.
+It does not require that the window name be visible
+(the 'l' toggle to be \*O).
+
+.IP "*" 3
+The \*(CIs shown with an \*(AK have use beyond \*(AM.
+.Bd -literal -compact
+    \'=', 'A', 'g'  are always available
+    \'a', 'w'       act the same with color mapping
+    \               and fields management
+.Ed
+
+.\" ......................................................................
+.SS 5c. SCROLLING a Window
+.\" ----------------------------------------------------------------------
+Typically a \*(TW is a partial view into a systems's total tasks/threads
+which shows only some of the available fields/columns.
+With these \*(KSs, you can move that view vertically or horizontally to
+reveal any desired task or column.
+
+.TP 4
+\fBUp\fR,\fBPgUp\fR :\fIScroll-Tasks \fR
+Move the view up toward the first task row, until the first task is
+displayed at the top of the \*(CW.
+The \fIUp\fR \*(KA moves a single line while \fIPgUp\fR scrolls the
+entire window.
+
+.TP 4
+\fBDown\fR,\fBPgDn\fR :\fIScroll-Tasks \fR
+Move the view down toward the last task row, until the last task is
+the only task displayed at the top of the \*(CW.
+The \fIDown\fR \*(KA moves a single line while \fIPgDn\fR scrolls the
+entire window.
+
+.TP 4
+\fBLeft\fR,\fBRight\fR :\fIScroll-Columns \fR
+Move the view of displayable fields horizontally one column at a time.
+
+\*(NT As a reminder, some fields/columns are not fixed-width but
+allocated all remaining screen width when visible.
+When scrolling right or left, that feature may produce some
+unexpected results initially.
+
+.TP 4
+\fBHome\fR :\fIJump-to-Home-Position \fR
+Reposition the display to the un-scrolled coordinates.
+
+.TP 4
+\fBEnd\fR :\fIJump-to-End-Position \fR
+Reposition the display so that the rightmost column reflects the last
+displayable field and the bottom task row represents the last task.
+
+\*(NT From this position it is still possible to scroll\fI down\fR
+and\fI right\fR using the \*(KAs.
+This is true until a single column and a single task is left as the only
+display element.
+
+.TP 4
+'\fBC\fR' :\fIShow-scroll-coordinates\fR toggle \fR
+Toggle an informational message which is displayed whenever the message
+line is not otherwise being used.
+
+.Bd -literal
+    "\fBscroll coordinates: y = n/n (tasks), x = n/n (fields)\fR"
+.Ed
+
+The coordinates shown as \fBn\fR/\fBn\fR are relative to the upper left
+corner of the \*(CW.
+
+.RS +4
+.TP 4
+\fBy = n/n (tasks) \fR
+The first \fBn\fR represents the topmost visible task and is controlled
+by \*(KSs.
+The second \fBn\fR is updated automatically to reflect total tasks.
+
+.TP 4
+\fBx = n/n (fields) \fR
+The first \fBn\fR represents the leftmost displayed column and is
+controlled by \*(KSs.
+The second \fBn\fR is the total number of displayable fields and is
+established with the '\fBf\fR' \*(CI.
+.RS -4
+
+.PP
+The above \*(CIs are\fB always\fR available in \*(FM but\fB never\fR
+available in \*(AM if the \*(CW's \*(TD has been toggled \*F.
+
+.\" ......................................................................
+.SS 5d. SEARCHING in a Window
+.\" ----------------------------------------------------------------------
+You can use these \*(CIs to locate a task row containing a particular value.
+
+.TP 4
+'\fBL\fR\' :\fILocate-a-string\fR
+You will be prompted for the case-sensitive string to locate starting from
+the current window coordinates.
+There are no restrictions on search string content.
+
+Searches are not limited to values from a single field or column.
+All of the values displayed in a task row are allowed in a search string.
+You may include spaces, numbers, symbols and even forest view artwork.
+
+Keying <Enter> with no input will effectively disable the '&' key until
+a new search string is entered.
+
+.TP 4
+'\fB&\fR\' :\fILocate-next\fR
+Assuming a search string has been established, \*(We will attempt to locate
+the next occurrence.
+
+.PP
+When a match is found, the current window is repositioned vertically so the
+task row containing that string is first.
+The scroll coordinates message can provide confirmation of such vertical
+repositioning (\*(Xc 'C' \*(CI).
+Horizontal scrolling, however, is never altered via searching.
+
+The availability of a matching string will be influenced by the following
+factors.
+.RS +3
+.TP 3
+a. Which fields are displayable from the total available,
+\*(Xt 3b. MANAGING Fields.
+.TP 3
+b. Scrolling a window vertically and/or horizontally,
+\*(Xt 5c. SCROLLING a Window.
+.TP 3
+c. The state of the command/command-line toggle,
+\*(Xc 'c' \*(CI.
+.TP 3
+d. The stability of the chosen sort column,
+for example PID is good but %CPU bad.
+.RS -3
+
+.PP
+If a search fails, restoring the \*(CW home (unscrolled) position, scrolling
+horizontally, displaying command-lines or choosing a more stable sort field
+could yet produce a successful '&' search.
+
+The above \*(CIs are\fB always\fR available in \*(FM but\fB never\fR
+available in \*(AM if the \*(CW's \*(TD has been toggled \*F.
+
+\*(NT Whenever a search key is typed, \*(We forces idle tasks \*O and user
+filtering \*F to ensure that every task is encountered.
+\*(XC 'i' and 'u/U' \*(CIs for additional information on how displayed tasks
+might be filtered.
+
+.\" ----------------------------------------------------------------------
+.SH 6. FILES
+.\" ----------------------------------------------------------------------
+.\" ......................................................................
+.SS 6a. SYSTEM Configuration File
+.\" ----------------------------------------------------------------------
+The presence of this file will influence which version of the 'help' screen
+is shown to an ordinary user.
+More importantly, it will limit what ordinary users are allowed
+to do when \*(We is running.
+They will not be able to issue the following commands.
+.Bd -literal -compact
+    k        Kill a task
+    r        Renice a task
+    d or s   Change delay/sleep interval
+.Ed
+
+The system \*(CF is\fB not\fR created by \*(We.
+Rather, you create this file manually and place it in the \fI/etc \fR
+directory.
+Its name must be 'toprc' and must have no leading '.' (period).
+It must have only two lines.
+
+Here is an example of the contents of\fI /etc/toprc\fR:
+.Bd -literal -compact
+    s        # line 1: 'secure' mode switch
+    5.0      # line 2: 'delay'\ \ interval in seconds
+.Ed
+
+.\" ......................................................................
+.SS 6b. PERSONAL Configuration File
+.\" ----------------------------------------------------------------------
+This file is written as '$HOME/.your-name-4-top' + 'rc'.
+Use the 'W' \*(CI to create it or update it.
+
+Here is the general layout:
+.Bd -literal -compact
+    global   # line 1: the program name/alias notation
+      "      # line 2: id,altscr,irixps,delay,curwin
+    per ea   # line a: winname,fieldscur
+    window   # line b: winflags,sortindx,maxtasks
+      "      # line c: summclr,msgsclr,headclr,taskclr
+.Ed
+
+If the $HOME variable is not present, \*(We will try to write the
+personal \*(CF to the current directory, subject to permissions.
+
+.\" ----------------------------------------------------------------------
+.SH 7. STUPID TRICKS Sampler
+.\" ----------------------------------------------------------------------
+Many of these 'tricks' work best when you give \*(We a scheduling boost.
+So plan on starting him with a nice value of -10, assuming you've got
+the authority.
+
+.\" ......................................................................
+.SS 7a. Kernel Magic
+.\" ----------------------------------------------------------------------
+.\" sorry, just can't help it -- don't ya love the sound of this?
+For these stupid tricks, \*(We needs \*(FM.
+.\" ( apparently AM static was a potential concern )
+
+.jBu
+The user interface, through prompts and help, intentionally implies
+that the delay interval is limited to tenths of a second.
+However, you're free to set any desired delay.
+If you want to see Linux at his scheduling best, try a delay of .09
+seconds or less.
+
+For this experiment, under x-windows open an xterm and maximize it.
+Then do the following:
+.Bd -literal -compact
+  . provide a scheduling boost and tiny delay via:
+      nice -n -10 top -d.09
+  . keep sorted column highlighting \*F so as to
+    minimize path length
+  . turn \*O reverse row highlighting for emphasis
+  . try various sort columns (TIME/MEM work well),
+    and normal or reverse sorts to bring the most
+    active processes into view
+.Ed
+
+What you'll see is a very busy Linux doing what he's always done for you,
+but there was no program available to illustrate this.
+
+.jBu
+Under an xterm using 'white-on-black' colors, on \*(We's Color Mapping screen
+set the task color to black and be sure that task highlighting is set to bold,
+not reverse.
+Then set the delay interval to around .3 seconds.
+
+After bringing the most active processes into view, what you'll see are
+the ghostly images of just the currently running tasks.
+
+.jBu
+Delete the existing rcfile, or create a new symlink.
+Start this new version then type 'T' (a secret key,
+\*(Xt 4c. Task Area Commands, SORTING) followed by 'W' and 'q'.
+Finally, restart the program with -d0 (zero delay).
+
+Your display will be refreshed at three times the rate of the former \*(We,
+a 300% speed advantage.
+As \*(We climbs the TIME ladder, be as patient as you can while speculating
+on whether or not \*(We will ever reach the \*(We.
+
+.\" ......................................................................
+.SS 7b. Bouncing Windows
+.\" ----------------------------------------------------------------------
+For these stupid tricks, \*(We needs \*(AM.
+
+.jBu
+With 3 or 4 \*(TDs visible, pick any window other than the last
+and turn idle processes \*F using the 'i' \*(CT.
+Depending on where you applied 'i', sometimes several \*(TDs are bouncing and
+sometimes it's like an accordion, as \*(We tries his best to allocate space.
+
+.jBu
+Set each window's summary lines differently: one with no memory ('m'); another
+with no states ('t'); maybe one with nothing at all, just the message line.
+Then hold down 'a' or 'w' and watch a variation on bouncing windows \*(Em
+hopping windows.
+
+.jBu
+Display all 4 windows and for each, in turn, set idle processes to \*F using
+the 'i' \*(CT.
+You've just entered the "extreme bounce" zone.
+
+.\" ......................................................................
+.SS 7c. The Big Bird Window
+.\" ----------------------------------------------------------------------
+This stupid trick also requires \*(AM.
+
+.jBu
+Display all 4 windows and make sure that 1:Def is the \*(CW.
+Then, keep increasing window size with the 'n' \*(CI until all the other
+\*(TDs are "pushed out of the nest".
+
+When they've all been displaced, toggle between all visible/invisible windows
+using the '_' \*(CT.
+Then ponder this:
+.br
+   is \*(We fibbing or telling honestly your imposed truth?
+.PP
+
+.\" ----------------------------------------------------------------------
+.SH 8. BUGS
+.\" ----------------------------------------------------------------------
+To report bugs, follow the instructions at:
+    http://www.debian.org/Bugs/Reporting
+
+.\" ----------------------------------------------------------------------
+.SH 9. HISTORY Former top
+.\" ----------------------------------------------------------------------
+The original top was written by Roger Binns,
+based on Branko Lankester's <lankeste@fwi.uva.nl> ps program.
+
+Robert Nation <nation@rocket.sanders.lockheed.com>
+adapted it for the proc file system.
+
+Helmut Geyer <Helmut.Geyer@iwr.uni-heidelberg.de>
+added support for configurable fields.
+
+Plus many other individuals contributed over the years.
+
+.\" ----------------------------------------------------------------------
+.SH 10. AUTHOR
+.\" ----------------------------------------------------------------------
+This entirely new and enhanced replacement was written by:
+    Jim Warner, <james.warner@comcast.net>
+.ig
+   ( as a means to learn Linux, can you believe it? )
+   ( & he accidentally learned a little groff, too! )
+   ( then after ten years he did it all over again! )
+..
+
+With invaluable help from:
+    Craig Small, <csmall@enc.com.au>
+.\" Craig Small. <csmall-procps@enc.com.au>
+.\" Craig Small, <csmall@debian.org>
+.\" Craig Small, <csmall@small.dropbear.id.au>
+    Albert Cahalan, <albert@users.sf.net>
+
+.ig
+.rj 2
+.B -*-\fR few though they are, some yet believe\fB -*- \fR
+.B -*-\~\~\~\~\~\~\~\fRin-the-\fBart\fR-of-programming\~\~\~\~\~\~\~\fB-*- \fR
+..
+
+ \" ----------------------------------------------------------------------
+.SH 11. SEE Also
+.\" ----------------------------------------------------------------------
+.BR free (1),
+.BR ps (1),
+.BR uptime (1),
+.BR atop (1),
+.BR slabtop (1),
+.BR vmstat (8),
+.BR w (1).
+
+
+.\" ----------------------------------------------------------------------
+.ig
+.rj 1
+\-*-
+.PD
+.in -3
+Copyright (c) 2002,2012 \*(Em James C. Warner
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation;
+with no Front-Cover Texts, no Back-Cover Texts, and with the following
+Invariant Sections and any sub-sections therein:
+.na
+.hy 0
+.in +3
+STUPID\ TRICKS\ Sampler;
+.br
+AUTHOR
+.in
+A copy of the license is included in the section entitled
+\(dqGNU Free Documentation License\(dq.
+..
+.
+.\" end: active doc ||||||||||||||||||||||||||||||||||||||||||||||||||||||
+.\" ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+.ig
+.\" ----------------------------------------------------------------------
+.SH GNU Free Documentation License
+Version 1.1, March 2000
+
+Copyright (C) 2000  Free Software Foundation, Inc.
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Everyone is permitted to copy and distribute verbatim copies
+of this license document, but changing it is not allowed.
+
+.SS 0. PREAMBLE
+The purpose of this License is to make a manual, textbook, or other
+written document "free" in the sense of freedom: to assure everyone
+the effective freedom to copy and redistribute it, with or without
+modifying it, either commercially or noncommercially.  Secondarily,
+this License preserves for the author and publisher a way to get
+credit for their work, while not being considered responsible for
+modifications made by others.
+
+This License is a kind of "copyleft", which means that derivative
+works of the document must themselves be free in the same sense.  It
+complements the GNU General Public License, which is a copyleft
+license designed for free software.
+
+We have designed this License in order to use it for manuals for free
+software, because free software needs free documentation: a free
+program should come with manuals providing the same freedoms that the
+software does.  But this License is not limited to software manuals;
+it can be used for any textual work, regardless of subject matter or
+whether it is published as a printed book.  We recommend this License
+principally for works whose purpose is instruction or reference.
+
+.SS 1. APPLICABILITY AND DEFINITIONS
+This License applies to any manual or other work that contains a
+notice placed by the copyright holder saying it can be distributed
+under the terms of this License.  The "Document", below, refers to any
+such manual or work.  Any member of the public is a licensee, and is
+addressed as "you".
+
+A "Modified Version" of the Document means any work containing the
+Document or a portion of it, either copied verbatim, or with
+modifications and/or translated into another language.
+
+A "Secondary Section" is a named appendix or a front-matter section of
+the Document that deals exclusively with the relationship of the
+publishers or authors of the Document to the Document's overall subject
+(or to related matters) and contains nothing that could fall directly
+within that overall subject.  (For example, if the Document is in part a
+textbook of mathematics, a Secondary Section may not explain any
+mathematics.)  The relationship could be a matter of historical
+connection with the subject or with related matters, or of legal,
+commercial, philosophical, ethical or political position regarding
+them.
+
+The "Invariant Sections" are certain Secondary Sections whose titles
+are designated, as being those of Invariant Sections, in the notice
+that says that the Document is released under this License.
+
+The "Cover Texts" are certain short passages of text that are listed,
+as Front-Cover Texts or Back-Cover Texts, in the notice that says that
+the Document is released under this License.
+
+A "Transparent" copy of the Document means a machine-readable copy,
+represented in a format whose specification is available to the
+general public, whose contents can be viewed and edited directly and
+straightforwardly with generic text editors or (for images composed of
+pixels) generic paint programs or (for drawings) some widely available
+drawing editor, and that is suitable for input to text formatters or
+for automatic translation to a variety of formats suitable for input
+to text formatters.  A copy made in an otherwise Transparent file
+format whose markup has been designed to thwart or discourage
+subsequent modification by readers is not Transparent.  A copy that is
+not "Transparent" is called "Opaque".
+
+Examples of suitable formats for Transparent copies include plain
+ASCII without markup, Texinfo input format, LaTeX input format, SGML
+or XML using a publicly available DTD, and standard-conforming simple
+HTML designed for human modification.  Opaque formats include
+PostScript, PDF, proprietary formats that can be read and edited only
+by proprietary word processors, SGML or XML for which the DTD and/or
+processing tools are not generally available, and the
+machine-generated HTML produced by some word processors for output
+purposes only.
+
+The "Title Page" means, for a printed book, the title page itself,
+plus such following pages as are needed to hold, legibly, the material
+this License requires to appear in the title page.  For works in
+formats which do not have any title page as such, "Title Page" means
+the text near the most prominent appearance of the work's title,
+preceding the beginning of the body of the text.
+
+.SS 2. VERBATIM COPYING
+You may copy and distribute the Document in any medium, either
+commercially or noncommercially, provided that this License, the
+copyright notices, and the license notice saying this License applies
+to the Document are reproduced in all copies, and that you add no other
+conditions whatsoever to those of this License.  You may not use
+technical measures to obstruct or control the reading or further
+copying of the copies you make or distribute.  However, you may accept
+compensation in exchange for copies.  If you distribute a large enough
+number of copies you must also follow the conditions in section 3.
+
+You may also lend copies, under the same conditions stated above, and
+you may publicly display copies.
+
+.SS 3. COPYING IN QUANTITY
+If you publish printed copies of the Document numbering more than 100,
+and the Document's license notice requires Cover Texts, you must enclose
+the copies in covers that carry, clearly and legibly, all these Cover
+Texts: Front-Cover Texts on the front cover, and Back-Cover Texts on
+the back cover.  Both covers must also clearly and legibly identify
+you as the publisher of these copies.  The front cover must present
+the full title with all words of the title equally prominent and
+visible.  You may add other material on the covers in addition.
+Copying with changes limited to the covers, as long as they preserve
+the title of the Document and satisfy these conditions, can be treated
+as verbatim copying in other respects.
+
+If the required texts for either cover are too voluminous to fit
+legibly, you should put the first ones listed (as many as fit
+reasonably) on the actual cover, and continue the rest onto adjacent
+pages.
+
+If you publish or distribute Opaque copies of the Document numbering
+more than 100, you must either include a machine-readable Transparent
+copy along with each Opaque copy, or state in or with each Opaque copy
+a publicly-accessible computer-network location containing a complete
+Transparent copy of the Document, free of added material, which the
+general network-using public has access to download anonymously at no
+charge using public-standard network protocols.  If you use the latter
+option, you must take reasonably prudent steps, when you begin
+distribution of Opaque copies in quantity, to ensure that this
+Transparent copy will remain thus accessible at the stated location
+until at least one year after the last time you distribute an Opaque
+copy (directly or through your agents or retailers) of that edition to
+the public.
+
+It is requested, but not required, that you contact the authors of the
+Document well before redistributing any large number of copies, to give
+them a chance to provide you with an updated version of the Document.
+
+.SS 4. MODIFICATIONS
+You may copy and distribute a Modified Version of the Document under
+the conditions of sections 2 and 3 above, provided that you release
+the Modified Version under precisely this License, with the Modified
+Version filling the role of the Document, thus licensing distribution
+and modification of the Modified Version to whoever possesses a copy
+of it.  In addition, you must do these things in the Modified Version:
+
+.HP 3
+.B A\fR.\ Use in the Title Page (and on the covers, if any) a title distinct
+from that of the Document, and from those of previous versions (which should,
+if there were any, be listed in the History section of the Document).
+You may use the same title as a previous version if the original publisher of
+that version gives permission.
+.HP 3
+.B B\fR.\ List on the Title Page, as authors, one or more persons or entities
+responsible for authorship of the modifications in the Modified Version,
+together with at least five of the principal authors of the Document
+(all of its principal authors, if it has less than five).
+.HP 3
+.B C\fR.\ State on the Title page the name of the publisher of the Modified
+Version, as the publisher.
+.HP 3
+.B D\fR.\ Preserve all the copyright notices of the Document.
+.HP 3
+.B E\fR.\ Add an appropriate copyright notice for your modifications adjacent
+to the other copyright notices.
+.HP 3
+.B F\fR.\ Include, immediately after the copyright notices, a license notice
+giving the public permission to use the Modified Version under the terms of
+this License, in the form shown in the Addendum below.
+.HP 3
+.B G\fR.\ Preserve in that license notice the full lists of Invariant Sections
+and required Cover Texts given in the Document's license notice.
+.HP 3
+.B H\fR.\ Include an unaltered copy of this License.
+.HP 3
+.B I\fR.\ Preserve the section entitled "History", and its title, and add to it
+an item stating at least the title, year, new authors, and publisher of the
+Modified Version as given on the Title Page.
+If there is no section entitled "History" in the Document, create one stating
+the title, year, authors, and publisher of the Document as given on its Title
+Page, then add an item describing the Modified Version as stated in the
+previous sentence.
+.HP 3
+.B J\fR.\ Preserve the network location, if any, given in the Document for
+public access to a Transparent copy of the Document, and likewise the network
+locations given in the Document for previous versions it was based on.
+These may be placed in the "History" section.
+You may omit a network location for a work that was published at least four
+years before the Document itself, or if the original publisher of the version
+it refers to gives permission.
+.HP 3
+.B K\fR.\ In any section entitled "Acknowledgements" or "Dedications", preserve
+the section's title, and preserve in the section all the substance and tone of
+each of the contributor acknowledgements and/or dedications given therein.
+.HP 3
+.B L\fR.\ Preserve all the Invariant Sections of the Document, unaltered in their
+text and in their titles.
+Section numbers or the equivalent are not considered part of the section titles.
+.HP 3
+.B M\fR.\ Delete any section entitled "Endorsements".
+Such a section may not be included in the Modified Version.
+.HP 3
+.B N\fR.\ Do not retitle any existing section as "Endorsements" or to conflict
+in title with any Invariant Section.
+
+.PP
+If the Modified Version includes new front-matter sections or
+appendices that qualify as Secondary Sections and contain no material
+copied from the Document, you may at your option designate some or all
+of these sections as invariant.  To do this, add their titles to the
+list of Invariant Sections in the Modified Version's license notice.
+These titles must be distinct from any other section titles.
+
+You may add a section entitled "Endorsements", provided it contains
+nothing but endorsements of your Modified Version by various
+parties--for example, statements of peer review or that the text has
+been approved by an organization as the authoritative definition of a
+standard.
+
+You may add a passage of up to five words as a Front-Cover Text, and a
+passage of up to 25 words as a Back-Cover Text, to the end of the list
+of Cover Texts in the Modified Version.  Only one passage of
+Front-Cover Text and one of Back-Cover Text may be added by (or
+through arrangements made by) any one entity.  If the Document already
+includes a cover text for the same cover, previously added by you or
+by arrangement made by the same entity you are acting on behalf of,
+you may not add another; but you may replace the old one, on explicit
+permission from the previous publisher that added the old one.
+
+The author(s) and publisher(s) of the Document do not by this License
+give permission to use their names for publicity for or to assert or
+imply endorsement of any Modified Version.
+
+.SS 5. COMBINING DOCUMENTS
+You may combine the Document with other documents released under this
+License, under the terms defined in section 4 above for modified
+versions, provided that you include in the combination all of the
+Invariant Sections of all of the original documents, unmodified, and
+list them all as Invariant Sections of your combined work in its
+license notice.
+
+The combined work need only contain one copy of this License, and
+multiple identical Invariant Sections may be replaced with a single
+copy.  If there are multiple Invariant Sections with the same name but
+different contents, make the title of each such section unique by
+adding at the end of it, in parentheses, the name of the original
+author or publisher of that section if known, or else a unique number.
+Make the same adjustment to the section titles in the list of
+Invariant Sections in the license notice of the combined work.
+
+In the combination, you must combine any sections entitled "History"
+in the various original documents, forming one section entitled
+"History"; likewise combine any sections entitled "Acknowledgements",
+and any sections entitled "Dedications".  You must delete all sections
+entitled "Endorsements."
+
+.SS 6. COLLECTIONS OF DOCUMENTS
+You may make a collection consisting of the Document and other documents
+released under this License, and replace the individual copies of this
+License in the various documents with a single copy that is included in
+the collection, provided that you follow the rules of this License for
+verbatim copying of each of the documents in all other respects.
+
+You may extract a single document from such a collection, and distribute
+it individually under this License, provided you insert a copy of this
+License into the extracted document, and follow this License in all
+other respects regarding verbatim copying of that document.
+
+.SS 7. AGGREGATION WITH INDEPENDENT WORKS
+A compilation of the Document or its derivatives with other separate
+and independent documents or works, in or on a volume of a storage or
+distribution medium, does not as a whole count as a Modified Version
+of the Document, provided no compilation copyright is claimed for the
+compilation.  Such a compilation is called an "aggregate", and this
+License does not apply to the other self-contained works thus compiled
+with the Document, on account of their being thus compiled, if they
+are not themselves derivative works of the Document.
+
+If the Cover Text requirement of section 3 is applicable to these
+copies of the Document, then if the Document is less than one quarter
+of the entire aggregate, the Document's Cover Texts may be placed on
+covers that surround only the Document within the aggregate.
+Otherwise they must appear on covers around the whole aggregate.
+
+.SS 8. TRANSLATION
+Translation is considered a kind of modification, so you may
+distribute translations of the Document under the terms of section 4.
+Replacing Invariant Sections with translations requires special
+permission from their copyright holders, but you may include
+translations of some or all Invariant Sections in addition to the
+original versions of these Invariant Sections.  You may include a
+translation of this License provided that you also include the
+original English version of this License.  In case of a disagreement
+between the translation and the original English version of this
+License, the original English version will prevail.
+
+.SS 9. TERMINATION
+You may not copy, modify, sublicense, or distribute the Document except
+as expressly provided for under this License.  Any other attempt to
+copy, modify, sublicense or distribute the Document is void, and will
+automatically terminate your rights under this License.  However,
+parties who have received copies, or rights, from you under this
+License will not have their licenses terminated so long as such
+parties remain in full compliance.
+
+.SS 10. FUTURE REVISIONS OF THIS LICENSE
+The Free Software Foundation may publish new, revised versions
+of the GNU Free Documentation License from time to time.  Such new
+versions will be similar in spirit to the present version, but may
+differ in detail to address new problems or concerns.  See
+http://www.gnu.org/copyleft/.
+
+Each version of the License is given a distinguishing version number.
+If the Document specifies that a particular numbered version of this
+License "or any later version" applies to it, you have the option of
+following the terms and conditions either of that specified version or
+of any later version that has been published (not as a draft) by the
+Free Software Foundation.  If the Document does not specify a version
+number of this License, you may choose any version ever published (not
+as a draft) by the Free Software Foundation.
+
+.SS ADDENDUM: How to use this License for your documents
+To use this License in a document you have written, include a copy of
+the License in the document and put the following copyright and
+license notices just after the title page:
+
+.IP "" 3
+Copyright (c)  YEAR  YOUR NAME.
+
+Permission is granted to copy, distribute and/or modify this document under the
+terms of the GNU Free Documentation License, Version 1.1 or any later version
+published by the Free Software Foundation;\ \ with the Invariant Sections being
+LIST THEIR TITLES, with the Front-Cover Texts being LIST, and with the
+Back-Cover Texts being LIST.
+A copy of the license is included in the section entitled "GNU
+Free Documentation License".
+
+If you have no Invariant Sections, write "with no Invariant Sections"
+instead of saying which ones are invariant.  If you have no
+Front-Cover Texts, write "no Front-Cover Texts" instead of
+"Front-Cover Texts being LIST"; likewise for Back-Cover Texts.
+
+If your document contains nontrivial examples of program code, we
+recommend releasing these examples in parallel under your choice of
+free software license, such as the GNU General Public License,
+to permit their use in free software.
+
+.\" ----------------------------------------------------------------------
+.SH \fRend of\fB GNU Free Documentation License
+.IP ""
+.PP
+..
+.\" end: gfdl license ||||||||||||||||||||||||||||||||||||||||||||||||||||
+.\" ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||

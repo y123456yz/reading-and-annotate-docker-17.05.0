@@ -1,0 +1,228 @@
+.\" Manual page for pgrep / pkill.
+.\" Licensed under version 2 of the GNU General Public License.
+.\" Copyright 2000 Kjetil Torgrim Homme
+.\"
+.TH PGREP "1" "September 2011" "procps-ng" "User Commands"
+.SH NAME
+pgrep, pkill \- look up or signal processes based on name and other attributes
+.SH SYNOPSIS
+.B pgrep
+[options] pattern
+.br
+.B pkill
+[options] pattern
+.SH DESCRIPTION
+.B pgrep
+looks through the currently running processes and lists the process IDs which
+matches the selection criteria to stdout.  All the criteria have to match.
+For example,
+.IP
+$ pgrep \-u root sshd
+.PP
+will only list the processes called
+.B sshd
+AND owned by
+.BR root .
+On the other hand,
+.IP
+$ pgrep \-u root,daemon
+.PP
+will list the processes owned by
+.B root
+OR
+.BR daemon .
+.PP
+.B pkill
+will send the specified signal (by default
+.BR SIGTERM )
+to each process instead of listing them on stdout.
+.SH OPTIONS
+.TP
+\fB\-\fR\fIsignal\fP
+.TQ
+\fB\-\-signal\fR \fIsignal\fR
+Defines the signal to send to each matched process.  Either the numeric or
+the symbolic signal name can be used.
+.RB ( pkill
+only.)
+.TP
+\fB\-c\fR, \fB\-\-count\fR
+Suppress normal output; instead print a count of matching processes.  When
+count does not match anything, e.g. returns zero, the command will return
+non-zero value.  (\fBpgrep\fP only.)
+.TP
+\fB\-d\fR, \fB\-\-delimeter\fR \fIdelimiter\fP
+Sets the string used to delimit each process ID in the output (by default a
+newline).
+.RB ( pgrep
+only.)
+.TP
+\fB\-f\fR, \fB\-\-full\fR
+The
+.I pattern
+is normally only matched against the process name.  When
+.B \-f
+is set, the full command line is used.
+.TP
+\fB\-g\fR, \fB\-\-pgroup\fR \fIpgrp\fP,...
+Only match processes in the process group IDs listed.  Process group 0 is
+translated into
+.BR pgrep 's
+or
+.BR pkill 's
+own process group.
+.TP
+\fB\-G\fR, \fB\-\-group\fR \fIgid\fP,...
+Only match processes whose real group ID is listed.  Either the numerical or
+symbolical value may be used.
+.TP
+\fB\-l\fR, \fB\-\-list\-name\fR
+List the process name as well as the process ID.
+.RB ( pgrep
+only.)
+.TP
+\fB\-n\fR, \fB\-\-newest\fR
+Select only the newest (most recently started) of the matching processes.
+.TP
+\fB\-o\fR, \fB\-\-oldest\fR
+Select only the oldest (least recently started) of the matching processes.
+.TP
+\fB\-P\fR, \fB\-\-parent\fR \fIppid\fP,...
+Only match processes whose parent process ID is listed.
+.TP
+\fB\-s\fR, \fB\-\-session\fR \fIsid\fP,...
+Only match processes whose process session ID is listed.  Session ID 0
+is translated into
+.BR pgrep 's
+or
+.BR pkill 's
+own session ID.
+.TP
+\fB\-t\fR, \fB\-\-terminal\fR \fIterm\fP,...
+Only match processes whose controlling terminal is listed.  The terminal name
+should be specified without the "/dev/" prefix.
+.TP
+\fB\-u\fR, \fB\-\-euid\fR \fIeuid\fP,...
+Only match processes whose effective user ID is listed.  Either the numerical
+or symbolical value may be used.
+.TP
+\fB\-U\fR, \fB\-\-uid\fR \fIuid\fP,...
+Only match processes whose real user ID is listed.  Either the numerical or
+symbolical value may be used.
+.TP
+\fB\-v\fR, \fB\-\-inverse\fR\fR
+Negates the matching.  This option usually used in pgrep context.  In
+.B pkill
+context the short option is disabled to avoid accidental usage of the option.
+.TP
+\fB\-x\fR, \fB\-\-exact\fR\fR
+Only match processes whose name (or command line if \-f is specified)
+.B exactly
+match the
+.IR pattern .
+.TP
+\fB\-F\fR, \fB\-\-pidfile\fR \fIfile\fR
+Read
+.IR PID 's
+from file.  This option is perhaps more useful for
+.B pkill
+than
+.BR pgrep .
+.TP
+\fB\-L\fR, \fB\-\-logpidfile\fR
+Fail if pidfile (see -F) not locked.
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Display version information and exit.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Display help and exit.
+.PD
+.SH OPERANDS
+.TP
+.I pattern
+Specifies an Extended Regular Expression for matching against the process
+names or command lines.
+.SH EXAMPLES
+Example 1: Find the process ID of the
+.B named
+daemon:
+.IP
+$ pgrep \-u root named
+.PP
+Example 2: Make
+.B syslog
+reread its configuration file:
+.IP
+$ pkill \-HUP syslogd
+.PP
+Example 3: Give detailed information on all
+.B xterm
+processes:
+.IP
+$ ps \-fp $(pgrep \-d, \-x xterm)
+.PP
+Example 4: Make all
+.B netscape
+processes run nicer:
+.IP
+$ renice +4 $(pgrep netscape)
+.SH "EXIT STATUS"
+.PD 0
+.TP
+0
+One or more processes matched the criteria.
+.TP
+1
+No processes matched.
+.TP
+2
+Syntax error in the command line.
+.TP
+3
+Fatal error: out of memory etc.
+.PD
+.SH NOTES
+The process name used for matching is limited to the 15 characters present in
+the output of /proc/\fIpid\fP/stat.  Use the \-f option to match against the
+complete command line, /proc/\fIpid\fP/cmdline.
+.PP
+The running
+.B pgrep
+or
+.B pkill
+process will never report itself as a
+match.
+.SH BUGS
+The options
+.B \-n
+and
+.B \-o
+and
+.B \-v
+can not be combined.  Let
+me know if you need to do this.
+.PP
+Defunct processes are reported.
+
+.SH "SEE ALSO"
+.BR ps (1),
+.BR regex (7),
+.BR signal (7),
+.BR killall (1),
+.BR skill (1),
+.BR kill (1),
+.BR kill (2)
+.SH STANDARDS
+.B pkill
+and
+.B pgrep
+were introduced in Sun's Solaris 7.  This implementation is fully compatible.
+.SH AUTHOR
+.UR kjetilho@ifi.uio.no
+Kjetil Torgrim Homme
+.UE
+.SH "REPORTING BUGS"
+Please send bug reports to
+.UR procps@freelists.org
+.UE

@@ -1,0 +1,32 @@
+.\" Man page for pwdx
+.\" Licensed under version 2 of the GNU General Public License.
+.\" Copyright 2004 Nicholas Miell.
+.\" Based on the pmap(1) man page by Albert Cahalan.
+.\"
+.TH PWDX "1" "June 2011" "procps-ng" "User Commands"
+.SH NAME
+pwdx \- report current working directory of a process
+.SH SYNOPSIS
+.B pwdx
+[\fIoptions\fR] \fIpid\fR [...]
+.SH OPTIONS
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Output version information and exit.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Output help screen and exit.
+.SH "SEE ALSO"
+.BR ps (1),
+.BR pgrep (1)
+.SH STANDARDS
+No standards apply, but pwdx looks an awful lot like a SunOS command.
+.SH AUTHOR
+.UR nmiell@gmail.com
+Nicholas Miell
+.UE
+wrote pwdx in 2004.
+.SH "REPORTING BUGS"
+Please send bug reports to
+.UR procps@freelists.org
+.UE

@@ -1,0 +1,132 @@
+
+regexp "(.*\/)testsuite" $objdir objdir topdir
+
+# These are the same as include/c.h
+set usage_help "\\s*-h, --help\\s+display this help and exit\\s+"
+set usage_version "\\s*-V, --version\\s+output version information and exit\\s+"
+set usage_man "\\s*For more details see \\S+\\."
+
+proc procps_v_version { tool } {
+  global topdir
+  set toolpath ${topdir}${tool}
+  set tmp [ exec $toolpath -V ]
+  regexp "from procps-ng (\[0-9.\]*)" $tmp tmp version
+  clone_output "$toolpath version $version\n"
+}
+
+proc free_version {} { procps_v_version free } 
+proc kill_version {} { procps_v_version kill } 
+proc pgrep_version {} { procps_v_version pgrep } 
+proc pkill_version {} { procps_v_version pkill } 
+proc pmap_version {} { procps_v_version pmap } 
+proc pwdx_version {} { procps_v_version pwdx } 
+proc sysctl_version {} { procps_v_version sysctl } 
+proc uptime_version {} { procps_v_version uptime } 
+proc vmstat_version {} { procps_v_version vmstat } 
+proc w_version {} { procps_v_version w } 
+
+#
+#
+# common utilities
+proc expect_continue { testname reg } {
+    expect {
+        -re "$reg" { }
+        eof { fail "$testname" }
+        timeout { fail "$testname" }
+    }
+}
+
+proc expect_pass { testname reg } {
+    expect {
+        -re "$reg" { pass "$testname" }
+        default { fail "$testname" }
+		timeout { fail "$testname" }
+    }
+}
+
+proc expect_blank { testname } {
+    expect {
+        -re "\\w" { fail "$testname" }
+        eof { pass "$testname" }
+        timeout { pass "$testname" }
+    }
+}
+
+proc expect_table { test match_header match_items match_footer } {
+    expect {
+        -re "$match_header" {
+            expect {
+                -re "$match_items" {
+                    expect {
+                        -re "$match_footer" { pass "$test" }
+                        default { fail "$test (footer)" }
+                    }
+                }
+                default { fail "$test (items)" }
+            }
+        }
+        default { fail "$test (header)" }
+    }
+}
+            
+proc expect_table_dsc { test match_header match_item } {
+    expect {
+        -re $match_header {}
+        default {
+            fail "$test (header)"
+            return
+        }
+    }
+
+    set do_loop 1
+    set last_value 999999
+    set found_item 0
+    while { $do_loop ==1 } {
+    expect {
+        -re $match_item {
+            set current_value $expect_out(1,string)
+            if { $current_value > $last_value } {
+                fail "$test (sorting $current_value > $last_value)"
+                return
+            } else {
+                set found_item 1
+                set last_value $current_value
+            }
+        }
+        default {
+            if { $found_item == 0 } {
+                fail "$test (items)"
+            } else {
+                pass $test
+            }
+            return
+        }
+    }
+    }
+    #expect {
+    #    -re $match_footer { pass $test }
+    #    default { fail "$test (footer)" }
+    #}
+}
+
+proc make_testproc { } {
+    # Time to run the whole job
+    set sleep_time 300
+
+    global testproc_path testproc_comm testproc1_pid testproc2_pid
+
+    set testproc_path [ exec mktemp -u ]
+    set sleep_path [ exec which sleep ]
+    exec ln -s $sleep_path $testproc_path
+    set testproc_comm [ exec basename $testproc_path ]
+
+    spawn readlink $testproc_path
+    expect {
+        -re "^$sleep_path\\s*$" { }
+        timeout { perror "test proc does not link to sleep 1" }
+        eof { perror "test proc does not link to sleep 1" }
+    }
+
+    set testproc1_pid [ exec $testproc_path $sleep_time & ]
+    set testproc2_pid [ exec $testproc_path $sleep_time & ]
+}

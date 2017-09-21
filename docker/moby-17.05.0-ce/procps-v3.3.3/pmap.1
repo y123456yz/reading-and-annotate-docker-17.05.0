@@ -1,0 +1,63 @@
+'\" t
+.\" (The preceding line is a note to broken versions of man to tell
+.\" them to pre-process this man page with tbl)
+.\" Man page for pmap.
+.\" Licensed under version 2 of the GNU General Public License.
+.\" Written by Albert Cahalan.
+.\"
+.TH PMAP "1" "June 2011" "procps-ng" "User Commands"
+.SH NAME
+pmap \- report memory map of a process
+.SH SYNOPSIS
+.B pmap
+[\fIoptions\fR] \fIpid\fR [...]
+.SH DESCRIPTION
+The pmap command reports the memory map of a process or processes.
+.SH OPTIONS
+.TP
+\fB\-x\fR, \fB\-\-extended\fR
+Show the extended format.
+.TP
+\fB\-d\fR, \fB\-\-device\fR
+Show the device format.
+.TP
+\fB\-q\fR, \fB\-\-quiet\fR
+Do not display some header or footer lines.
+.TP
+\fB\-A\fR, \fB\-\-range\fR \fIlow\fR,\fIhigh\fR
+Limit results to the given range to
+.I low
+and
+.I high
+address range.  Notice that the low and high arguments are single string
+separated with comma.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Display help text and exit.
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Display version information and exit.
+.SH "EXIT STATUS"
+.PP
+.RS
+.PD 0
+.TP
+.B 0
+Success.
+.TP
+.B 1
+Failure.
+.TP
+.B 42
+Did not find all processes asked for.
+.PD
+.RE
+.SH "SEE ALSO"
+.BR ps (1),
+.BR pgrep (1)
+.SH STANDARDS
+No standards apply, but pmap looks an awful lot like a SunOS command.
+.SH "REPORTING BUGS"
+Please send bug reports to
+.UR procps@freelists.org
+.UE

@@ -1,0 +1,164 @@
+.\" Copyright 1999, George Staikos (staikos@0wned.org)
+.\" This file may be used subject to the terms and conditions of the
+.\" GNU General Public License Version 2, or any later version
+.\" at your option, as published by the Free Software Foundation.
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+.\" GNU General Public License for more details."
+.TH SYSCTL "8" "Jan 2012" "procps-ng" "System Administration"
+.SH NAME
+sysctl \- configure kernel parameters at runtime
+.SH SYNOPSIS
+.B sysctl
+[\fIoptions\fR] [\fIvariable\fR[\fI=value\fR]] [...]
+.BR
+.B sysctl \-p [file or regexp] [...]
+.SH DESCRIPTION
+.B sysctl
+is used to modify kernel parameters at runtime.  The parameters available
+are those listed under /proc/sys/.  Procfs is required for 
+.B sysctl
+support in Linux.  You can use
+.B sysctl
+to both read and write sysctl data.
+.SH PARAMETERS
+.TP
+.I variable
+The name of a key to read from.  An example is kernel.ostype.  The '/'
+separator is also accepted in place of a '.'.
+.TP
+.IR  variable = value
+To set a key, use the form
+.IR  variable = value
+where
+.I variable
+is the key and
+.I value
+is the value to set it to.  If the value contains quotes or characters
+which are parsed by the shell, you may need to enclose the value in double
+quotes.  This requires the
+.B \-w
+parameter to use.
+.TP
+\fB\-n\fR, \fB\-\-values\fR
+Use this option to disable printing of the key name when printing values.
+.TP
+\fB\-e\fR, \fB\-\-ignore\fR
+Use this option to ignore errors about unknown keys.
+.TP
+\fB\-N\fR, \fB\-\-names\fR
+Use this option to only print the names.  It may be useful with shells that
+have programmable completion.
+.TP
+\fB\-q\fR, \fB\-\-quiet\fR
+Use this option to not display the values set to stdout.
+.TP
+\fB\-w\fR, \fB\-\-write\fR
+Use this option when you want to change a sysctl setting.
+.TP
+\fB\-p\fR[\fIFILE\fR], \fB\-\-load\fR[=\fIFILE\fR]
+Load in sysctl settings from the file specified or /etc/sysctl.conf if none
+given.  Specifying \- as filename means reading data from standard input.
+Using this option will mean arguments to
+.B sysctl
+are files, which are read in order they are specified.  The file argument can
+may be specified as reqular expression.
+.TP
+\fB\-a\fR, \fB\-\-all\fR
+Display all values currently available.
+.TP
+\fB\-\-deprecated\fR
+Include deprecated parameters to
+.B \-\-all
+values listing.
+.TP
+\fB\-b\fR, \fB\-\-binary\fR
+Print value without new line.
+.TP
+\fB\-\-system\fR
+Load settings from all system configuration files.
+.br
+/run/sysctl.d/*.conf
+.br
+/etc/sysctl.d/*.conf
+.br
+/usr/local/lib/sysctl.d/*.conf
+.br
+/usr/lib/sysctl.d/*.conf
+.br
+/lib/sysctl.d/*.conf
+.br
+/etc/sysctl.conf
+.TP
+\fB\-\-pattern\fR \fIpattern\fR
+Only apply settings that match
+.IR pattern .
+The
+.I pattern
+uses extended regular expression syntax.
+.TP
+\fB\-A\fR
+Alias of \fB\-a\fR
+.TP
+\fB\-d\fR
+Alias of \fB\-h\fR
+.TP
+\fB\-f\fR
+Alias of \fB\-p\fR
+.TP
+\fB\-X\fR
+Alias of \fB\-a\fR
+.TP
+\fB\-o\fR
+Does nothing in favour of BSD compatibility.
+.TP
+\fB\-x\fR
+Does nothing in favour of BSD compatibility.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Display help text and exit.
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Display version information and exit.
+.SH EXAMPLES
+/sbin/sysctl \-a
+.br
+/sbin/sysctl \-n kernel.hostname
+.br
+/sbin/sysctl \-w kernel.domainname="example.com"
+.br
+/sbin/sysctl \-p/etc/sysctl.conf
+.br
+/sbin/sysctl \-a \-\-pattern forward
+.br
+/sbin/sysctl \-a \-\-pattern forward$
+.br
+/sbin/sysctl \-a \-\-pattern 'net.ipv4.conf.(eth|wlan)0.arp'
+.br
+/sbin/sysctl \-\-system \-\-pattern '^net.ipv6'
+.SH DEPRECATED PARAMETERS
+The
+.B base_reachable_time
+and
+.B retrans_time
+are deprecated.  The sysctl command does not allow changing values of there
+parameters.  Users who insist to use deprecated kernel interfaces should values
+to /proc file system by other means.  For example:
+.PP
+echo 256 > /proc/sys/net/ipv6/neigh/eth0/base_reachable_time
+.SH FILES
+.I /proc/sys
+.br
+.I /etc/sysctl.conf
+.SH SEE ALSO
+.BR sysctl.conf (5)
+.BR regex (7)
+.SH AUTHOR
+.UR staikos@0wned.org
+George Staikos
+.UE
+.SH "REPORTING BUGS"
+Please send bug reports to
+.UR procps@freelists.org
+.UE
