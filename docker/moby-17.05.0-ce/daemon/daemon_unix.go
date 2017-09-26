@@ -64,7 +64,7 @@ const (
 	sudo docker daemon –exec-opt native.cgroupdriver=system
 	*/
 	// constant for cgroup drivers
-	cgroupFsDriver      = "cgroupfs"
+	cgroupFsDriver      = "cgroupfs"   //通过 UsingSystemd 来判断是cgroupfs还是systemd
 	cgroupSystemdDriver = "systemd"
 )
 
@@ -511,7 +511,7 @@ func VerifyCgroupDriver(config *config.Config) error {
 }
 
 // UsingSystemd returns true if cli option includes native.cgroupdriver=systemd
-func UsingSystemd(config *config.Config) bool {
+func UsingSystemd(config *config.Config) bool { //真正生效见 createSpec
 	return getCD(config) == cgroupSystemdDriver
 }
 

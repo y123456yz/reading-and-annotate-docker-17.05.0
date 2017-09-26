@@ -18,11 +18,13 @@ mounts本质上是一个map，类型为map[string]*mountedLayer。前面提到�
 //roLayer是只读的layer原信息，mounts是运行容器的时候可写layer
 //初始化实例见CreateRWLayer
 type mountedLayer struct {
+//mountedLayer 存储的内容主要是索引某个容器的可读写层(也叫容器层)的ID(也对应容器的ID)
+// 存储在 /var/lib/docker/image/[graph_driver]/layerdb/mounts/[chain_id]/路径下
 	name       string
 	//initID和mountID表示了这个layer数据存放的位置，和 roLayer.CacheId一样。
-	mountID    string
-	initID     string
-	parent     *roLayer
+	mountID    string  //读写层ID
+	initID     string  //容器init层的ID
+	parent     *roLayer //父镜像ID，也就是只读层
 	path       string
 	layerStore *layerStore
 

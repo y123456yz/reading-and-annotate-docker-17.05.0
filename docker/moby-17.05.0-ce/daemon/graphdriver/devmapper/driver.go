@@ -19,8 +19,8 @@ import (
 	units "github.com/docker/go-units"
 )
 
-func init() {
-	graphdriver.Register("devicemapper", Init)   //Init在 GetDriver中执行 见graphdriver\driver.go
+func init() { //NewDaemon->NewStoreFromOptions->graphdriver.New->GetDriver->init  初始化调用流程
+	graphdriver.Register("devicemapper", Init)   //Init在 GetDriver 中执行 见graphdriver\driver.go
 }
 
 // Driver contains the device set mounted and the home directory

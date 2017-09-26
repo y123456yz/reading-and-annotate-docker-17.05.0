@@ -217,7 +217,8 @@ int get_process_time(pid_t pid,int tid)
 
     sscanf (t + 2, "%c %d %d %d %d %d %u %u %u %u %u %d %d %d %d %d %d %u %u %d %u %u %u %u %u %u %u %u %d %d %d %d %u",
              /*     1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33*/
-                    &state,&ppid,&pgrp,&session,&tty,&tpgid,&flags,&minflt,&cminflt,&majflt,&cmajflt,&utime,&stime,&cutime,&cstime,&counter,
+                    &state,&ppid,&pgrp,&session,&tty,&tpgid,&flags,&minflt,&cminflt,&majflt,
+                    &cmajflt,&utime,&stime,&cutime,&cstime,&counter,
                     &priority,&timeout,&itrealvalue,&starttime,&vsize,&rss,&rlim,&startcode,&endcode,&startstack,
                     &kstkesp,&kstkeip,&signal,&blocked,&sigignore,&sigcatch,&wchan);
     /*printf("-------%c %d %d %d %d %d %u %u %u %u %u -%d -%d -%d -%d %d %d %u %u %d %u %u %u %u %u %u %u %u %d %d %d %d %u",
@@ -225,7 +226,7 @@ int get_process_time(pid_t pid,int tid)
                     priority,timeout,itrealvalue,starttime,vsize,rss,rlim,startcode,endcode,startstack,
                     kstkesp,kstkeip,signal,blocked,sigignore,sigcatch,wchan);
     */
-    //printf("+++%lu %lu %lu %lu\n",utime,stime,cutime,cstime);
+    printf("yang test  +++%lu %lu %lu %lu\n",utime,stime,cutime,cstime);
              
     int p_cpu=utime+stime+cutime+cstime;
     return p_cpu;
@@ -261,7 +262,7 @@ string GetCpuMem( size_t pid, string &cpu ,string &mem,int tid=0 )
     
     fgets(buf,sizeof(buf),fp);
 
-	printf("yang test...,buf:%s\r\n", buf);
+	//printf("yang test...,buf:%s\r\n", buf);
     sscanf(buf,"%s%d%d%d%d%d%d%d%d",tcpu,&user,&nice,&sys,&idle,&iowait,&irq,&softirq,&steal);
     
     //printf("%s,%d,%d,%d,%d,%d,%d,%d,%d\n",tcpu,user,nice,sys,idle,iowait,irq,softirq,steal);
@@ -358,6 +359,9 @@ string GetCpuMem( size_t pid, string &cpu ,string &mem,int tid=0 )
         pcpu = (float)(p_cpu2 - p_cpu1)/(all2-all1)*NUM_PROCS*100;
     }
 
+	
+	printf("yang test .......%d, %d..(p_cpu2 - p_cpu1):%d, %d %d.. (all2-all1):%d \r\n",
+		p_cpu2,  p_cpu1, (p_cpu2 - p_cpu1), all2, all1, (all2-all1));
     //printf("cpu(s): %.2f\% ,%.2f\% ,%.2f\% ,%.2f\% ,%.2f\% ,%.2f\% ,%.2f\% ,%.2f\% \n",
     //          usage,syage,niage,idage,ioage,irage,soage,stage);
     sprintf(ccpu,"Cpu(s):  %.2f%%us,%.2f%%sy,%.2f%%ni,%.2f%%id,%.2f%%wa,%.2f%%hi,%.2f%%si,%.2f%%st\n",

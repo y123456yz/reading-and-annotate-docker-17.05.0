@@ -174,7 +174,7 @@ func init() {
 // Register registers an InitFunc for the driver.
 //可以搜索 graphdriver.Register，例如devicemapper driver对应的driver注册见 graphdriver\devmapper\driver.go
 //overlay 对应的为 graphdriver\overlay\driver.go
-func Register(name string, initFunc InitFunc) error {
+func Register(name string, initFunc InitFunc) error { //NewDaemon->NewStoreFromOptions->graphdriver.New->GetDriver->init  存储驱动初始化调用流程
 	if _, exists := drivers[name]; exists {
 		return fmt.Errorf("Name already registered %s", name)
 	}
@@ -183,6 +183,7 @@ func Register(name string, initFunc InitFunc) error {
 	return nil
 }
 
+////NewDaemon->NewStoreFromOptions->graphdriver.New->GetDriver->init
 // GetDriver initializes and returns the registered driver     name 为 devicemapper  overlay  vfs等
 func GetDriver(name string, pg plugingetter.PluginGetter, config Options) (Driver, error) {
 	if initFunc, exists := drivers[name]; exists {
@@ -219,10 +220,10 @@ type Options struct {  //命令行中写带的graphdriver storage相关参数在
 }
 
 // New creates the driver and initializes it at the specified root.
-//NewStoreFromOptions->graphdriver.New    name 为 devicemapper  overlay  vfs等
+//NewDaemon->NewStoreFromOptions->graphdriver.New    name 为 devicemapper  overlay  vfs等
 func New(name string, pg plugingetter.PluginGetter, config Options) (Driver, error) {
 
-	if name != "" {
+	if name != "" { //NewDaemon->NewStoreFromOptions->graphdriver.New->GetDriver
 		logrus.Debugf("[graphdriver] trying provided driver: %s", name) // so the logs show specified driver
 		return GetDriver(name, pg, config)
 	}

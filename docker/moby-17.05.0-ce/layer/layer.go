@@ -83,10 +83,10 @@ type TarStreamer interface {
 
 // Layer represents a read-only layer
 /*
-docker中定义了 Layer 和 RWLayer 两种接口，分别用来定义只读层和可读写层的一些操作，又定义了roLayer和mountedLayer,分别实现这两种接口。
+docker中定义了 Layer 和 RWLayer 两种接口，分别用来定义只读层和可读写层的一些操作，又定义了 roLayer 和 mountedLayer,分别实现这两种接口。
 其中 roLayer 用于藐视不可改变的镜像层，mountedLayer 用于藐视可读写的容器层
 */
-type Layer interface {
+type Layer interface { //roLayer中实现
 	TarStreamer
 
 	// TarStreamFrom returns a tar archive stream for all the layer chain with
@@ -123,7 +123,7 @@ type Layer interface {
 docker中定义了 Layer 和 RWLayer 两种接口，分别用来定义只读层和可读写层的一些操作，又定义了roLayer和mountedLayer,分别实现这两种接口。
 其中 roLayer 用于表视不可改变的镜像层，mountedLayer 用于表视可读写的容器层
 */
-type RWLayer interface {
+type RWLayer interface { //mountedLayer 中实现
 	TarStreamer
 
 	// Name of mounted layer

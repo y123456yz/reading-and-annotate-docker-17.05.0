@@ -69,9 +69,9 @@ type StoreOptions struct { //初始化赋值见NewDaemon
 // NewStoreFromOptions creates a new Store instance
 /*
 
-*/ //NewDaemon中执行
+*/ //NewDaemon 中执行
 func NewStoreFromOptions(options StoreOptions) (Store, error) {
-	//NewStoreFromOptions->graphdriver.New
+	//NewDaemon->NewStoreFromOptions->graphdriver.New
 	driver, err := graphdriver.New(options.GraphDriver, options.PluginGetter, graphdriver.Options{
 		Root:                options.StorePath,
 		DriverOptions:       options.GraphDriverOptions,

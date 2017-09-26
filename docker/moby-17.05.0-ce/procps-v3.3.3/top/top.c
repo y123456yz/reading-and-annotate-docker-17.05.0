@@ -1971,9 +1971,9 @@ static void procs_hlp (proc_t *this) {
       oldtimev.tv_usec = timev.tv_usec;
 
       //yang test smp_num_cpus:8, Rc.mode_irixps:1, et:100, Hertz:0
-     memset(buf, 0, 200);
-     snprintf(buf, 200, "yang test smp_num_cpus:%d, Rc.mode_irixps:%d, et:%d, Hertz:%d", smp_num_cpus, Rc.mode_irixps, et, Hertz);
-     writelog(buf);
+      memset(buf, 0, 200);
+      snprintf(buf, 200, "yang test smp_num_cpus:%d, Rc.mode_irixps:%d, et:%d, Hertz:%d", smp_num_cpus, Rc.mode_irixps, et, Hertz);
+      writelog(buf);
 
       
       // if in Solaris mode, adjust our scaling for all cpus
