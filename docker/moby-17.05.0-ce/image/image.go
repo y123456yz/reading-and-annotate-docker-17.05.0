@@ -56,7 +56,7 @@ type V1Image struct {
 }
 
 // Image stores the image configuration
-type Image struct {
+type Image struct { //创建容器的时候，会根据docker run制定的镜像来创建container实例，可以参考 (daemon *Daemon) create (daemon\create.go)
 	V1Image
 	Parent     ID        `json:"parent,omitempty"`
 	RootFS     *RootFS   `json:"rootfs,omitempty"`

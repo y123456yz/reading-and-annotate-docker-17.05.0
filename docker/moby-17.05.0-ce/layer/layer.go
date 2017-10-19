@@ -229,7 +229,7 @@ type MetadataTransaction interface {
 // metadata about layers and providing the metadata
 // for restoring a Store.
 //MetadataStore为接口，主要为获得层基本信息的方法。 metadata 是这个层的额外信息，不仅能够让docker获取运行和构建的信息，也包括父层的层次信息（只读层和读写层都包含元数据）。
-type MetadataStore interface {
+type MetadataStore interface { //相应接口实现可以参考 NewStoreFromOptions->NewStoreFromGraphDriver
 	// StartTransaction starts an update for new metadata
 	// which will be used to represent an ID on commit.
 	StartTransaction() (MetadataTransaction, error)

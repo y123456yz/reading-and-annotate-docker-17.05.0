@@ -54,7 +54,8 @@ type InitFunc func(root string, options []string, uidMaps, gidMaps []idtools.IDM
 // interface and use the NaiveDiffDriver wrapper constructor.
 //
 // Use of ProtoDriver directly by client code is not recommended.
-type ProtoDriver interface {  //包含在 NaiveDiffDriver 结构中
+//例如devicemapper驱动的相应接口在 graphdriver\driver.go 中的Driver结构中包含有一下这些接口实现
+type ProtoDriver interface {  //包含在 NaiveDiffDriver 结构中       type Driver interface {}也包含该接口
 	// String returns a string representation of this driver.
 	String() string   //代表这个驱动的字符串
 	// CreateReadWrite creates a new, empty filesystem layer that is ready
@@ -97,7 +98,7 @@ type ProtoDriver interface {  //包含在 NaiveDiffDriver 结构中
 }
 
 // DiffDriver is the interface to use to implement graph diffs
-type DiffDriver interface {
+type DiffDriver interface { //type Driver interface {}包含该接口
 	// Diff produces an archive of the changes between the specified
 	// layer and its parent layer which may be "".
 	//将指定ID的层相对父镜像层改动的文件打包并返回
@@ -124,7 +125,7 @@ type DiffDriver interface {
 // Driver is the interface for layered/snapshot file system drivers.
 type Driver interface {
 	ProtoDriver
-	DiffDriver
+	DiffDriver  //有些driver没有DiffDriver接口，例如devicemapper
 }
 
 // Capabilities defines a list of capabilities a driver may implement.
@@ -211,6 +212,7 @@ func getBuiltinDriver(name, home string, options []string, uidMaps, gidMaps []id
 }
 
 // Options is used to initialize a graphdriver    --storage-opt dm.basesize=20G命令行参数配置
+//赋值见NewStoreFromOptions
 type Options struct {  //命令行中写带的graphdriver storage相关参数在 NewDeviceSet 中生效
 	Root                string
 	DriverOptions       []string   //options选项可以为 dm.basesize dm.loopdatasize等，见NewDeviceSet
@@ -221,7 +223,7 @@ type Options struct {  //命令行中写带的graphdriver storage相关参数在
 
 // New creates the driver and initializes it at the specified root.
 //NewDaemon->NewStoreFromOptions->graphdriver.New    name 为 devicemapper  overlay  vfs等
-func New(name string, pg plugingetter.PluginGetter, config Options) (Driver, error) {
+func New(name string, pg plugingetter.PluginGetter, config Options) (Driver, error) {  //存储驱动的初始化
 
 	if name != "" { //NewDaemon->NewStoreFromOptions->graphdriver.New->GetDriver
 		logrus.Debugf("[graphdriver] trying provided driver: %s", name) // so the logs show specified driver

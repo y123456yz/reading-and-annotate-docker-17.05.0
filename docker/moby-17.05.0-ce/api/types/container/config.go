@@ -37,10 +37,10 @@ type HealthConfig struct {
 
 //在docker create的时候，解析出 *ContainerCreateConfig.config与*ContainerCreateConfig.hostConfig 后，然后在 postContainersCreate->containerCreate 中实例化 Container 结构
 
-//*ContainerCreateConfig.config与*ContainerCreateConfig.hostConfig都是配置的结构，区别是config是只与container相关的配置，hostConfig属于与宿主机相关的配置选项；
+//*ContainerCreateConfig.config与*ContainerCreateConfig.hostConfig都是配置的结构，区别是config是只与container相关的配置，hostConfig属于与宿主机相关的配置选项；见ContainerCreateConfig
 // 他们都包含在ContainerCreateConfig结构中,见postContainersCreate
-type Config struct {
-	Hostname        string              // Hostname
+type Config struct { //ContainerCreateConfig 中的 Config成员为该结构
+	Hostname        string              // Hostname  newContainer->generateHostname中赋值，默认为imageid的前12字节
 	Domainname      string              // Domainname
 	User            string              // User that will run the command(s) inside the container, also support user:group
 	AttachStdin     bool                // Attach the standard input, makes possible user interaction
@@ -51,6 +51,7 @@ type Config struct {
 	OpenStdin       bool                // Open stdin
 	StdinOnce       bool                // If true, close stdin after the 1 attached client disconnects.
 	Env             []string            // List of environment variable to set in the container
+	//命令行参数在存储在这里
 	Cmd             strslice.StrSlice   // Command to run when starting the container
 	Healthcheck     *HealthConfig       `json:",omitempty"` // Healthcheck describes how to check the container is healthy
 	ArgsEscaped     bool                `json:",omitempty"` // True if command is already escaped (Windows specific)

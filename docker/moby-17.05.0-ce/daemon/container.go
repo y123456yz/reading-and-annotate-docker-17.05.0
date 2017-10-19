@@ -78,7 +78,7 @@ func (daemon *Daemon) IsPaused(id string) bool {
 	return c.State.IsPaused()
 }
 
-// /var/log/docker/container + id
+// /var/lib/docker/container + id
 func (daemon *Daemon) containerRoot(id string) string {
 	return filepath.Join(daemon.repository, id)
 }
@@ -119,12 +119,15 @@ func (daemon *Daemon) newContainer(name string, config *containertypes.Config, h
 		err            error
 		noExplicitName = name == ""
 	)
-	id, name, err = daemon.generateIDAndName(name)
+
+	//imgID为镜像的ID
+	//这里的id是容器的id,也就是每个容器一个id
+	id, name, err = daemon.generateIDAndName(name) //产生name:id kv对
 	if err != nil {
 		return nil, err
 	}
 
-	if hostConfig.NetworkMode.IsHost() {
+	if hostConfig.NetworkMode.IsHost() { //根据id生成hostname
 		if config.Hostname == "" {
 			config.Hostname, err = os.Hostname()
 			if err != nil {
@@ -184,6 +187,7 @@ func (daemon *Daemon) getEntrypointAndArgs(configEntrypoint strslice.StrSlice, c
 	return configCmd[0], configCmd[1:]
 }
 
+//取id的前12字节作为hostname
 func (daemon *Daemon) generateHostname(id string, config *containertypes.Config) {
 	// Generate default hostname
 	if config.Hostname == "" {

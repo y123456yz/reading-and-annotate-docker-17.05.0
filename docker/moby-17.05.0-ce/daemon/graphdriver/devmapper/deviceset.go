@@ -75,7 +75,7 @@ type transaction struct {
 }
 
 /*
-root@fd-mesos-slave38.gz01:/var/lib/docker/devicemapper/metadata$ cat 73566c5a5e7f6cb18378dac0f4f0415b9d982f4231418fc2321de9395d386ab2-init
+root@fd-xxx-slave38.gz01:/var/lib/docker/devicemapper/metadata$ cat 73566c5a5e7f6cb18378dac0f4f0415b9d982f4231418fc2321de9395d386ab2-init
 {"device_id":39,"size":42949672960,"transaction_id":61,"initialized":false,"deleted":false}
 root@fd-mesos-slave38.gz01:/var/lib/docker/devicemapper/metadata$
 */

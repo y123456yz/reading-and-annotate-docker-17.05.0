@@ -28,6 +28,7 @@ var (
 	}
 )
 
+//NewFSMetadataStore 中使用，改结构包含 getLayerDirectory getLayerFilename等方法，见下面
 type fileMetadataStore struct {
 	root string
 }

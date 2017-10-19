@@ -24,7 +24,7 @@ func init() { //NewDaemon->NewStoreFromOptions->graphdriver.New->GetDriver->init
 }
 
 // Driver contains the device set mounted and the home directory
-type Driver struct {  //初始化赋值见下面的 Init 函数
+type Driver struct {  //初始化赋值见下面的 Init 函数    该 driver除了包含这些结构成员外，还包括 ProtoDriver 接口实现的 Status GetMetadata 等函数功能
 	*DeviceSet
 	home    string
 	uidMaps []idtools.IDMap
@@ -55,6 +55,7 @@ func Init(home string, options []string, uidMaps, gidMaps []idtools.IDMap) (grap
 		locker:    locker.New(),
 	}
 
+	//d包含ProtoDriver接口的函数功能
 	return graphdriver.NewNaiveDiffDriver(d, uidMaps, gidMaps), nil
 }
 

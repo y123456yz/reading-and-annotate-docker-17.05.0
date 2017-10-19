@@ -339,7 +339,7 @@ hostConfig := `{"Binds":[],"ContainerIDFile":"","Memory":0,"MemorySwap":0,"CpuSh
 // Portable information *should* appear in Config.
 // 解析客户端的docker start中的包体内容反序列号，然后存到该结构中，见 //postContainersStart->DecodeHostConfig
 //docker create(postContainersCreate)  docker start(postContainersStart)
-//*ContainerCreateConfig.config与*ContainerCreateConfig.hostConfig都是配置的结构，区别是config是只与container相关的配置，hostConfig属于与宿主机相关的配置选项；
+//*ContainerCreateConfig.config与*ContainerCreateConfig.hostConfig都是配置的结构，区别是config是只与container相关的配置，hostConfig属于与宿主机相关的配置选项；见ContainerCreateConfig
 // 他们都包含在 ContainerCreateConfig 结构中，见 postContainersCreate， docker create的时候会在 GetContainer(daemon/container.go) 中创建 Container 实例
 
 //在docker create的时候，解析出 *ContainerCreateConfig.config与*ContainerCreateConfig.hostConfig 后，然后在 postContainersCreate->containerCreate 中实例化 Container 结构
@@ -351,6 +351,7 @@ type HostConfig struct {//生效使用见 postContainersStart->ContainerStart
 	NetworkMode     NetworkMode   // Network mode to use for the container
 	PortBindings    nat.PortMap   // Port mapping between the exposed port (container) and the host
 	RestartPolicy   RestartPolicy // Restart policy to be used for the container
+	//postContainersCreate 中赋值
 	AutoRemove      bool          // Automatically remove container when it exits
 	VolumeDriver    string        // Name of the volume driver used to mount volumes
 	VolumesFrom     []string      // List of volumes to take from other container

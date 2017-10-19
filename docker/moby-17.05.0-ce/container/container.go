@@ -61,7 +61,7 @@ var (
 // CommonContainer holds the fields for a container which are
 // applicable across all platforms supported by the daemon.
 //type Container struct包含该结构, 该结构是windows平台和unix平台公用的结构，见container_unix.go和container_windows.go中的type Container struct
-type CommonContainer struct { //主要结构赋值见 newContainer
+type CommonContainer struct { //主要结构赋值见 newContainer   初始化赋值见NewBaseContainer
 	StreamConfig *stream.Config
 	// embed for Container to support states directly.
 	*State          `json:"State"` // Needed for Engine API version <= 1.11

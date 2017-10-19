@@ -51,7 +51,7 @@ type store struct {
 	了解docker的人应该知道容器的部分配置信息是存放在image里面的，如volume、port、workdir等，这部分信息就存放在这个目录下面，
 	docker启动时会读取镜像配置信息，反序列化出image对象，docker images获取到的镜像有多少个，这里就有多少个响应的目录，目录名image id
 		metadata目录：metadata目录存放了docker image的parent信息
-	*/
+	*/ //赋值见NewFSStoreBackend，store的函数接口在fs.go文件中
 	fs        StoreBackend
 
 	//digestSet成员，本质上是一个set数据结构，里面存放的其实是每个docker的最上层layer的chain-id。

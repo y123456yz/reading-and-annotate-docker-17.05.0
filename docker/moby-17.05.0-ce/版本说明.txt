@@ -5,3 +5,6 @@ v17.05.0-ce
 https://download.docker.com/linux/    docker  rpm下载
 docker run --security-opt seccomp=unconfined -v /usr/local/var:/usr/local/var:shared -td --privileged --name yyz fb47fe6aa16c /sbin/init  启动容器
 deboam 9
+
+
+SRIOV 虚拟化解决方案b

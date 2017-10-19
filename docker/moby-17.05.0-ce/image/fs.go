@@ -17,7 +17,7 @@ import (
 type DigestWalkFunc func(id digest.Digest) error
 
 // StoreBackend provides interface for image.Store persistence
-type StoreBackend interface {
+type StoreBackend interface { //该接口中的函数具体实现可以参考 NewFSStoreBackend， 具体实也在改fs.go文件中
 	Walk(f DigestWalkFunc) error
 	Get(id digest.Digest) ([]byte, error)
 	Set(data []byte) (digest.Digest, error)
@@ -28,7 +28,7 @@ type StoreBackend interface {
 }
 
 // fs implements StoreBackend using the filesystem.
-type fs struct {
+type fs struct { //newFSStore 中初始化使用该结构    该接口实现了func (s *fs) contentFile  get 等方法，可以直接赋值给StoreBackend，参考NewFSStoreBackend
 	sync.RWMutex
 	root string
 }
@@ -40,6 +40,9 @@ const (
 // image/fs.go   创建仓库后端的文件系统
 // NewFSStoreBackend returns new filesystem based backend for image.Store
 func NewFSStoreBackend(root string) (StoreBackend, error) {
+	/*
+	newFSStore返回的是fs类型，为什么可以赋值给StoreBackend接口呢？ 因为下面的 (s *fs) contentFile 等实现有StoreBackend接口的实现
+	*/
 	return newFSStore(root)
 }
 

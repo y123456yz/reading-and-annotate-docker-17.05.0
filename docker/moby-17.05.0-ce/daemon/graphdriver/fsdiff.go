@@ -23,7 +23,7 @@ var (
 // NewNaiveDiffDriver function below.
 // Notably, the AUFS driver doesn't need to be wrapped like this.
 type NaiveDiffDriver struct {
-	ProtoDriver
+	ProtoDriver   //赋值参考 graphdriver\driver.go 中的 init->NewNaiveDiffDriver
 	uidMaps []idtools.IDMap
 	gidMaps []idtools.IDMap
 }
@@ -35,6 +35,7 @@ type NaiveDiffDriver struct {
 //     Changes(id, parent string) ([]archive.Change, error)
 //     ApplyDiff(id, parent string, diff archive.Reader) (size int64, err error)
 //     DiffSize(id, parent string) (size int64, err error)
+//devicemapper 在 graphdriver\driver.go 中的init中调用
 func NewNaiveDiffDriver(driver ProtoDriver, uidMaps, gidMaps []idtools.IDMap) Driver {
 	return &NaiveDiffDriver{ProtoDriver: driver,
 		uidMaps: uidMaps,

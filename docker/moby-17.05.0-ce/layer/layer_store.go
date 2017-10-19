@@ -30,7 +30,7 @@ const maxLayerDepth = 125
 //见http://licyhust.com/%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF/2016/09/27/docker-image-data-structure/
 
 //注意roLayer 和 layerStore 的关系
-type layerStore struct {
+type layerStore struct {  //NewStoreFromGraphDriver 中初始化会使用该结构类型
 	//MetadataStore为接口，主要为获得层基本信息的方法。
 	// metadata是这个层的额外信息，不仅能够让docker获取运行和构建的信息， 也包括父层的层次信息（只读层和读写层都包含元数据）。
 
@@ -54,12 +54,12 @@ type layerStore struct {
 }
 
 // StoreOptions are the options used to create a new Store instance
-type StoreOptions struct { //初始化赋值见NewDaemon
-	StorePath                 string
-	MetadataStorePathTemplate string
+type StoreOptions struct { //初始化赋值见 NewDaemon
+	StorePath                 string  //  /var/lib/docker
+	MetadataStorePathTemplate string  //  /var/lib/docker/image/devicemapper/layerdb
 	//生效使用见NewStoreFromOptions   --storage-driver 配置，有 devicemapper  aufs  overlay 等
-	GraphDriver               string
-	GraphDriverOptions        []string
+	GraphDriver               string  //devicemapper  overlay等
+	GraphDriverOptions        []string  //存储驱动对应的选项信息
 	UIDMaps                   []idtools.IDMap
 	GIDMaps                   []idtools.IDMap
 	PluginGetter              plugingetter.PluginGetter
@@ -71,7 +71,8 @@ type StoreOptions struct { //初始化赋值见NewDaemon
 
 */ //NewDaemon 中执行
 func NewStoreFromOptions(options StoreOptions) (Store, error) {
-	//NewDaemon->NewStoreFromOptions->graphdriver.New
+	//NewDaemon->NewStoreFromOptions->graphdriver.New   //存储驱动的初始化
+	//这里的driver也就是 driver.go中的 drivers map[string]InitFunc 获取到的，见GetDriver
 	driver, err := graphdriver.New(options.GraphDriver, options.PluginGetter, graphdriver.Options{
 		Root:                options.StorePath,
 		DriverOptions:       options.GraphDriverOptions,
@@ -89,6 +90,7 @@ func NewStoreFromOptions(options StoreOptions) (Store, error) {
 		return nil, err
 	}
 
+	//fms结构包含 getLayerDirectory getLayerFilename等方法
 	return NewStoreFromGraphDriver(fms, driver)
 }
 

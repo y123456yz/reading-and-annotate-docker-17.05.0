@@ -13,6 +13,7 @@ import (
 type ContainerCreateConfig struct { //postContainersCreate 中初始化构建改结构，来源是客户端发起的post请求
 	Name             string
 	//*container.config与*container.hostConfig都是配置的结构，区别是config是只与container相关的配置，hostConfig属于与宿主机相关的配置选项；postContainersCreate
+	//见 ContainerCreateConfig 结构
 	Config           *container.Config
 	//赋值见 daemon/create.go 中的 containerCreate
 	HostConfig       *container.HostConfig

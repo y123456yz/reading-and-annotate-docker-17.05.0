@@ -35,7 +35,7 @@ func NewRegistrar() *Registrar {
 // Reserve registers a key to a name
 // Reserve is idempotent
 // Attempting to reserve a key to a name that already exists results in an `ErrNameReserved`
-// A name reservation is globally unique
+// A name reservation is globally unique   把name:key组成一个kv对
 func (r *Registrar) Reserve(name, key string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()

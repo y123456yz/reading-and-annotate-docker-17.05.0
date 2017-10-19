@@ -75,7 +75,7 @@ type Daemon struct { //赋值见NewDaemon 见 NewDaemon
 	ID                        string
 	//部署所有docker容器的路径，当dockerd重启的时候，会去查看在daemon.repository也就是在/var/lib/docker/container
 	//中的内容。若有已经存在的docker容器，则将相应的信息收集并进行维护，同时重启restart policy为always的容器
-	repository                string   //  /var/log/docker/container
+	repository                string   //  /var/lib/docker/containers    赋值见NewDaemon
 	//用于存储具体docker容器信息的对象
 	containers                container.Store
 	//docker容器所执行的命令
@@ -112,11 +112,12 @@ type Daemon struct { //赋值见NewDaemon 见 NewDaemon
 	shutdown                  bool
 	uidMaps                   []idtools.IDMap
 	gidMaps                   []idtools.IDMap
+	//赋值见 NewDaemon
 	layerStore                layer.Store
-	imageStore                image.Store
+	imageStore                image.Store   //赋值见 NewDaemon
 	PluginStore               *plugin.Store // todo: remove
 	pluginManager             *plugin.Manager
-	//记录键和其名字的对应关系
+	//记录键和其名字的对应关系  存放容器名和ID的KV对数组，赋值见 reserveName
 	nameIndex                 *registrar.Registrar
 	//容器的link目录，记录容器的link关系
 	linkIndex                 *linkIndex
@@ -642,7 +643,7 @@ func NewDaemon(config *config.Config, registryService registry.Service, containe
 	//设立graph driver，graphdriver主要是来管理镜像，以及镜像与镜像之间关系的实现方法。由于config.GraphDriver的默认值为空，所以主要的处理流程在graphdriver.New()中；
 	//加载的优先级的顺序为 priority = []string{"aufs","btrfs","zfs","devicemapper","overlay","vfs"}，
 	// NewStoreFromOptions creates a new Store instance  // lay/layer_store.go 创建graphDriver实例，从driver创建layer仓库的实例
-	d.layerStore, err = layer.NewStoreFromOptions(layer.StoreOptions{
+	d.layerStore, err = layer.NewStoreFromOptions(layer.StoreOptions {
 		StorePath:                 config.Root,
 		MetadataStorePathTemplate: filepath.Join(config.Root, "image", "%s", "layerdb"),
 		GraphDriver:               driverName,

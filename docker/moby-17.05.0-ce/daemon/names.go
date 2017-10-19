@@ -38,6 +38,7 @@ func (daemon *Daemon) registerName(container *container.Container) error {
 	return daemon.nameIndex.Reserve(container.Name, container.ID)
 }
 
+//设置name:id  KV对存储到daemon.nameIndex
 func (daemon *Daemon) generateIDAndName(name string) (string, string, error) {
 	var (
 		err error
@@ -58,6 +59,7 @@ func (daemon *Daemon) generateIDAndName(name string) (string, string, error) {
 	return id, name, nil
 }
 
+//记录键和其名字的对应关系  存放容器名和ID的KV对数组，赋值见 reserveName
 func (daemon *Daemon) reserveName(id, name string) (string, error) {
 	if !validContainerNamePattern.MatchString(strings.TrimPrefix(name, "/")) {
 		return "", fmt.Errorf("Invalid container name (%s), only %s are allowed", name, validContainerNameChars)
@@ -66,6 +68,7 @@ func (daemon *Daemon) reserveName(id, name string) (string, error) {
 		name = "/" + name
 	}
 
+	//记录键和其名字的对应关系  存放容器名和ID的KV对数组，赋值见 reserveName
 	if err := daemon.nameIndex.Reserve(name, id); err != nil {
 		if err == registrar.ErrNameReserved {
 			id, err := daemon.nameIndex.Get(name)

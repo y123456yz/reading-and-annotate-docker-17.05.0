@@ -68,6 +68,7 @@ func (daemon *Daemon) GetImageID(refOrID string) (image.ID, error) {
 }
 
 // GetImage returns an image corresponding to the image referred to by refOrID.
+//客户端docker run  ... image，run的时候指定的img可能是不全的，这里需要把imageid补全
 func (daemon *Daemon) GetImage(refOrID string) (*image.Image, error) {
 	imgID, err := daemon.GetImageID(refOrID)
 	if err != nil {

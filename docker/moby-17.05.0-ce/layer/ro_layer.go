@@ -28,7 +28,9 @@ type roLayer struct { //对应/var/lib/docker/image/overlay/layerdb/sha256/目�
 diff-id：通过docker pull下载镜像时，镜像的json文件中每一个layer都有一个唯一的diff-id
 chain-id：chain-id是根据parent的chain-id和自身的diff-id生成的，假如没有parent，则chain-id等于diff-id，假如有parent，则chain-id等于sha256sum( “parent-chain-id diff-id”)
 cache-id：随机生成的64个16进制数。cache-id标识了这个layer的数据具体存放位置
-只读层元数据的持久化位于 /var/lib/docker/image/[graphdriver]/imagedb/metadata/sha256/[chainID]/文件夹下
+
+//只读层元数据的持久化位于 /var/lib/docker/image/devicemapper/layerdb/sha256/[chainID]/文件夹下
+// 可读写层(也叫容器层)存储在 /var/lib/docker/image/[graph_driver]/layerdb/mounts/[chain_id]/路径下
 
 在layer的所有属性中，diffID采用SHA256算法，基于镜像层文件包的内容计算得到。而chainID是基于内容存储的索引，它是根据当前层与所有祖先镜像层
 diffID计算出来的，具体算法如下:
