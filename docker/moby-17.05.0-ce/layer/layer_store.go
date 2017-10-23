@@ -29,7 +29,13 @@ const maxLayerDepth = 125
 //docker的镜像在docker老版本中是由一个叫graph的数据结构进行管理的，现在换成了layerStore
 //见http://licyhust.com/%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF/2016/09/27/docker-image-data-structure/
 
-//注意roLayer 和 layerStore 的关系
+//注意 roLayer mountedLayer 和 layerStore 的关系  layerStore 包含 roLayer mountedLayer成员
+
+//MetadataStore 是/var/lib/docker/image/devicemapper/layerdb/目录中相关文件操作的接口， 该目录下面的文件内容存储在 layerStore 结构中
+//StoreBackend 是/var/lib/docker/image/{driver}/imagedb 目录中相关文件操作的接口， 该目录下面的文件内容存储在 store 结构中
+///var/lib/docker/image/{driver}/imagedb/content/sha256/下面的文件和/var/lib/docker/image/devicemapper/layerdb/sha256下面的文件通过(is *store) restore()关联起来
+
+//Daemon.layerStore 成员实际上就是存储的layerStore结构， 数据源头由 Daemon.layerStore 指向
 type layerStore struct {  //NewStoreFromGraphDriver 中初始化会使用该结构类型
 	//MetadataStore为接口，主要为获得层基本信息的方法。
 	// metadata是这个层的额外信息，不仅能够让docker获取运行和构建的信息， 也包括父层的层次信息（只读层和读写层都包含元数据）。
@@ -37,16 +43,20 @@ type layerStore struct {  //NewStoreFromGraphDriver 中初始化会使用该结�
 	/*
 	store的数据类型为MetadataStore，主要用来存储每个layer的元数据，存储的目录位于/var/lib/docker/image/{driver}/layerdb，
 	这里的driver包括aufs、devicemapper、overlay和btrfs。
-	layerdb下面有三个目录，mounts、sha256和tmp，tmp目录主要存放临时性数据，因此不做介绍。主要介绍mounts和sha256两个目录。
+	layerdb下面有三个目录，mounts、sha256和tmp，tmp目录主要存放临时性数据
 	*/
-	store  MetadataStore
-	driver graphdriver.Driver
+	store  MetadataStore	  //store对应 fileMetadataStore  用于读取/var/lib/docker/image/devicemapper/layerdb/mounts/目录中的相关文件内容使用的函数接口
+	driver graphdriver.Driver // driver:例如devicemapper，这里的driver对应 graphdriver\driver.go中的 Driver结构
 
 	//即map的键为ChainID（字母串），值为roLayer, store本质上是磁盘上保存了各个layer的元数据信息，当docker初始化时，它会利用
 	//这些元数据文件在内存中构造各个layer，每个Layer都用一个roLayer结构体表示，即只读(ro)的layer
-	layerMap map[ChainID]*roLayer
+	//roLayer 存储镜像层信息，见loadLayer  mountedLayer 存储只读层(容器层)信息，见loadMount
+	//ChinID为image/devicemapper/layerdb/sha256/xxx 中的xxx，roLayer为XXX中的各个文件内容存储在roLayer，赋值见 loadLayer
+	//ChinID为image/devicemapper/layerdb/sha256/xxx 中的xxx实际是根据/var/lib/docker/image/devicemapper/imagedb/content/sha256/$ID文件内容中的diff_ids列表算出来的，可以参考 (is *store) restore()
+	layerMap map[ChainID]*roLayer //镜像层 roLayer 中各层ID和roLayer对应关系存到这里面，赋值见 loadLayer，
 	layerL   sync.Mutex
 
+	//roLayer 存储镜像层信息，见loadLayer  mountedLayer 存储只读层(容器层)信息，见loadMount
 	mounts map[string]*mountedLayer
 	mountL sync.Mutex
 
@@ -56,7 +66,8 @@ type layerStore struct {  //NewStoreFromGraphDriver 中初始化会使用该结�
 // StoreOptions are the options used to create a new Store instance
 type StoreOptions struct { //初始化赋值见 NewDaemon
 	StorePath                 string  //  /var/lib/docker
-	MetadataStorePathTemplate string  //  /var/lib/docker/image/devicemapper/layerdb
+	//该目录下的相关文件对应的函数接口见 fileMetadataStore
+	MetadataStorePathTemplate string  //  /var/lib/docker/image/devicemapper/layerdb  赋值见NewDaemon ，该目录在NewFSMetadataStore中创建
 	//生效使用见NewStoreFromOptions   --storage-driver 配置，有 devicemapper  aufs  overlay 等
 	GraphDriver               string  //devicemapper  overlay等
 	GraphDriverOptions        []string  //存储驱动对应的选项信息
@@ -70,7 +81,7 @@ type StoreOptions struct { //初始化赋值见 NewDaemon
 /*
 
 */ //NewDaemon 中执行
-func NewStoreFromOptions(options StoreOptions) (Store, error) {
+func NewStoreFromOptions(options StoreOptions) (Store, error) { //返回 layerStore 类型
 	//NewDaemon->NewStoreFromOptions->graphdriver.New   //存储驱动的初始化
 	//这里的driver也就是 driver.go中的 drivers map[string]InitFunc 获取到的，见GetDriver
 	driver, err := graphdriver.New(options.GraphDriver, options.PluginGetter, graphdriver.Options{
@@ -97,7 +108,9 @@ func NewStoreFromOptions(options StoreOptions) (Store, error) {
 // NewStoreFromGraphDriver creates a new Store instance using the provided
 // metadata store and graph driver. The metadata store will be used to restore
 // the Store.
-func NewStoreFromGraphDriver(store MetadataStore, driver graphdriver.Driver) (Store, error) {
+//加载/var/lib/docker/image/devicemapper/layerdb/mounts和/var/lib/docker/image/devicemapper/layerdb/sha256目录中的文件内容到layerStore
+//store对应 fileMetadataStore    driver:例如devicemapper，这里的driver对应 graphdriver\driver.go中的 Driver结构
+func NewStoreFromGraphDriver(store MetadataStore, driver graphdriver.Driver) (Store, error) {  //layerStore 返回
 	caps := graphdriver.Capabilities{}
 	if capDriver, ok := driver.(graphdriver.CapabilityDriver); ok {
 		caps = capDriver.Capabilities()
@@ -111,12 +124,17 @@ func NewStoreFromGraphDriver(store MetadataStore, driver graphdriver.Driver) (St
 		useTarSplit: !caps.ReproducesExactDiffs,
 	}
 
-	ids, mounts, err := store.List()
+	// 读取/var/lib/docker/image/devicemapper/layerdb/sha256目录中的文件夹存入ids数组中
+	// /var/lib/docker/image/devicemapper/layerdb/mounts目录下面的文件夹名称存入 mounts 数组
+	ids, mounts, err := store.List()  //fileMetadataStore->(fms *fileMetadataStore) List()
 	if err != nil {
 		return nil, err
 	}
 
-	for _, id := range ids {
+	///var/lib/docker/image/devicemapper/layerdb/sha256存的是镜像层信息
+	// /var/lib/docker/image/devicemapper/layerdb/mounts存的是容器层信息
+
+	for _, id := range ids { //镜像层id列表信息
 		l, err := ls.loadLayer(id)
 		if err != nil {
 			logrus.Debugf("Failed to load layer %s: %s", id, err)
@@ -127,7 +145,7 @@ func NewStoreFromGraphDriver(store MetadataStore, driver graphdriver.Driver) (St
 		}
 	}
 
-	for _, mount := range mounts {
+	for _, mount := range mounts { //容器层列表信息
 		if err := ls.loadMount(mount); err != nil {
 			logrus.Debugf("Failed to load mount %s: %s", mount, err)
 		}
@@ -137,26 +155,30 @@ func NewStoreFromGraphDriver(store MetadataStore, driver graphdriver.Driver) (St
 }
 
 func (ls *layerStore) loadLayer(layer ChainID) (*roLayer, error) {
-	cl, ok := ls.layerMap[layer]
+	cl, ok := ls.layerMap[layer] //如果 ChainID:roLayer已经存在，直接返回，如果没有对应的关系存在，则在后面加入
 	if ok {
 		return cl, nil
 	}
 
+	// 获取/var/lib/docker/image/devicemapper/layerdb/sha256/02f5128fe5a1deee94c98a1be63692a776693f09b0bb2bbfdf2ee74620071d54/diff中的文件内容，然后通过DiffID返回
 	diff, err := ls.store.GetDiffID(layer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get diff id for %s: %s", layer, err)
 	}
 
+	///var/lib/docker/image/devicemapper/layerdb/sha256/02f5128fe5a1deee94c98a1be63692a776693f09b0bb2bbfdf2ee74620071d54/size
 	size, err := ls.store.GetSize(layer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get size for %s: %s", layer, err)
 	}
 
+	///var/lib/docker/image/devicemapper/layerdb/sha256/02f5128fe5a1deee94c98a1be63692a776693f09b0bb2bbfdf2ee74620071d54/cache-id
 	cacheID, err := ls.store.GetCacheID(layer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get cache id for %s: %s", layer, err)
 	}
 
+	///var/lib/docker/image/devicemapper/layerdb/sha256/02f5128fe5a1deee94c98a1be63692a776693f09b0bb2bbfdf2ee74620071d54/parent
 	parent, err := ls.store.GetParent(layer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get parent for %s: %s", layer, err)
@@ -167,6 +189,8 @@ func (ls *layerStore) loadLayer(layer ChainID) (*roLayer, error) {
 		return nil, fmt.Errorf("failed to get descriptor for %s: %s", layer, err)
 	}
 
+	//把 /var/lib/docker/image/devicemapper/layerdb/sha256/02f5128fe5a1deee94c98a1be63692a776693f09b0bb2bbfdf2ee74620071d54这层
+	//获取到的信息存入到roLayer
 	cl = &roLayer{
 		chainID:    layer,
 		diffID:     diff,
@@ -177,7 +201,7 @@ func (ls *layerStore) loadLayer(layer ChainID) (*roLayer, error) {
 		descriptor: descriptor,
 	}
 
-	if parent != "" {
+	if parent != "" { //上层和下层通过这里的parent联系起来
 		p, err := ls.loadLayer(parent)
 		if err != nil {
 			return nil, err
@@ -190,8 +214,9 @@ func (ls *layerStore) loadLayer(layer ChainID) (*roLayer, error) {
 	return cl, nil
 }
 
+// 读取/var/lib/docker/image/devicemapper/layerdb/mounts/containerId目录下面的文件内容存入 mountedLayer
 func (ls *layerStore) loadMount(mount string) error {
-	if _, ok := ls.mounts[mount]; ok {
+	if _, ok := ls.mounts[mount]; ok { //已经存在于mounts中说明已经读取过了，不用走后面流程
 		return nil
 	}
 
@@ -219,13 +244,13 @@ func (ls *layerStore) loadMount(mount string) error {
 	}
 
 	if parent != "" {
-		p, err := ls.loadLayer(parent)
+		p, err := ls.loadLayer(parent) //注意:容器层的parent为镜像层
 		if err != nil {
 			return err
 		}
 		ml.parent = p
 
-		p.referenceCount++
+		p.referenceCount++ //镜像层被几个容器给引用了
 	}
 
 	ls.mounts[ml.name] = ml
@@ -364,6 +389,8 @@ func (ls *layerStore) registerWithDescriptor(ts io.Reader, parent ChainID, descr
 	return layer.getReference(), nil
 }
 
+//ls.layerMap[layer] 被根据/var/lib/docker/image/devicemapper/imagedb/content/sha256/$ID文件内容中的diff_ids列表
+// 算出来的ChainID，被/var/lib/docker/image/devicemapper/imagedb/content/sha256/$ID引用
 func (ls *layerStore) getWithoutLock(layer ChainID) *roLayer {
 	l, ok := ls.layerMap[layer]
 	if !ok {
@@ -381,6 +408,7 @@ func (ls *layerStore) get(l ChainID) *roLayer {
 	return ls.getWithoutLock(l)
 }
 
+//获取ChainID对应的layer信息
 func (ls *layerStore) Get(l ChainID) (Layer, error) {
 	ls.layerL.Lock()
 	defer ls.layerL.Unlock()

@@ -19,10 +19,14 @@ docker中定义了 Layer 和 RWLayer 两种接口，分别用来定义只读层�
 其中 roLayer 用于表视不可改变的镜像层，mountedLayer 用于表视可读写的容器层
 
 docker镜像管理部分和存储驱动在设计上完全分离了，镜像层或者容器层在存储驱动中拥有一个新的标示ID，在镜像层(roLayer)中称为
-cacheID,容器层(mountedLayer)中为mountID。 mountID是随机生成的并保存在mountedLayer的元数据mountID中，持久化到
+cacheID,容器层(mountedLayer)中为mountID。 mountID是随机生成的并保存在mountedLayer的元数据mountID中
+
+referencedCacheLayer 中包含 roLayer
 */
 
-//roLayer是只读的layer原信息，mounts是运行容器的时候可写layer
+//loadLayer 中初始化构造该结构， layerStore 结构包含该成员类型
+//注意 roLayer mountedLayer 和 layerStore 的关系  layerStore 包含 roLayer mountedLayer成员
+//roLayer 存储只读镜像层信息，见loadLayer  mountedLayer 存储只读层(容器层)信息，见loadMount
 type roLayer struct { //对应/var/lib/docker/image/overlay/layerdb/sha256/目录相关
 /*  参考http://licyhust.com/%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF/2016/09/27/docker-image-data-structure/
 diff-id：通过docker pull下载镜像时，镜像的json文件中每一个layer都有一个唯一的diff-id
@@ -39,6 +43,7 @@ diffID计算出来的，具体算法如下:
 */
 	chainID    ChainID //chainID和parent可以从所属image元数据计算出来
 	diffID     DiffID  //diffID和size可以通过一个该镜像层包计算出来
+	//赋值见loadLayer
 	parent     *roLayer  //每一层都包括指向父层的指针。如果没有这个指针，说明处于最底层。
 	//在docker宿主机上随机生成的uuid,在当前宿主机上与该镜像层一一对应，用于标识和索引graphdriver中的镜像层文件
 	cacheID    string //知名layer数据存放位置，/var/lib/docker/devicemapper/metadata/cache-id
@@ -48,8 +53,9 @@ diffID计算出来的，具体算法如下:
 	descriptor distribution.Descriptor
 
 	//referentces存放的是他的子layer的信息。当删除镜像时，只有roLayer的referentceCount为零时，才能够删除该layer。
-	referenceCount int
-	references     map[Layer]struct{}
+	//可以被子镜像层引用，也可以被容器层引用，还可以被/var/lib/docker/image/devicemapper/imagedb/content/sha256中的diff_ids计算出的ChinaID引用，可以搜索 referenceCount++
+	referenceCount int  //该镜像层被容器层、镜像层、和/var/lib/docker/image/devicemapper/imagedb/content/sha256中的diff_ids引用的次数，
+	references     map[Layer]struct{} //赋值参考getReference
 }
 
 // TarStream for roLayer guarantees that the data that is produced is the exact
@@ -119,13 +125,13 @@ func (rl *roLayer) Metadata() (map[string]string, error) {
 	return rl.layerStore.driver.GetMetadata(rl.cacheID)
 }
 
-type referencedCacheLayer struct {
+type referencedCacheLayer struct { //下面的getReference 中会使用到该类
 	*roLayer
 }
 
-func (rl *roLayer) getReference() Layer {
+func (rl *roLayer) getReference() Layer { //referencedCacheLayer 中的roLayer实现 Layer 中的各种方法
 	ref := &referencedCacheLayer{
-		roLayer: rl,
+		roLayer: rl,  //把rl存入referencedCacheLayer
 	}
 	rl.references[ref] = struct{}{}
 

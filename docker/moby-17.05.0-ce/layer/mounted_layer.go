@@ -15,13 +15,14 @@ docker中定义了 Layer 和 RWLayer 两种接口，分别用来定义只读层�
 mounts本质上是一个map，类型为map[string]*mountedLayer。前面提到过mounts存放的其实是每个容器可写的layer的信息，他们的元数据存
 放在/var/lib/docker/image/{driver}/layerdb/mounts目录下。而mountedLayer则是这些可写的layer在内存中的结构
 */
-//roLayer是只读的layer原信息，mounts是运行容器的时候可写layer
-//初始化实例见CreateRWLayer
-type mountedLayer struct {
+//roLayer 是只读的layer原信息，mounts是运行容器的时候可写layer
+//roLayer 存储只读镜像层信息，见loadLayer  mountedLayer 存储只读层(容器层)信息，见loadMount
+//初始化实例见CreateRWLayer  layerStore 包含该成员类型， loadMount 中初始化赋值该类，
+type mountedLayer struct { //参考loadMount 读取/var/lib/docker/image/devicemapper/layerdb/mounts/containerId目录下面的文件内容存入 mountedLayer
 //mountedLayer 存储的内容主要是索引某个容器的可读写层(也叫容器层)的ID(也对应容器的ID)
 //只读层元数据的持久化位于 /var/lib/docker/image/[graphdriver]/imagedb/metadata/sha256/[chainID]/文件夹下
 // 可读写层(也叫容器层)存储在 /var/lib/docker/image/[graph_driver]/layerdb/mounts/[chain_id]/路径下
-	name       string
+	name       string  // /var/lib/docker/image/devicemapper/layerdb/mounts/containerId 中的containerId
 	//initID和mountID表示了这个layer数据存放的位置，和 roLayer.CacheId一样。
 	mountID    string  //读写层ID
 	initID     string  //容器init层的ID

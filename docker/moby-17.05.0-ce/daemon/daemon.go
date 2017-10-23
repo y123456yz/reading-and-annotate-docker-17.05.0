@@ -112,9 +112,11 @@ type Daemon struct { //赋值见NewDaemon 见 NewDaemon
 	shutdown                  bool
 	uidMaps                   []idtools.IDMap
 	gidMaps                   []idtools.IDMap
-	//赋值见 NewDaemon
+	//赋值见 NewDaemon   通过NewStoreFromOptions返回  实际上为 layerStore 类型，实现有type Store interface {}中包含的函数
+	//layerStore 存储相关的接口方法，结构，源头都在这里
 	layerStore                layer.Store
-	imageStore                image.Store   //赋值见 NewDaemon
+	//Store 存储相关的接口方法，结构，源头都在这里
+	imageStore                image.Store   //赋值见 NewDaemon  Daemon.imageStore
 	PluginStore               *plugin.Store // todo: remove
 	pluginManager             *plugin.Manager
 	//记录键和其名字的对应关系  存放容器名和ID的KV对数组，赋值见 reserveName
@@ -676,6 +678,7 @@ func NewDaemon(config *config.Config, registryService registry.Service, containe
 		return nil, err
 	}
 
+	//ifs为type fs struct类型结构，实现有 StoreBackend 接口函数信息, ifs对应的目录为/var/lib/docker/image/{driver}/imagedb
 	d.imageStore, err = image.NewImageStore(ifs, d.layerStore)
 	if err != nil {
 		return nil, err

@@ -57,7 +57,9 @@ var (
 )
 
 // ChainID is the content-addressable ID of a layer.
+//ChainID 通过 createChainIDFromParent 计算得到，根据/var/lib/docker/image/devicemapper/imagedb/content/sha256/XXX文件内容中的diff_ids递归计算得到，见createChainIDFromParent
 type ChainID digest.Digest
+//ChainID 通过 createChainIDFromParent 计算得到，根据/var/lib/docker/image/devicemapper/imagedb/content/sha256/XXX文件内容中的diff_ids递归计算得到，见createChainIDFromParent
 
 // String returns a string rendition of a layer ID
 func (id ChainID) String() string {
@@ -66,7 +68,7 @@ func (id ChainID) String() string {
 
 //digest.Digest类型，其实都是string类型,都是sha256:uuid，uuid为64个16进制数
 // DiffID is the hash of an individual layer tar.
-type DiffID digest.Digest
+type DiffID digest.Digest  //type Digest string
 
 // String returns a string rendition of a layer DiffID
 func (diffID DiffID) String() string {
@@ -86,7 +88,7 @@ type TarStreamer interface {
 docker中定义了 Layer 和 RWLayer 两种接口，分别用来定义只读层和可读写层的一些操作，又定义了 roLayer 和 mountedLayer,分别实现这两种接口。
 其中 roLayer 用于藐视不可改变的镜像层，mountedLayer 用于藐视可读写的容器层
 */
-type Layer interface { //roLayer中实现
+type Layer interface { //roLayer 中实现这些方法
 	TarStreamer
 
 	// TarStreamFrom returns a tar archive stream for all the layer chain with
@@ -187,7 +189,7 @@ type CreateRWLayerOpts struct { //使用见setRWLayer
 
 // Store represents a backend for managing both
 // read-only and read-write layers.
-type Store interface {
+type Store interface {  //layerStore 结构会实现这些方法
 	Register(io.Reader, ChainID) (Layer, error)
 	Get(ChainID) (Layer, error)
 	Map() map[ChainID]Layer
@@ -229,14 +231,21 @@ type MetadataTransaction interface {
 // metadata about layers and providing the metadata
 // for restoring a Store.
 //MetadataStore为接口，主要为获得层基本信息的方法。 metadata 是这个层的额外信息，不仅能够让docker获取运行和构建的信息，也包括父层的层次信息（只读层和读写层都包含元数据）。
+
+//MetadataStore 是/var/lib/docker/image/devicemapper/layerdb/目录中相关文件操作的接口， 该目录下面的文件内容存储在 layerStore 结构中
+//StoreBackend 是/var/lib/docker/image/{driver}/imagedb 目录中相关文件操作的接口， 该目录下面的文件内容存储在 store 结构中
+///var/lib/docker/image/{driver}/imagedb/content/sha256/下面的文件和/var/lib/docker/image/devicemapper/layerdb/sha256下面的文件通过(is *store) restore()关联起来
+
+//fileMetadataStore 包含该接口成员实现   fileMetadataStore  fileMetadataStore
 type MetadataStore interface { //相应接口实现可以参考 NewStoreFromOptions->NewStoreFromGraphDriver
 	// StartTransaction starts an update for new metadata
 	// which will be used to represent an ID on commit.
 	StartTransaction() (MetadataTransaction, error)
 
+	//loadLayer 中执行
 	GetSize(ChainID) (int64, error)
 	GetParent(ChainID) (ChainID, error)
-	GetDiffID(ChainID) (DiffID, error)
+	GetDiffID(ChainID) (DiffID, error)  //loadLayer 中执行
 	GetCacheID(ChainID) (string, error)
 	GetDescriptor(ChainID) (distribution.Descriptor, error)
 	TarSplitReader(ChainID) (io.ReadCloser, error)
@@ -245,23 +254,42 @@ type MetadataStore interface { //相应接口实现可以参考 NewStoreFromOpti
 	SetInitID(string, string) error
 	SetMountParent(string, ChainID) error
 
+	//loadMount中执行
 	GetMountID(string) (string, error)
 	GetInitID(string) (string, error)
 	GetMountParent(string) (ChainID, error)
 
 	// List returns the full list of referenced
 	// read-only and read-write layers
-	List() ([]ChainID, []string, error)
+	List() ([]ChainID, []string, error)  //NewStoreFromGraphDriver 中执行
 
 	Remove(ChainID) error
 	RemoveMount(string) error
 }
 
 // CreateChainID returns ID for a layerDigest slice
-func CreateChainID(dgsts []DiffID) ChainID {
+//(is *store) restore() 中调用执行
+func CreateChainID(dgsts []DiffID) ChainID { //根据DiffID数组算出ChainID
 	return createChainIDFromParent("", dgsts...)
 }
+/*
+  "rootfs": {
+    "type": "layers",
+    "diff_ids": [
+      "sha256:51a45fddc531d0138a18ad6f073310daab3a3fe4862997b51b6c8571f3776b62",   //#1
+      "sha256:5792d8202a821076989a52ced68d1382fc0596f937e7808abbd5ffc1db93fffb",   //#2
+      "sha256:b7bbef1946d74cdfd84b0db815b4fe9fc9405451190aa65b9eab6ae198c560b4",   //#3
+      "sha256:15f9e79c2b67f8578e31eda9eb1696b86a10b343ac0e4c50787c5bf01ba55772",
+      "sha256:4164b79e9b3832c5a07c9a94c85369bb8f122c9514db51c3e8eb65bc0f2116f9",
+      "sha256:368ef39ae0d0020b57d1f2a86ffab5c7454e7bcc8410c0458b0b0934e11c7bdc",
+      "sha256:fc91cde1bce45e852ad94bdaa5ef2f8e2e3ebd30f3a253c2dccc0e52b8bd19b4",
+      "sha256:34442167f2bc45188d98271ca2ef54030709b2f83dffd4c5af448dd03085f02c"
+    ]
+  }
+}
 
+#1  #2  #3...存入到DiffID数组中
+*/  //根据parent 和 dgsts 算出一个ChainID
 func createChainIDFromParent(parent ChainID, dgsts ...DiffID) ChainID {
 	if len(dgsts) == 0 {
 		return parent

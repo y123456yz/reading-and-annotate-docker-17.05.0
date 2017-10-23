@@ -16,7 +16,12 @@ import (
 // DigestWalkFunc is function called by StoreBackend.Walk
 type DigestWalkFunc func(id digest.Digest) error
 
+//MetadataStore 是/var/lib/docker/image/devicemapper/layerdb/目录中相关文件操作的接口， 该目录下面的文件内容存储在 layerStore 结构中
+//StoreBackend 是/var/lib/docker/image/{driver}/imagedb 目录中相关文件操作的接口， 该目录下面的文件内容存储在 store 结构中
+///var/lib/docker/image/{driver}/imagedb/content/sha256/下面的文件和/var/lib/docker/image/devicemapper/layerdb/sha256下面的文件通过(is *store) restore()关联起来
+
 // StoreBackend provides interface for image.Store persistence
+//type fs struct{} 结构实现了这些接口  // fs为type fs struct类型结构，实现有 StoreBackend 接口函数信息
 type StoreBackend interface { //该接口中的函数具体实现可以参考 NewFSStoreBackend， 具体实也在改fs.go文件中
 	Walk(f DigestWalkFunc) error
 	Get(id digest.Digest) ([]byte, error)
@@ -28,17 +33,18 @@ type StoreBackend interface { //该接口中的函数具体实现可以参考 Ne
 }
 
 // fs implements StoreBackend using the filesystem.
-type fs struct { //newFSStore 中初始化使用该结构    该接口实现了func (s *fs) contentFile  get 等方法，可以直接赋值给StoreBackend，参考NewFSStoreBackend
+type fs struct { //newFSStore 中初始化使用该结构    该接口实现了func (s *fs) contentFile  get 等方法，可以直接赋值给 StoreBackend，参考NewFSStoreBackend
 	sync.RWMutex
-	root string
+	root string ///var/lib/docker/image/{driver}/imagedb
 }
 
 const (
-	contentDirName  = "content"
-	metadataDirName = "metadata"
+	contentDirName  = "content"   // /var/lib/docker/image/{driver}/imagedb/content
+	metadataDirName = "metadata"  // /var/lib/docker/image/{driver}/imagedb/metadata
 )
 // image/fs.go   创建仓库后端的文件系统
 // NewFSStoreBackend returns new filesystem based backend for image.Store
+///var/lib/docker/image/{driver}/imagedb，该目录下主要包含两个目录content和metadata
 func NewFSStoreBackend(root string) (StoreBackend, error) {
 	/*
 	newFSStore返回的是fs类型，为什么可以赋值给StoreBackend接口呢？ 因为下面的 (s *fs) contentFile 等实现有StoreBackend接口的实现
@@ -46,6 +52,7 @@ func NewFSStoreBackend(root string) (StoreBackend, error) {
 	return newFSStore(root)
 }
 
+///var/lib/docker/image/{driver}/imagedb，该目录下主要包含两个目录content和metadata
 func newFSStore(root string) (*fs, error) {
 	s := &fs{
 		root: root,
@@ -63,12 +70,15 @@ func (s *fs) contentFile(dgst digest.Digest) string {
 	return filepath.Join(s.root, contentDirName, string(dgst.Algorithm()), dgst.Hex())
 }
 
+// /var/lib/docker/image/{driver}/imagedb/metadata/sha256/$dgst
 func (s *fs) metadataDir(dgst digest.Digest) string {
 	return filepath.Join(s.root, metadataDirName, string(dgst.Algorithm()), dgst.Hex())
 }
 
 // Walk calls the supplied callback for each image ID in the storage backend.
-func (s *fs) Walk(f DigestWalkFunc) error {
+//(is *store) restore() 中执行
+//// 遍历/var/lib/docker/image/{driver}/imagedb/content/sha256文件夹中的hex目录获取hex目录名，然后调用f函数执行
+func (s *fs) Walk(f DigestWalkFunc) error { ////NewImageStore->(is *store) restore() 中调用walk
 	// Only Canonical digest (sha256) is currently supported
 	s.RLock()
 	dir, err := ioutil.ReadDir(filepath.Join(s.root, contentDirName, string(digest.Canonical)))
@@ -76,7 +86,10 @@ func (s *fs) Walk(f DigestWalkFunc) error {
 	if err != nil {
 		return err
 	}
+
+	//扫描/var/lib/docker/image/devicemapper/imagedb/content/sha256 目录的文件夹，判断是否满足Hex要求
 	for _, v := range dir {
+		//Canonical = "sha256"
 		dgst := digest.NewDigestFromHex(string(digest.Canonical), v.Name())
 		if err := dgst.Validate(); err != nil {
 			logrus.Debugf("skipping invalid digest %s: %s", dgst, err)
@@ -89,6 +102,7 @@ func (s *fs) Walk(f DigestWalkFunc) error {
 	return nil
 }
 
+//(is *store) Get(id ID) 中调用  //获取dgst对应的文件内容，通过content返回
 // Get returns the content stored under a given digest.
 func (s *fs) Get(dgst digest.Digest) ([]byte, error) {
 	s.RLock()
@@ -97,7 +111,10 @@ func (s *fs) Get(dgst digest.Digest) ([]byte, error) {
 	return s.get(dgst)
 }
 
+//获取dgst对应的文件内容，通过content返回
 func (s *fs) get(dgst digest.Digest) ([]byte, error) {
+
+	//读取/var/lib/docker/image/devicemapper/imagedb/content/sha256/$ID对应的文件内容
 	content, err := ioutil.ReadFile(s.contentFile(dgst))
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get digest %s", dgst)
@@ -158,10 +175,13 @@ func (s *fs) SetMetadata(dgst digest.Digest, key string, data []byte) error {
 }
 
 // GetMetadata returns metadata for a given digest.
+// (is *store) GetParent( 中执行
+// 读取/var/lib/docker/image/{driver}/imagedb/metadata/sha256/$dgst/$key 中的内容通过byte返回
 func (s *fs) GetMetadata(dgst digest.Digest, key string) ([]byte, error) {
 	s.RLock()
 	defer s.RUnlock()
 
+	//读取/var/lib/docker/image/devicemapper/imagedb/content/sha256/$ID对应的文件内容，如果没有改文件，直接返回Nil
 	if _, err := s.get(dgst); err != nil {
 		return nil, err
 	}

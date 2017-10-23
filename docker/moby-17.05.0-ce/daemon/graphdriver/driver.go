@@ -123,7 +123,7 @@ type DiffDriver interface { //type Driver interface {}包含该接口
 }
 
 // Driver is the interface for layered/snapshot file system drivers.
-type Driver interface {
+type Driver interface { //layerStore 包含该接口成员
 	ProtoDriver
 	DiffDriver  //有些driver没有DiffDriver接口，例如devicemapper
 }

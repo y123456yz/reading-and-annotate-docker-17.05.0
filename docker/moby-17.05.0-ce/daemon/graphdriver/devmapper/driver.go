@@ -55,7 +55,7 @@ func Init(home string, options []string, uidMaps, gidMaps []idtools.IDMap) (grap
 		locker:    locker.New(),
 	}
 
-	//d包含ProtoDriver接口的函数功能
+	//d包含ProtoDriver接口的函数功能   //例如devicemapper，这里的driver对应 graphdriver\driver.go中的 Driver结构
 	return graphdriver.NewNaiveDiffDriver(d, uidMaps, gidMaps), nil
 }
 

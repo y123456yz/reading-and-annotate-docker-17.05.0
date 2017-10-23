@@ -26,66 +26,88 @@ type Store interface {
 }
 
 // LayerGetReleaser is a minimal interface for getting and releasing images.
+//LayerGetReleaser中的接口从 Daemon.layerStore 获得 ,见 NewImageStore
 type LayerGetReleaser interface { //下面的store包含该结构
 	Get(layer.ChainID) (layer.Layer, error)
 	Release(layer.Layer) ([]layer.Metadata, error)
 }
 
-type imageMeta struct {
+type imageMeta struct { //(is *store) restore()中使用该类
 	//imageMeta包含一个layer成员，docker image是由多个只读的roLayer构成，而这里的layer就是最上层的layer。
-	layer    layer.Layer
-	children map[ID]struct{}
+	layer    layer.Layer   //这里的layer实际上是通过上面的is.ls.Get获取到的 referencedCacheLayer 信息
+	children map[ID]struct{}  //赋值见(is *store) restore()
 }
 
 //imageStore 存放的是各个docker image的信息。imageStore的类型为image.Store，结构体为
 //Docker镜像存储相关数据结构参考http://licyhust.com/%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF/2016/09/27/docker-image-data-structure/
-type store struct {
+
+//MetadataStore 是/var/lib/docker/image/devicemapper/layerdb/目录中相关文件操作的接口， 该目录下面的文件内容存储在 layerStore 结构中
+//StoreBackend 是/var/lib/docker/image/{driver}/imagedb 目录中相关文件操作的接口， 该目录下面的文件内容存储在 store 结构中。  docker images看到的就是imagedb/content/xxx中的文件夹
+///var/lib/docker/image/{driver}/imagedb/content/sha256/下面的文件和/var/lib/docker/image/devicemapper/layerdb/sha256下面的文件通过(is *store) restore()关联起来
+
+type store struct { //初始化赋值见 NewImageStore   该结构类型源头数据存入 Daemon.imageStore
 	sync.Mutex
-	//ls类型为LayerGetReleaser接口，初始化时将ls初始化为 layerStore。fs类型为StoreBackend。
+	//ls类型为LayerGetReleaser接口，初始化时将ls初始化为 layerStore。
 	ls        LayerGetReleaser
-	//images就是每一个镜像的信息
-	images    map[ID]*imageMeta
+	//images就是每一个镜像的信息  赋值见(is *store) restore()
+	images    map[ID]*imageMeta  ///var/lib/docker/image/{driver}/imagedb/content/sha256目录有几个文件，这里就有几个imageMeta
 	//fs存放了image的原信息，存储的目录位于/var/lib/docker/image/{driver}/imagedb，该目录下主要包含两个目录content和metadata
 	/*
 		content目录：content下面的sha256目录下存放了每个docker image的元数据文件，除了制定了这个image由那些roLayer构成，还包含了部分配置信息，
 	了解docker的人应该知道容器的部分配置信息是存放在image里面的，如volume、port、workdir等，这部分信息就存放在这个目录下面，
 	docker启动时会读取镜像配置信息，反序列化出image对象，docker images获取到的镜像有多少个，这里就有多少个响应的目录，目录名image id
 		metadata目录：metadata目录存放了docker image的parent信息
-	*/ //赋值见NewFSStoreBackend，store的函数接口在fs.go文件中
-	fs        StoreBackend
+	*/ //赋值见 NewFSStoreBackend，store 的函数接口在fs.go文件中，
+	// fs为type fs struct类型结构，实现有 StoreBackend 接口函数信息
+	fs        StoreBackend  ///var/lib/docker/image/{driver}/imagedb
 
 	//digestSet成员，本质上是一个set数据结构，里面存放的其实是每个docker的最上层layer的chain-id。
-	digestSet *digestset.Set
+	digestSet *digestset.Set //集合add见 (is *store) restore()   这个集合里面记录的是/var/lib/docker/image/{driver}/imagedb/content/sha256/目录下的所有dgst
 }
 
 // NewImageStore returns new store object for given layer store
-// image/store.go  创建镜像仓库实例
-func NewImageStore(fs StoreBackend, ls LayerGetReleaser) (Store, error) {
+// image/store.go  创建镜像仓库实例  LayerGetReleaser中的接口从实参 Daemon.layerStore 获得
+func NewImageStore(fs StoreBackend, ls LayerGetReleaser) (Store, error) { //NewDaemon 中调用
 	is := &store{
 		ls:        ls,
 		images:    make(map[ID]*imageMeta),
-		fs:        fs,
+		fs:        fs,  ///var/lib/docker/image/{driver}/imagedb
 		digestSet: digestset.NewSet(),
 	}
 
 	// load all current images and retain layers
-	if err := is.restore(); err != nil {
+	/*
+	遍历/var/lib/docker/image/{driver}/imagedb/content/sha256文件夹中的hex目录,然后读取其中的文件内容，通过diff_ids计算出chainID,然后获取
+	/var/lib/docker/image/devicemapper/layerdb/sha256/$chainID的 roLayer 信息，然后存入 store.images[]中
+	*/
+	if err := is.restore(); err != nil { //NewImageStore->(is *store) restore()
 		return nil, err
 	}
 
 	return is, nil
 }
 
+/*
+遍历/var/lib/docker/image/{driver}/imagedb/content/sha256文件夹中的hex目录,然后读取其中的文件内容，通过diff_ids计算出chainID,然后获取
+/var/lib/docker/image/devicemapper/layerdb/sha256/$chainID的 roLayer 信息，然后存入 store.images[]中
+*/
+//NewImageStore 中调用
 func (is *store) restore() error {
+	//Walk对应 (s *fs) Walk(f DigestWalkFunc)
+	//// 遍历/var/lib/docker/image/{driver}/imagedb/content/sha256文件夹中的hex目录获取hex目录名，然后调用f函数执行
 	err := is.fs.Walk(func(dgst digest.Digest) error {
+		//dgst对应/var/lib/docker/image/devicemapper/imagedb/content/sha256目录下的文件内容信息存入type Image struct {}结构中
 		img, err := is.Get(IDFromDigest(dgst))
 		if err != nil {
 			logrus.Errorf("invalid image %v, %v", dgst, err)
 			return nil
 		}
+
 		var l layer.Layer
+		//根据/var/lib/docker/image/devicemapper/imagedb/content/sha256/$id文件内容中的rootfs中的diff_ids {}json内容算出一个ChainID
 		if chainID := img.RootFS.ChainID(); chainID != "" {
-			l, err = is.ls.Get(chainID)
+			//根据ChainID 算出来的ID，然后通过 /var/lib/docker/image/devicemapper/layerdb/sha256/$chainID 获取到对应的roLayer
+			l, err = is.ls.Get(chainID)//调用 layerStore 中的 Get函数， 获取chainID对应的layer信息，referencedCacheLayer
 			if err != nil {
 				return err
 			}
@@ -95,10 +117,11 @@ func (is *store) restore() error {
 		}
 
 		imageMeta := &imageMeta{
-			layer:    l,
+			layer:    l, //这里的layer实际上是通过上面的is.ls.Get获取到的 referencedCacheLayer 信息
 			children: make(map[ID]struct{}),
 		}
 
+		///var/lib/docker/image/{driver}/imagedb/content/sha256/目录中的dgst信息实际上全是存入这里面的
 		is.images[IDFromDigest(dgst)] = imageMeta
 
 		return nil
@@ -194,10 +217,11 @@ func (is *store) Search(term string) (ID, error) {
 	return IDFromDigest(dgst), nil
 }
 
+//获取/var/lib/docker/image/devicemapper/imagedb/content/sha256目录下面的ID对应的文件内容配置信息
 func (is *store) Get(id ID) (*Image, error) {
 	// todo: Check if image is in images
 	// todo: Detect manual insertions and start using them
-	config, err := is.fs.Get(id.Digest())
+	config, err := is.fs.Get(id.Digest()) //获取ID对应文件的内容
 	if err != nil {
 		return nil, err
 	}
@@ -208,8 +232,9 @@ func (is *store) Get(id ID) (*Image, error) {
 	}
 	img.computedID = id
 
+	//// 读取/var/lib/docker/image/{driver}/imagedb/metadata/sha256/parent 中的内容通过byte返回
 	img.Parent, err = is.GetParent(id)
-	if err != nil {
+	if err != nil { //没有parent文件parent指向空
 		img.Parent = ""
 	}
 
@@ -257,9 +282,11 @@ func (is *store) SetParent(id, parent ID) error {
 	return is.fs.SetMetadata(id.Digest(), "parent", []byte(parent))
 }
 
+/// 读取/var/lib/docker/image/{driver}/imagedb/metadata/sha256/$dgst/$key 中的内容通过byte返回
 func (is *store) GetParent(id ID) (ID, error) {
+	// (s *fs) GetMetadata  // 读取/var/lib/docker/image/{driver}/imagedb/metadata/sha256/$dgst/$key 中的内容通过byte返回
 	d, err := is.fs.GetMetadata(id.Digest(), "parent")
-	if err != nil {
+	if err != nil {  //没有这个文件直接返回""
 		return "", err
 	}
 	return ID(d), nil // todo: validate?

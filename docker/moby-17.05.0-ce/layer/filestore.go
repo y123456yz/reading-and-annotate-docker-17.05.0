@@ -22,7 +22,7 @@ import (
 var (
 	stringIDRegexp      = regexp.MustCompile(`^[a-f0-9]{64}(-init)?$`)
 	supportedAlgorithms = []digest.Algorithm{
-		digest.SHA256,
+		digest.SHA256,   //SHA256 Algorithm = "sha256"
 		// digest.SHA384, // Currently not used
 		// digest.SHA512, // Currently not used
 	}
@@ -30,7 +30,7 @@ var (
 
 //NewFSMetadataStore 中使用，改结构包含 getLayerDirectory getLayerFilename等方法，见下面
 type fileMetadataStore struct {
-	root string
+	root string ///var/lib/docker/image/devicemapper/layerdb
 }
 
 type fileMetadataTransaction struct {
@@ -181,12 +181,15 @@ func (fms *fileMetadataStore) GetParent(layer ChainID) (ChainID, error) {
 	return ChainID(dgst), nil
 }
 
+//loadLayer 中执行
+// 获取/var/lib/docker/image/devicemapper/layerdb/sha256/02f5128fe5a1deee94c98a1be63692a776693f09b0bb2bbfdf2ee74620071d54/diff中的文件内容，然后通过DiffID返回
 func (fms *fileMetadataStore) GetDiffID(layer ChainID) (DiffID, error) {
 	content, err := ioutil.ReadFile(fms.getLayerFilename(layer, "diff"))
 	if err != nil {
 		return "", err
 	}
 
+	///去除字符串两侧的空白字符
 	dgst, err := digest.Parse(strings.TrimSpace(string(content)))
 	if err != nil {
 		return "", err
@@ -209,12 +212,13 @@ func (fms *fileMetadataStore) GetCacheID(layer ChainID) (string, error) {
 	return content, nil
 }
 
+//loadLayer 中执行
 func (fms *fileMetadataStore) GetDescriptor(layer ChainID) (distribution.Descriptor, error) {
 	content, err := ioutil.ReadFile(fms.getLayerFilename(layer, "descriptor.json"))
 	if err != nil {
 		if os.IsNotExist(err) {
 			// only return empty descriptor to represent what is stored
-			return distribution.Descriptor{}, nil
+			return distribution.Descriptor{}, nil  //文件不存在直接返回nil
 		}
 		return distribution.Descriptor{}, err
 	}
@@ -312,9 +316,15 @@ func (fms *fileMetadataStore) GetMountParent(mount string) (ChainID, error) {
 	return ChainID(dgst), nil
 }
 
+//NewStoreFromGraphDriver 中执行
+// 读取/var/lib/docker/image/devicemapper/layerdb/sha256目录中的文件夹存入ChainID数组中
+// /var/lib/docker/image/devicemapper/layerdb/mounts目录下面的文件夹名称存入 string 数组
 func (fms *fileMetadataStore) List() ([]ChainID, []string, error) {
 	var ids []ChainID
-	for _, algorithm := range supportedAlgorithms {
+
+	//读取/var/lib/docker/image/devicemapper/layerdb/sha256目录中的文件夹存入ids数组中
+	for _, algorithm := range supportedAlgorithms { //algorithm应该是 "sha256" 字符串，
+		// /var/lib/docker/image/devicemapper/layerdb/sha256存入fileInfos 链表
 		fileInfos, err := ioutil.ReadDir(filepath.Join(fms.root, string(algorithm)))
 		if err != nil {
 			if os.IsNotExist(err) {
@@ -335,6 +345,7 @@ func (fms *fileMetadataStore) List() ([]ChainID, []string, error) {
 		}
 	}
 
+	// /var/lib/docker/image/devicemapper/layerdb/mounts目录下面的文件夹名称存入mounts数组
 	fileInfos, err := ioutil.ReadDir(filepath.Join(fms.root, "mounts"))
 	if err != nil {
 		if os.IsNotExist(err) {

@@ -27,9 +27,12 @@ func IDFromDigest(digest digest.Digest) ID {
 	return ID(digest)
 }
 
-// V1Image stores the V1 image configuration.
+// V1Image stores the V1 image configuration.   type Image struct 结构中包含 V1Image成员
+//这里面的内容从 /var/lib/docker/image/devicemapper/imagedb/content/sha256/$id中获取解析json得到
+///var/lib/docker/image/devicemapper/imagedb/content/sha256下面文件是配置文件，对应的内容
 type V1Image struct {
 	// ID is a unique 64 character identifier of the image
+	//使用omitempty熟悉，如果该字段为nil或0值（数字0,字符串"",空数组[]等），则打包的JSON结果不会有这个字段。
 	ID string `json:"id,omitempty"`
 	// Parent is the ID of the parent image
 	Parent string `json:"parent,omitempty"`
@@ -55,21 +58,23 @@ type V1Image struct {
 	Size int64 `json:",omitempty"`
 }
 
-// Image stores the image configuration
+// Image stores the image configuration  赋值见 (is *store) Get(id ID)
+//这里面的内容从 /var/lib/docker/image/devicemapper/imagedb/content/sha256/$id中获取解析json得到， 解析函数见 (is *store) Get(id ID)
 type Image struct { //创建容器的时候，会根据docker run制定的镜像来创建container实例，可以参考 (daemon *Daemon) create (daemon\create.go)
 	V1Image
 	Parent     ID        `json:"parent,omitempty"`
-	RootFS     *RootFS   `json:"rootfs,omitempty"`
+	//存放footfs {}这一段json信息
+	RootFS     *RootFS   `json:"rootfs,omitempty"`  // /var/lib/docker/image/devicemapper/imagedb/content/sha256/$id 中的rootfs {}信息
 	History    []History `json:"history,omitempty"`
 	OSVersion  string    `json:"os.version,omitempty"`
 	OSFeatures []string  `json:"os.features,omitempty"`
 
 	// rawJSON caches the immutable JSON associated with this image.
-	rawJSON []byte
+	rawJSON []byte  //json字符串信息，见NewFromJSON
 
 	// computedID is the ID computed from the hash of the image config.
 	// Not to be confused with the legacy V1 ID in V1Image.
-	computedID ID
+	computedID ID  //赋值见(is *store) Get(id ID)  也就是/var/lib/docker/image/devicemapper/imagedb/content/sha256/目录下面对应的文件名
 }
 
 // RawJSON returns the immutable JSON associated with the image.
@@ -134,6 +139,7 @@ type Exporter interface {
 }
 
 // NewFromJSON creates an Image configuration from json.
+//解析src中json的字符信息存入image结构中
 func NewFromJSON(src []byte) (*Image, error) {
 	img := &Image{}
 
