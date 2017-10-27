@@ -59,7 +59,8 @@ var (
 // new format. // migrate/v1/migrate.go  迁移metadata
 func Migrate(root, driverName string, ls layer.Store, is image.Store, rs refstore.Store, ms metadata.Store) error {
 	graphDir := filepath.Join(root, graphDirName)
-	if _, err := os.Lstat(graphDir); os.IsNotExist(err) {
+	if _, err := os.Lstat(graphDir); os.IsNotExist(err) {  // /var/lib/docker/graph 目录如果不存在，直接返回nil
+		logrus.Infof("/var/lib/docker/graph not exist")
 		return nil
 	}
 

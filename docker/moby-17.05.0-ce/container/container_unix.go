@@ -219,6 +219,11 @@ func (container *Container) HasMountFor(path string) bool {
 }
 
 // UnmountIpcMounts uses the provided unmount function to unmount shm and mqueue if they were mounted
+/*
+shm：为容器分配的一个内存文件系统，后面会绑定到容器中的/dev/shm目录，可以由docker create的参数--shm-size控制其大小，默认是64M，
+其本质上就是一个挂载到/dev/shm的tmpfs，由于这个目录的内容是放在内存中的，所以读写速度快，有些程序会利用这个特点而用到这个目录，
+所以docker事先为容器准备好这个目录。
+*/
 func (container *Container) UnmountIpcMounts(unmount func(pth string) error) {
 	if container.HostConfig.IpcMode.IsContainer() || container.HostConfig.IpcMode.IsHost() {
 		return

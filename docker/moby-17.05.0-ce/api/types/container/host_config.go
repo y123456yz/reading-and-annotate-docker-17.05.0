@@ -343,7 +343,7 @@ hostConfig := `{"Binds":[],"ContainerIDFile":"","Memory":0,"MemorySwap":0,"CpuSh
 // 他们都包含在 ContainerCreateConfig 结构中，见 postContainersCreate， docker create的时候会在 GetContainer(daemon/container.go) 中创建 Container 实例
 
 //在docker create的时候，解析出 *ContainerCreateConfig.config与*ContainerCreateConfig.hostConfig 后，然后在 postContainersCreate->containerCreate 中实例化 Container 结构
-type HostConfig struct {//生效使用见 postContainersStart->ContainerStart
+type HostConfig struct {//生效使用见 postContainersStart->ContainerStart   hostconfig内容参考/var/lib/docker/containers/$containerID/hostconfig.json
 	// Applicable to all platforms
 	Binds           []string      // List of volume bindings for this container
 	ContainerIDFile string        // File (path) where the containerId is written

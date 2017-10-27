@@ -41,6 +41,7 @@ root@fd-mesos-master04.gz01:/var/lib/docker/containers/9be24974a6a7cf064f4a238f7
 这些配置文件包含了9be24974a6a7cf064f4a238f70260b13b15359248b3267602bfc49e00f13d670这个容器的所有元数据
 */
 //走进docker(06)：docker create命令背后发生了什么？
+//dockerd在收到客户端的创建容器请求后，做了两件事情，一是准备容器需要的layer，二是检查客户端传过来的参数，并和image配置文件中的参数进行合并，然后存储成容器的配置文件。
 func (daemon *Daemon) containerCreate(params types.ContainerCreateConfig, managed bool) (containertypes.ContainerCreateCreatedBody, error) {
 	start := time.Now()
 	if params.Config == nil {
@@ -231,8 +232,11 @@ func (daemon *Daemon) generateSecurityOpt(hostConfig *containertypes.HostConfig)
 //创建读写层  create.go中的create函数调用
 func (daemon *Daemon) setRWLayer(container *container.Container) error {
 	var layerID layer.ChainID
+	/*
+	根据container.ImageID ，查找到/var/lib/docker/image/devicemapper/imagedb/content/sha256/XXX，然后根据XXX中的diff_ids内容计算出layerID
+	*/
 	if container.ImageID != "" {
-		//获取image
+		//获取image  //获取/var/lib/docker/image/devicemapper/imagedb/content/sha256目录下面的ID对应的文件内容配置信息
 		img, err := daemon.imageStore.Get(container.ImageID)
 		if err != nil {
 			return err
@@ -240,13 +244,13 @@ func (daemon *Daemon) setRWLayer(container *container.Container) error {
 		layerID = img.RootFS.ChainID()
 	}
 
-	rwLayerOpts := &layer.CreateRWLayerOpts{
+	rwLayerOpts := &layer.CreateRWLayerOpts {
 		MountLabel: container.MountLabel,
 		InitFunc:   daemon.getLayerInit(),  //setupInitLayer(initPath)；创建初始化层，就是创建一个容器需要的基本目录和文
 		StorageOpt: container.HostConfig.StorageOpt,
 	}
 
-	rwLayer, err := daemon.layerStore.CreateRWLayer(container.ID, layerID, rwLayerOpts)
+	rwLayer, err := daemon.layerStore.CreateRWLayer(container.ID, layerID, rwLayerOpts) //setRWLayer->CreateRWLayer
 	if err != nil {
 		return err
 	}

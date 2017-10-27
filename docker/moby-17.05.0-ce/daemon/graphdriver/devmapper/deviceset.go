@@ -2033,6 +2033,7 @@ func (devices *DeviceSet) initDevmapper(doInit bool) error {
 }
 
 // AddDevice adds a device and registers in the hash.
+//(d *Driver) Create 中执行
 func (devices *DeviceSet) AddDevice(hash, baseHash string, storageOpt map[string]string) error {
 	logrus.Debugf("devmapper: AddDevice START(hash=%s basehash=%s)", hash, baseHash)
 	defer logrus.Debugf("devmapper: AddDevice END(hash=%s basehash=%s)", hash, baseHash)

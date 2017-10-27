@@ -19,6 +19,14 @@ import (
 //
 // This allows to abstract the digest behind this type and work only in those
 // terms.
+
+/*
+对于某些image来说，可能在发布之后还会做一些更新，比如安全方面的，这时虽然镜像的内容变了，但镜像的名称和tag没有变，
+所以会造成前后两次通过同样的名称和tag从服务器得到不同的两个镜像的问题，于是docker引入了镜像的digest的概念，一个
+镜像的digest就是镜像的manifes文件的sha256码，当镜像的内容发生变化的时候，即镜像的layer发生变化，从而layer的sha256
+发生变化，而manifest里面包含了每一个layer的sha256，所以manifest的sha256也会发生变化，即镜像的digest发生变化，
+这样就保证了digest能唯一的对应一个镜像。
+*/
 type Digest string
 
 // NewDigest returns a Digest from alg and a hash.Hash object.

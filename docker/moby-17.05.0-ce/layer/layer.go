@@ -57,9 +57,11 @@ var (
 )
 
 // ChainID is the content-addressable ID of a layer.
-//ChainID 通过 createChainIDFromParent 计算得到，根据/var/lib/docker/image/devicemapper/imagedb/content/sha256/XXX文件内容中的diff_ids递归计算得到，见createChainIDFromParent
+//ChainID 通过 createChainIDFromParent 计算得到，根据/var/lib/docker/image/devicemapper/imagedb/content/sha256/XXX文件内容中的diff_ids递归计算得到，
+// 见createChainIDFromParent,计算出的chainID和/var/lib/docker/image/devicemapper/layerdb/sha256目录下的文件夹名相同，对应一个镜像
+//可以参考 https://segmentfault.com/a/1190000009730986
 type ChainID digest.Digest
-//ChainID 通过 createChainIDFromParent 计算得到，根据/var/lib/docker/image/devicemapper/imagedb/content/sha256/XXX文件内容中的diff_ids递归计算得到，见createChainIDFromParent
+//ChainID 通过 createChainIDFromParent 计算得到，根据/var/lib/docker/image/devicemapper/imagedb/content/sha256/XXX文件内容中的diff_ids递归计算得到，见 createChainIDFromParent
 
 // String returns a string rendition of a layer ID
 func (id ChainID) String() string {
@@ -181,9 +183,9 @@ type Metadata struct {
 type MountInit func(root string) error
 
 // CreateRWLayerOpts contains optional arguments to be passed to CreateRWLayer
-type CreateRWLayerOpts struct { //使用见setRWLayer
+type CreateRWLayerOpts struct { //使用见 setRWLayer
 	MountLabel string
-	InitFunc   MountInit
+	InitFunc   MountInit   //linux 对应 daemon.setupInitLayer
 	StorageOpt map[string]string
 }
 
@@ -289,7 +291,7 @@ func CreateChainID(dgsts []DiffID) ChainID { //根据DiffID数组算出ChainID
 }
 
 #1  #2  #3...存入到DiffID数组中
-*/  //根据parent 和 dgsts 算出一个ChainID
+*/  //根据parent 和 dgsts 算出一个ChainID   参考https://segmentfault.com/a/1190000009730986
 func createChainIDFromParent(parent ChainID, dgsts ...DiffID) ChainID {
 	if len(dgsts) == 0 {
 		return parent

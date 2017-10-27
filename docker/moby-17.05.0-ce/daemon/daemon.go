@@ -645,7 +645,7 @@ func NewDaemon(config *config.Config, registryService registry.Service, containe
 	//设立graph driver，graphdriver主要是来管理镜像，以及镜像与镜像之间关系的实现方法。由于config.GraphDriver的默认值为空，所以主要的处理流程在graphdriver.New()中；
 	//加载的优先级的顺序为 priority = []string{"aufs","btrfs","zfs","devicemapper","overlay","vfs"}，
 	// NewStoreFromOptions creates a new Store instance  // lay/layer_store.go 创建graphDriver实例，从driver创建layer仓库的实例
-	d.layerStore, err = layer.NewStoreFromOptions(layer.StoreOptions {
+	d.layerStore, err = layer.NewStoreFromOptions(layer.StoreOptions { //初始化/var/lib/docker/image/devicemapper/layerdb/相关操作的接口并初始化存储驱动devicemapper等
 		StorePath:                 config.Root,
 		MetadataStorePathTemplate: filepath.Join(config.Root, "image", "%s", "layerdb"),
 		GraphDriver:               driverName,
@@ -659,8 +659,8 @@ func NewDaemon(config *config.Config, registryService registry.Service, containe
 		return nil, err
 	}
 
-	graphDriver := d.layerStore.DriverName() // 取layer里面的graphDriver
-	imageRoot := filepath.Join(config.Root, "image", graphDriver)
+	graphDriver := d.layerStore.DriverName() // 取layer里面的graphDriver   devicemapper等
+	imageRoot := filepath.Join(config.Root, "image", graphDriver)  ///var/lib/docker/image/devicemapper/
 	//设置系统是否使用SELinux，SElinux有个问题是不能和btrfs的graphdriver一起使用；
 	// Configure and validate the kernels security support
 	if err := configureKernelSecuritySupport(config, graphDriver); err != nil {// linux内核安全支持的配置
@@ -678,6 +678,10 @@ func NewDaemon(config *config.Config, registryService registry.Service, containe
 		return nil, err
 	}
 
+	/*
+	遍历/var/lib/docker/image/{driver}/imagedb/content/sha256文件夹中的hex目录,然后读取其中的文件内容，通过diff_ids计算出chainID,然后获取
+	/var/lib/docker/image/devicemapper/layerdb/sha256/$chainID的 roLayer 信息，然后存入 store.images[]中
+	*/
 	//ifs为type fs struct类型结构，实现有 StoreBackend 接口函数信息, ifs对应的目录为/var/lib/docker/image/{driver}/imagedb
 	d.imageStore, err = image.NewImageStore(ifs, d.layerStore)
 	if err != nil {
@@ -701,7 +705,7 @@ func NewDaemon(config *config.Config, registryService registry.Service, containe
 		return nil, err
 	}
 	// distribution/metadata/metadata.go  按照路径创建一个基于文件系统的元数据仓库实例
-	distributionMetadataStore, err := dmetadata.NewFSMetadataStore(filepath.Join(imageRoot, "distribution"))
+	distributionMetadataStore, err := dmetadata.NewFSMetadataStore(filepath.Join(imageRoot, "distribution")) ///var/lib/docker/image/devicemapper/distribution
 	if err != nil {
 		return nil, err
 	}

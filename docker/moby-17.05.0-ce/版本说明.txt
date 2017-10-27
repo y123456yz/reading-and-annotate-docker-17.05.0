@@ -8,3 +8,34 @@ deboam 9
 
 
 SRIOV 虚拟化解决方案b
+
+docker镜像理解:
+走进docker(01)：hello-world的背后发生了什么？  https://segmentfault.com/a/1190000009309297
+走进docker(02)：image(镜像)是什么？  https://segmentfault.com/a/1190000009309347
+走进docker(05)：docker在本地如何管理image（镜像）?   https://segmentfault.com/a/1190000009730986
+走进docker(03)：如何绕过docker运行hello-world？  https://segmentfault.com/a/1190000009309378
+
+image存储过程参考:https://segmentfault.com/a/1190000009730986  这个比较好
+
+为什么需要镜像的digest？
+
+对于某些image来说，可能在发布之后还会做一些更新，比如安全方面的，这时虽然镜像的内容变了，但镜像的名称和tag没有变，所以会造成
+前后两次通过同样的名称和tag从服务器得到不同的两个镜像的问题，于是docker引入了镜像的digest的概念，一个镜像的digest就是镜像的
+manifes文件的sha256码，当镜像的内容发生变化的时候，即镜像的layer发生变化，从而layer的sha256发生变化，而manifest里面包含了每
+一个layer的sha256，所以manifest的sha256也会发生变化，即镜像的digest发生变化，这样就保证了digest能唯一的对应一个镜像。
+
+docker pull的大概过程
+如果对Image manifest，Image Config和Filesystem Layers等概念不是很了解，请先参考image(镜像)是什么。
+
+取image的大概过程如下：
+docker发送image的名称+tag（或者digest）给registry服务器，服务器根据收到的image的名称+tag（或者digest），找到相应image的manifest，然后将manifest返回给docker
+docker得到 manifest 后，读取里面image配置文件的digest(sha256)，这个sha256码就是image的ID
+根据ID在本地找有没有存在同样ID的image，有的话就不用继续下载了
+如果没有，那么会给registry服务器发请求（里面包含配置文件的sha256和media type），拿到image的配置文件（Image Config）
+根据配置文件中的diff_ids（每个diffid对应一个layer tar包的sha256，tar包相当于layer的原始格式），在本地找对应的layer是否存在
+如果layer不存在，则根据manifest里面layer的sha256和media type去服务器拿相应的layer（相当去拿压缩格式的包）。
+拿到后进行解压，并检查解压后tar包的sha256能否和配置文件（Image Config）中的diff_id对的上，对不上说明有问题，下载失败
+根据docker所用的后台文件系统类型，解压tar包并放到指定的目录
+等所有的layer都下载完成后，整个image下载完成，就可以使用了
+注意： 对于layer来说，config文件中diffid是layer的tar包的sha256，而manifest文件中的digest依赖于media type，比如media type是tar+gzip，
+那digest就是layer的tar包经过gzip压缩后的内容的sha256，如果media type就是tar的话，diffid和digest就会一样。

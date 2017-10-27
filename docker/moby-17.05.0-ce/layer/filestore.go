@@ -22,7 +22,7 @@ import (
 var (
 	stringIDRegexp      = regexp.MustCompile(`^[a-f0-9]{64}(-init)?$`)
 	supportedAlgorithms = []digest.Algorithm{
-		digest.SHA256,   //SHA256 Algorithm = "sha256"
+		digest.SHA256, //SHA256 Algorithm = "sha256"  由于sha256码太长，所以用bcdef...来表示完整的sha256，节约空间，这样64个abc这样的编码就可以表示sha256中生成的各种ID
 		// digest.SHA384, // Currently not used
 		// digest.SHA512, // Currently not used
 	}
@@ -115,6 +115,11 @@ func (fm *fileMetadataTransaction) SetDescriptor(ref distribution.Descriptor) er
 	return fm.ws.WriteFile("descriptor.json", jsonRef, 0644)
 }
 
+/*
+#tar-split.json.gz，layer压缩包的split文件，通过这个文件可以还原layer的tar包，
+#在docker save导出image的时候会用到
+#详情可参考https://github.com/vbatts/tar-split
+*/ //参考https://segmentfault.com/a/1190000009730986
 func (fm *fileMetadataTransaction) TarSplitWriter(compressInput bool) (io.WriteCloser, error) {
 	f, err := fm.ws.FileWriter("tar-split.json.gz", os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -231,6 +236,11 @@ func (fms *fileMetadataStore) GetDescriptor(layer ChainID) (distribution.Descrip
 	return ref, err
 }
 
+/*
+#tar-split.json.gz，layer压缩包的split文件，通过这个文件可以还原layer的tar包，
+#在docker save导出image的时候会用到
+#详情可参考https://github.com/vbatts/tar-split
+*/ //参考https://segmentfault.com/a/1190000009730986
 func (fms *fileMetadataStore) TarSplitReader(layer ChainID) (io.ReadCloser, error) {
 	fz, err := os.Open(fms.getLayerFilename(layer, "tar-split.json.gz"))
 	if err != nil {

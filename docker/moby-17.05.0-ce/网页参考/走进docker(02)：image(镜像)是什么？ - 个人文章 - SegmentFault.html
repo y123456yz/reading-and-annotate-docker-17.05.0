@@ -1,0 +1,1605 @@
+<!DOCTYPE html>
+<!-- saved from url=(0043)https://segmentfault.com/a/1190000009309347 -->
+<html lang="zh-CN"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1"><meta name="renderer" content="webkit"><meta property="qc:admins" content="15317273575564615446375"><meta property="og:image" content="https://static.segmentfault.com/v-59f19486/global/img/touch-icon.png"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"><meta name="alexaVerifyID" content="LkzCRJ7rPEUwt6fVey2vhxiw1vQ"><meta name="apple-itunes-app" content="app-id=958101793, app-argument="><title>走进docker(02)：image(镜像)是什么？ - 个人文章 - SegmentFault</title><meta name="description" content="上一篇介绍了hello-world的大概流程，那么hello-world的image里面到底包含了些什么呢？里面的格式是怎么样的呢？ image所包含的内容以及格式都是有标准的，由Open Containers Initiative(OCI)负责维护，地址为ima..."><meta name="keywords" content="docker"><link rel="search" type="application/opensearchdescription+xml" href="https://segmentfault.com/opensearch.xml" title="SegmentFault"><link rel="shortcut icon" href="https://static.segmentfault.com/v-59f19486/global/img/favicon.ico"><link rel="apple-touch-icon" href="https://static.segmentfault.com/v-59f19486/global/img/touch-icon.png"><meta name="msapplication-TileColor" content="#009a61"><meta name="msapplication-square150x150logo" content="https://static.segmentfault.com/v-59f19486/global/img/touch-icon.png"><link rel="alternate" type="application/atom+xml" title="SegmentFault 最新问题" href="https://segmentfault.com/feeds/questions"><link rel="alternate" type="application/atom+xml" title="SegmentFault 最新文章" href="https://segmentfault.com/feeds/blogs"><link rel="stylesheet" href="./走进docker(02)：image(镜像)是什么？ - 个人文章 - SegmentFault_files/global.css"><link rel="stylesheet" href="./走进docker(02)：image(镜像)是什么？ - 个人文章 - SegmentFault_files/blog.css"><link rel="stylesheet" href="./走进docker(02)：image(镜像)是什么？ - 个人文章 - SegmentFault_files/responsive.css"><link rel="preload" href="./走进docker(02)：image(镜像)是什么？ - 个人文章 - SegmentFault_files/integrator.js.下载" as="script"><script src="./走进docker(02)：image(镜像)是什么？ - 个人文章 - SegmentFault_files/ca-pub-6330872677300335.js.下载"></script><script type="text/javascript" src="./走进docker(02)：image(镜像)是什么？ - 个人文章 - SegmentFault_files/integrator.js.下载"></script><link rel="prefetch" href="https://securepubads.g.doubleclick.net/static/3p_cookie.html"></head><body data-mod="blog" class="blog-post "><!--[if lt IE 9]><div class="alert alert-danger topframe" role="alert">你的浏览器实在<strong>太太太太太太旧了</strong>，放学别走，升级完浏览器再说 <a target="_blank" class="alert-link" href="http://browsehappy.com">立即升级</a></div><![endif]--><img id="icon4weChat" style="height: 0;width: 0;" data-src="https://static.segmentfault.com/v-59f19486/global/img/touch-icon-512.png"><div class="global-nav sf-header sf-header--index"><nav class="container nav"><div class="visible-xs header-response"><a href="https://segmentfault.com/search" style="display:block"><i class="fa fa-search" aria-hidden="true"></i></a><div class="sf-header__logo sf-header__logo--response"><h1><a href="https://segmentfault.com/" style="height:24px; background-size: auto 24px;"></a></h1></div><a href="https://segmentfault.com/user/login" class="pull-right login-btn"><i class="fa fa-user" aria-hidden="true"></i></a><div class="bottom-nav"><div class="opts"><a class="opts-group " href="https://segmentfault.com/questions"><i class="fa fa-comments" aria-hidden="true"></i><span>问答</span></a><a class="opts-group " href="https://segmentfault.com/news"><i class="fa fa-newspaper-o" aria-hidden="true"></i><span>头条</span></a><a class="opts-group active" href="https://segmentfault.com/blogs"><i class="fa fa-pencil-square" aria-hidden="true"></i><span>专栏</span></a><a class="opts-group " href="https://segmentfault.com/lives"><i class="fa fa-play-circle" aria-hidden="true"></i><span>讲堂</span></a><div class="opts-group"><div class="btn-group dropup"><i class="fa fa-bars dropdown hoverDropdown" data-toggle="dropdown" aria-hidden="true"><span>更多</span></i><ul class="dropdown-menu"><li><a href="https://segmentfault.com/jobs">职位</a></li><li><a href="https://segmentfault.com/events">活动</a></li><li><a href="https://segmentfault.com/tags">标签</a></li><li><a href="https://segmentfault.com/badges">徽章</a></li></ul></div></div></div></div></div><div class="row hidden-xs"><div class="col-sm-8 col-md-9 col-lg-9"><div class="sf-header__logo"><h1><a href="https://segmentfault.com/">SegmentFault</a></h1></div><div><ul class="menu list-inline pull-left hidden-xs"><li class="menu__item"><a href="https://segmentfault.com/questions" class="">问答</a></li><li class="menu__item"><a href="https://segmentfault.com/news" class="">头条</a></li><li class="menu__item"><a href="https://segmentfault.com/blogs" class="active-nav">专栏</a></li><li class="menu__item"><a href="https://segmentfault.com/lives" class="">讲堂</a></li><li class="menu__item menu__item--more dropdown"><a href="https://segmentfault.com/a/1190000009309347##" class="dropdown-toggle dropdownBtn" data-toggle="dropdown">
+                                        发现<i class="fa fa-caret-down" style="font-size: 14px;margin-left: 5px;" aria-hidden="true"></i></a><div class="dropdown-block hidden"><ul class="dropdown-content-menu"><li><a href="https://segmentfault.com/events">活动</a></li><li><a href="https://segmentfault.com/groups">技术圈<span class="notice notice-menu">hi</span></a></li><li><a href="https://segmentfault.com/jobs">找工作</a></li><li><a href="https://segmentfault.com/users">排行榜</a></li><li><a href="https://segmentfault.com/badges">徽章</a></li><li><a href="https://docs.segmentfault.com/" target="_blank">开发手册<i style="line-height: 20px;font-size: 12px;color: #F5A623;" class="ml10 fa fa-external-link-square"></i></a></li></ul></div></li><li class="menu__item visible-sm-inline-block"><a href="https://segmentfault.com/search"><span class="glyphicon glyphicon-search" style="vertical-align: middle;"></span></a></li></ul><form action="https://segmentfault.com/search" class="header-search  hidden-sm hidden-xs pull-right"><button class="btn btn-link"><span class="sr-only">搜索</span><span class="glyphicon glyphicon-search"></span></button><input id="searchBox" name="q" type="text" placeholder="搜索问题或关键字" class="form-control" value=""></form></div></div><div class="col-sm-4 col-md-3 col-lg-3 text-right"><ul class="opts list-inline hidden-xs"><li class="opts__item"><a href="https://segmentfault.com/user/login" class="SFLogin btn-signin" style="margin-bottom:2px;">立即登录</a><a href="https://segmentfault.com/user/login" class="SFLogin ml10 btn-signup" onclick="_gaq.push([&#39;_trackEvent&#39;, &#39;Button&#39;, &#39;Click&#39;, &#39;Login&#39;]);">免费注册</a></li></ul></div></div></nav></div>
+    
+<input id="articleId" value="1190000009309347" class="hidden">
+<div class="wrap" data-blogid="">
+            <div id="loginBanner" class="hidden-sm hidden-xs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6">
+                <h1 class="title">在 SegmentFault，解决技术问题</h1>
+                <p class="desc">每个月，我们帮助 1000 万的开发者解决各种各样的技术问题。并助力他们在技术能力、职业生涯、影响力上获得提升。</p>
+                <p class="img-desc">一线的工程师、著名开源项目的作者们，都在这里：</p>
+                <img src="./走进docker(02)：image(镜像)是什么？ - 个人文章 - SegmentFault_files/logos@2x.png">
+            </div>
+            <div class="col-md-4 col-md-offset-2">
+                <form class="text-center register-form clearfix" action="https://segmentfault.com/api/user/phone/register">
+
+                    <div class="form-group form-name"> <!-- 用户名 -->
+                        <input type="text" class="form-control " name="name" placeholder="真实姓名或常用昵称">
+                    </div>
+
+                    <div class="form-group form-getCode"> <!-- 手机号及验证码 -->
+                        <input type="text" class="form-control" name="phone" placeholder="手机号（仅支持大陆手机号）">
+                        <div class="captchaInput mt10 mb10">
+                            <input type="text" class="form-control" name="captch" placeholder="请输入下方的验证码后，再点击获取验证码">
+                            <div class="mt10">
+                                <img src="./走进docker(02)：image(镜像)是什么？ - 个人文章 - SegmentFault_files/captcha" class="captcha" width="240" height="50">
+                            </div>
+                        </div>
+                        <div class="input-group mt15">
+                            <input type="tel" class="form-control" name="code" placeholder="短信验证码" autocomplete="off">
+                            <span class="input-group-btn">
+                                <button class="btn btn-default getCode mt0" style="width:96px;" type="button">获取验证码</button>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="form-group form-password"> <!-- 密码 -->
+                        <input type="password" class="form-control " name="password" placeholder="密码（不少于 6 位）" autocomplete="off">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary register-button pull-right" onclick="ga(&quot;send&quot;, &quot;event&quot;, &quot;join button&quot;, &quot;clicked&quot;, &quot;welcome board&quot;);">注册</button>
+
+                    <div class="hasid">
+                        已有账号？<a href="https://segmentfault.com/user/login" class="login_now" onclick="_gaq.push([&#39;_trackEvent&#39;, &#39;Button&#39;, &#39;Click&#39;, &#39;Login&#39;]);">立即登录</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <i class="fa fa-times-circle" aria-hidden="true"></i>
+</div>        <div class="post-topheader custom-">
+        <div class="container">
+            <div class="block-for-right-border">
+                <div class="row">
+                    <div class="col-md-9 col-sm-8 col-xs-12">
+                        <div class="post-topheader__info" data-username="wuyangchun" data-userslug="wuyangchun" data-useravatar="https://static.segmentfault.com/v-59f19486/global/img/user-64.png">
+
+                            <h1 class="h3 post-topheader__info--title" id="articleTitle" data-id="1190000009309347">
+                                <a href="https://segmentfault.com/a/1190000009309347"> 走进docker(02)：image(镜像)是什么？</a>
+                            </h1>
+
+                            <div class="content__tech blog-type-common blog-type-0-before">
+                                <ul class="taglist--inline inline-block article__title--tag mr10">
+                                                                            <li class="tagPopup mb5"><a class="tag" href="https://segmentfault.com/t/docker/blogs" data-toggle="popover" data-img="https://sfault-avatar.b0.upaiyun.com/269/397/2693973775-1040000000366352_huge256" data-placement="top" data-original-title="docker" data-id="1040000000366352">docker</a></li>
+                                                                    </ul>
+                                                                                                <div class="article__author">
+                                    <a href="https://segmentfault.com/u/wuyangchun" class="mr5 "><strong>wuyangchun</strong></a>
+                                    5月5日发布
+                                                                                                        </div>
+                            </div>
+
+                                                        <form class="form form__tech hidden" data-action="#">
+                                <span class="pull-right">
+                                    <button class="btn btn-default save-tags-btn" type="button">保存</button>
+                                </span>
+                                <div class="form-group" style="margin-right: 65px">
+                                    <label for="tags" class="sr-only">标签：至少1个，最多5个</label>
+                                    <input class="tagsInput form-control hidden" data-init="[{&quot;name&quot;:&quot;docker&quot;,&quot;url&quot;:&quot;\/t\/docker&quot;,&quot;id&quot;:&quot;1040000000366352&quot;,&quot;thumbnailUrl&quot;:&quot;https:\/\/sfault-avatar.b0.upaiyun.com\/269\/397\/2693973775-1040000000366352_huge256&quot;}]" name="tags" type="text" placeholder="标签，如：php 可使用逗号,分号;分隔" data-role="tagsinput"><div class="sf-typeHelper"><span class="sf-typeHelper-item  ">docker<span data-role="remove">×</span></span><input type="text" data-role="sf_typeHelper-input" class="sf-typeHelper-input" placeholder="标签，如：php 可使用逗号,分号;分隔" style="width: 20em;"><ul class="sf-typeHelper-list dropdown-menu" style="display: none;"></ul></div>
+                                    <div role="tabpanel" class="techTags panel panel-default techTags-panel" data-tech="{&quot;\u5f00\u53d1\u8bed\u8a00&quot;:[{&quot;id&quot;:&quot;1040000000089436&quot;,&quot;name&quot;:&quot;javascript&quot;},{&quot;id&quot;:&quot;1040000000089387&quot;,&quot;name&quot;:&quot;php&quot;},{&quot;id&quot;:&quot;1040000000089434&quot;,&quot;name&quot;:&quot;css&quot;},{&quot;id&quot;:&quot;1040000000089571&quot;,&quot;name&quot;:&quot;html&quot;},{&quot;id&quot;:&quot;1040000000089449&quot;,&quot;name&quot;:&quot;java&quot;},{&quot;id&quot;:&quot;1040000000089534&quot;,&quot;name&quot;:&quot;python&quot;},{&quot;id&quot;:&quot;1040000000089409&quot;,&quot;name&quot;:&quot;html5&quot;},{&quot;id&quot;:&quot;1040000000089918&quot;,&quot;name&quot;:&quot;node.js&quot;},{&quot;id&quot;:&quot;1040000000089741&quot;,&quot;name&quot;:&quot;c++&quot;},{&quot;id&quot;:&quot;1040000000089457&quot;,&quot;name&quot;:&quot;c&quot;},{&quot;id&quot;:&quot;1040000000090209&quot;,&quot;name&quot;:&quot;objective-c&quot;},{&quot;id&quot;:&quot;1040000000090203&quot;,&quot;name&quot;:&quot;golang&quot;},{&quot;id&quot;:&quot;1040000000089669&quot;,&quot;name&quot;:&quot;shell&quot;},{&quot;id&quot;:&quot;1040000000531223&quot;,&quot;name&quot;:&quot;swift&quot;},{&quot;id&quot;:&quot;1040000000089581&quot;,&quot;name&quot;:&quot;c#&quot;},{&quot;id&quot;:&quot;1040000000089699&quot;,&quot;name&quot;:&quot;ruby&quot;},{&quot;id&quot;:&quot;1040000000089686&quot;,&quot;name&quot;:&quot;bash&quot;},{&quot;id&quot;:&quot;1040000000091262&quot;,&quot;name&quot;:&quot;sass&quot;},{&quot;id&quot;:&quot;1040000000365394&quot;,&quot;name&quot;:&quot;typescript&quot;},{&quot;id&quot;:&quot;1040000000090433&quot;,&quot;name&quot;:&quot;asp.net&quot;},{&quot;id&quot;:&quot;1040000000090600&quot;,&quot;name&quot;:&quot;less&quot;},{&quot;id&quot;:&quot;1040000000090208&quot;,&quot;name&quot;:&quot;lua&quot;},{&quot;id&quot;:&quot;1040000000090228&quot;,&quot;name&quot;:&quot;scala&quot;},{&quot;id&quot;:&quot;1040000000161068&quot;,&quot;name&quot;:&quot;coffeescript&quot;},{&quot;id&quot;:&quot;1040000000090194&quot;,&quot;name&quot;:&quot;actionscript&quot;},{&quot;id&quot;:&quot;1040000000090201&quot;,&quot;name&quot;:&quot;erlang&quot;},{&quot;id&quot;:&quot;1040000000089698&quot;,&quot;name&quot;:&quot;perl&quot;},{&quot;id&quot;:&quot;1040000000311191&quot;,&quot;name&quot;:&quot;rust&quot;}],&quot;\u5e73\u53f0\u6846\u67b6&quot;:[{&quot;id&quot;:&quot;1040000000196640&quot;,&quot;name&quot;:&quot;laravel&quot;},{&quot;id&quot;:&quot;1040000000125263&quot;,&quot;name&quot;:&quot;flask&quot;},{&quot;id&quot;:&quot;1040000000090103&quot;,&quot;name&quot;:&quot;spring&quot;},{&quot;id&quot;:&quot;1040000000089564&quot;,&quot;name&quot;:&quot;django&quot;},{&quot;id&quot;:&quot;1040000000166256&quot;,&quot;name&quot;:&quot;express&quot;},{&quot;id&quot;:&quot;1040000000089646&quot;,&quot;name&quot;:&quot;ruby-on-rails&quot;},{&quot;id&quot;:&quot;1040000000090398&quot;,&quot;name&quot;:&quot;yii&quot;},{&quot;id&quot;:&quot;1040000000116331&quot;,&quot;name&quot;:&quot;tornado&quot;},{&quot;id&quot;:&quot;1040000000622042&quot;,&quot;name&quot;:&quot;koa&quot;},{&quot;id&quot;:&quot;1040000000089638&quot;,&quot;name&quot;:&quot;struts&quot;}],&quot;\u670d\u52a1\u5668&quot;:[{&quot;id&quot;:&quot;1040000000089392&quot;,&quot;name&quot;:&quot;linux&quot;},{&quot;id&quot;:&quot;1040000000090145&quot;,&quot;name&quot;:&quot;nginx&quot;},{&quot;id&quot;:&quot;1040000000089761&quot;,&quot;name&quot;:&quot;apache&quot;},{&quot;id&quot;:&quot;1040000000366352&quot;,&quot;name&quot;:&quot;docker&quot;},{&quot;id&quot;:&quot;1040000000090245&quot;,&quot;name&quot;:&quot;ubuntu&quot;},{&quot;id&quot;:&quot;1040000000090249&quot;,&quot;name&quot;:&quot;centos&quot;},{&quot;id&quot;:&quot;1040000000090401&quot;,&quot;name&quot;:&quot;\u7f13\u5b58&quot;},{&quot;id&quot;:&quot;1040000000090117&quot;,&quot;name&quot;:&quot;tomcat&quot;},{&quot;id&quot;:&quot;1040000000090107&quot;,&quot;name&quot;:&quot;\u8d1f\u8f7d\u5747\u8861&quot;},{&quot;id&quot;:&quot;1040000000090646&quot;,&quot;name&quot;:&quot;unix&quot;},{&quot;id&quot;:&quot;1040000000089648&quot;,&quot;name&quot;:&quot;hadoop&quot;},{&quot;id&quot;:&quot;1040000000090609&quot;,&quot;name&quot;:&quot;windows-server&quot;}],&quot;\u6570\u636e\u5e93\u548c\u7f13\u5b58&quot;:[{&quot;id&quot;:&quot;1040000000089439&quot;,&quot;name&quot;:&quot;mysql&quot;},{&quot;id&quot;:&quot;1040000000090049&quot;,&quot;name&quot;:&quot;sql&quot;},{&quot;id&quot;:&quot;1040000000089431&quot;,&quot;name&quot;:&quot;redis&quot;},{&quot;id&quot;:&quot;1040000000089488&quot;,&quot;name&quot;:&quot;mongodb&quot;},{&quot;id&quot;:&quot;1040000000090701&quot;,&quot;name&quot;:&quot;oracle&quot;},{&quot;id&quot;:&quot;1040000000089432&quot;,&quot;name&quot;:&quot;nosql&quot;},{&quot;id&quot;:&quot;1040000000089873&quot;,&quot;name&quot;:&quot;memcached&quot;},{&quot;id&quot;:&quot;1040000000090424&quot;,&quot;name&quot;:&quot;sqlserver&quot;},{&quot;id&quot;:&quot;1040000000090354&quot;,&quot;name&quot;:&quot;sqlite&quot;},{&quot;id&quot;:&quot;1040000000090861&quot;,&quot;name&quot;:&quot;postgresql&quot;}],&quot;\u5f00\u53d1\u5de5\u5177&quot;:[{&quot;id&quot;:&quot;1040000000089459&quot;,&quot;name&quot;:&quot;git&quot;},{&quot;id&quot;:&quot;1040000000091226&quot;,&quot;name&quot;:&quot;github&quot;},{&quot;id&quot;:&quot;1040000000089467&quot;,&quot;name&quot;:&quot;vim&quot;},{&quot;id&quot;:&quot;1040000000089579&quot;,&quot;name&quot;:&quot;xcode&quot;},{&quot;id&quot;:&quot;1040000000126097&quot;,&quot;name&quot;:&quot;sublime-text&quot;},{&quot;id&quot;:&quot;1040000000089509&quot;,&quot;name&quot;:&quot;eclipse&quot;},{&quot;id&quot;:&quot;1040000002720957&quot;,&quot;name&quot;:&quot;visual-studio-code&quot;},{&quot;id&quot;:&quot;1040000000090560&quot;,&quot;name&quot;:&quot;intellij-idea&quot;},{&quot;id&quot;:&quot;1040000000090186&quot;,&quot;name&quot;:&quot;maven&quot;},{&quot;id&quot;:&quot;1040000000089447&quot;,&quot;name&quot;:&quot;svn&quot;},{&quot;id&quot;:&quot;1040000000090473&quot;,&quot;name&quot;:&quot;ide&quot;},{&quot;id&quot;:&quot;1040000000090524&quot;,&quot;name&quot;:&quot;atom&quot;},{&quot;id&quot;:&quot;1040000000090231&quot;,&quot;name&quot;:&quot;visual-studio&quot;},{&quot;id&quot;:&quot;1040000000090216&quot;,&quot;name&quot;:&quot;emacs&quot;},{&quot;id&quot;:&quot;1040000000183694&quot;,&quot;name&quot;:&quot;hg&quot;},{&quot;id&quot;:&quot;1040000000089663&quot;,&quot;name&quot;:&quot;textmate&quot;}],&quot;\u7cfb\u7edf\u8bbe\u5907&quot;:[{&quot;id&quot;:&quot;1040000000089658&quot;,&quot;name&quot;:&quot;android&quot;},{&quot;id&quot;:&quot;1040000000089442&quot;,&quot;name&quot;:&quot;ios&quot;},{&quot;id&quot;:&quot;1040000000089407&quot;,&quot;name&quot;:&quot;chrome&quot;},{&quot;id&quot;:&quot;1040000000089709&quot;,&quot;name&quot;:&quot;windows&quot;},{&quot;id&quot;:&quot;1040000000089498&quot;,&quot;name&quot;:&quot;iphone&quot;},{&quot;id&quot;:&quot;1040000000090217&quot;,&quot;name&quot;:&quot;firefox&quot;},{&quot;id&quot;:&quot;1040000000125504&quot;,&quot;name&quot;:&quot;internet-explorer&quot;},{&quot;id&quot;:&quot;1040000000089499&quot;,&quot;name&quot;:&quot;safari&quot;},{&quot;id&quot;:&quot;1040000000090638&quot;,&quot;name&quot;:&quot;ipad&quot;},{&quot;id&quot;:&quot;1040000000090218&quot;,&quot;name&quot;:&quot;opera&quot;},{&quot;id&quot;:&quot;1040000002871462&quot;,&quot;name&quot;:&quot;apple-watch&quot;}],&quot;\u5176\u5b83&quot;:[{&quot;id&quot;:&quot;1040000000089409&quot;,&quot;name&quot;:&quot;html5&quot;},{&quot;id&quot;:&quot;1040000002893277&quot;,&quot;name&quot;:&quot;react.js&quot;},{&quot;id&quot;:&quot;1040000000090137&quot;,&quot;name&quot;:&quot;\u641c\u7d22\u5f15\u64ce&quot;},{&quot;id&quot;:&quot;1040000000123810&quot;,&quot;name&quot;:&quot;virtualenv&quot;},{&quot;id&quot;:&quot;1040000000090316&quot;,&quot;name&quot;:&quot;lucene&quot;}]}" style="display: none;">
+    <ul class="nav nav-tabs" role="tablist">
+                    <li role="presentation" class="active"><a href="https://segmentfault.com/a/1190000009309347#开发语言" aria-controls="type" role="tab" data-toggle="tab">开发语言</a>
+            </li>
+                    <li role="presentation" class=""><a href="https://segmentfault.com/a/1190000009309347#平台框架" aria-controls="type" role="tab" data-toggle="tab">平台框架</a>
+            </li>
+                    <li role="presentation" class=""><a href="https://segmentfault.com/a/1190000009309347#服务器" aria-controls="type" role="tab" data-toggle="tab">服务器</a>
+            </li>
+                    <li role="presentation" class=""><a href="https://segmentfault.com/a/1190000009309347#数据库和缓存" aria-controls="type" role="tab" data-toggle="tab">数据库和缓存</a>
+            </li>
+                    <li role="presentation" class=""><a href="https://segmentfault.com/a/1190000009309347#开发工具" aria-controls="type" role="tab" data-toggle="tab">开发工具</a>
+            </li>
+                    <li role="presentation" class=""><a href="https://segmentfault.com/a/1190000009309347#系统设备" aria-controls="type" role="tab" data-toggle="tab">系统设备</a>
+            </li>
+                    <li role="presentation" class=""><a href="https://segmentfault.com/a/1190000009309347#其它" aria-controls="type" role="tab" data-toggle="tab">其它</a>
+            </li>
+            </ul>
+    <div class="tab-content">
+                    <div role="tabpanel" class="tab-pane active" id="开发语言">
+                <ul class="taglist--inline">
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089436&quot;,&quot;name&quot;:&quot;javascript&quot;}" href="javascript: void(0);">javascript</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089387&quot;,&quot;name&quot;:&quot;php&quot;}" href="javascript: void(0);">php</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089434&quot;,&quot;name&quot;:&quot;css&quot;}" href="javascript: void(0);">css</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089571&quot;,&quot;name&quot;:&quot;html&quot;}" href="javascript: void(0);">html</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089449&quot;,&quot;name&quot;:&quot;java&quot;}" href="javascript: void(0);">java</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089534&quot;,&quot;name&quot;:&quot;python&quot;}" href="javascript: void(0);">python</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089409&quot;,&quot;name&quot;:&quot;html5&quot;}" href="javascript: void(0);">html5</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089918&quot;,&quot;name&quot;:&quot;node.js&quot;}" href="javascript: void(0);">node.js</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089741&quot;,&quot;name&quot;:&quot;c++&quot;}" href="javascript: void(0);">c++</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089457&quot;,&quot;name&quot;:&quot;c&quot;}" href="javascript: void(0);">c</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090209&quot;,&quot;name&quot;:&quot;objective-c&quot;}" href="javascript: void(0);">objective-c</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090203&quot;,&quot;name&quot;:&quot;golang&quot;}" href="javascript: void(0);">golang</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089669&quot;,&quot;name&quot;:&quot;shell&quot;}" href="javascript: void(0);">shell</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000531223&quot;,&quot;name&quot;:&quot;swift&quot;}" href="javascript: void(0);">swift</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089581&quot;,&quot;name&quot;:&quot;c#&quot;}" href="javascript: void(0);">c#</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089699&quot;,&quot;name&quot;:&quot;ruby&quot;}" href="javascript: void(0);">ruby</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089686&quot;,&quot;name&quot;:&quot;bash&quot;}" href="javascript: void(0);">bash</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000091262&quot;,&quot;name&quot;:&quot;sass&quot;}" href="javascript: void(0);">sass</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000365394&quot;,&quot;name&quot;:&quot;typescript&quot;}" href="javascript: void(0);">typescript</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090433&quot;,&quot;name&quot;:&quot;asp.net&quot;}" href="javascript: void(0);">asp.net</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090600&quot;,&quot;name&quot;:&quot;less&quot;}" href="javascript: void(0);">less</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090208&quot;,&quot;name&quot;:&quot;lua&quot;}" href="javascript: void(0);">lua</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090228&quot;,&quot;name&quot;:&quot;scala&quot;}" href="javascript: void(0);">scala</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000161068&quot;,&quot;name&quot;:&quot;coffeescript&quot;}" href="javascript: void(0);">coffeescript</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090194&quot;,&quot;name&quot;:&quot;actionscript&quot;}" href="javascript: void(0);">actionscript</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090201&quot;,&quot;name&quot;:&quot;erlang&quot;}" href="javascript: void(0);">erlang</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089698&quot;,&quot;name&quot;:&quot;perl&quot;}" href="javascript: void(0);">perl</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000311191&quot;,&quot;name&quot;:&quot;rust&quot;}" href="javascript: void(0);">rust</a>
+                        </li>
+                                    </ul>
+            </div>
+                    <div role="tabpanel" class="tab-pane " id="平台框架">
+                <ul class="taglist--inline">
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000196640&quot;,&quot;name&quot;:&quot;laravel&quot;}" href="javascript: void(0);">laravel</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000125263&quot;,&quot;name&quot;:&quot;flask&quot;}" href="javascript: void(0);">flask</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090103&quot;,&quot;name&quot;:&quot;spring&quot;}" href="javascript: void(0);">spring</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089564&quot;,&quot;name&quot;:&quot;django&quot;}" href="javascript: void(0);">django</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000166256&quot;,&quot;name&quot;:&quot;express&quot;}" href="javascript: void(0);">express</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089646&quot;,&quot;name&quot;:&quot;ruby-on-rails&quot;}" href="javascript: void(0);">ruby-on-rails</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090398&quot;,&quot;name&quot;:&quot;yii&quot;}" href="javascript: void(0);">yii</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000116331&quot;,&quot;name&quot;:&quot;tornado&quot;}" href="javascript: void(0);">tornado</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000622042&quot;,&quot;name&quot;:&quot;koa&quot;}" href="javascript: void(0);">koa</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089638&quot;,&quot;name&quot;:&quot;struts&quot;}" href="javascript: void(0);">struts</a>
+                        </li>
+                                    </ul>
+            </div>
+                    <div role="tabpanel" class="tab-pane " id="服务器">
+                <ul class="taglist--inline">
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089392&quot;,&quot;name&quot;:&quot;linux&quot;}" href="javascript: void(0);">linux</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090145&quot;,&quot;name&quot;:&quot;nginx&quot;}" href="javascript: void(0);">nginx</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089761&quot;,&quot;name&quot;:&quot;apache&quot;}" href="javascript: void(0);">apache</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000366352&quot;,&quot;name&quot;:&quot;docker&quot;}" href="javascript: void(0);">docker</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090245&quot;,&quot;name&quot;:&quot;ubuntu&quot;}" href="javascript: void(0);">ubuntu</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090249&quot;,&quot;name&quot;:&quot;centos&quot;}" href="javascript: void(0);">centos</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090401&quot;,&quot;name&quot;:&quot;\u7f13\u5b58&quot;}" href="javascript: void(0);">缓存</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090117&quot;,&quot;name&quot;:&quot;tomcat&quot;}" href="javascript: void(0);">tomcat</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090107&quot;,&quot;name&quot;:&quot;\u8d1f\u8f7d\u5747\u8861&quot;}" href="javascript: void(0);">负载均衡</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090646&quot;,&quot;name&quot;:&quot;unix&quot;}" href="javascript: void(0);">unix</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089648&quot;,&quot;name&quot;:&quot;hadoop&quot;}" href="javascript: void(0);">hadoop</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090609&quot;,&quot;name&quot;:&quot;windows-server&quot;}" href="javascript: void(0);">windows-server</a>
+                        </li>
+                                    </ul>
+            </div>
+                    <div role="tabpanel" class="tab-pane " id="数据库和缓存">
+                <ul class="taglist--inline">
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089439&quot;,&quot;name&quot;:&quot;mysql&quot;}" href="javascript: void(0);">mysql</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090049&quot;,&quot;name&quot;:&quot;sql&quot;}" href="javascript: void(0);">sql</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089431&quot;,&quot;name&quot;:&quot;redis&quot;}" href="javascript: void(0);">redis</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089488&quot;,&quot;name&quot;:&quot;mongodb&quot;}" href="javascript: void(0);">mongodb</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090701&quot;,&quot;name&quot;:&quot;oracle&quot;}" href="javascript: void(0);">oracle</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089432&quot;,&quot;name&quot;:&quot;nosql&quot;}" href="javascript: void(0);">nosql</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089873&quot;,&quot;name&quot;:&quot;memcached&quot;}" href="javascript: void(0);">memcached</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090424&quot;,&quot;name&quot;:&quot;sqlserver&quot;}" href="javascript: void(0);">sqlserver</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090354&quot;,&quot;name&quot;:&quot;sqlite&quot;}" href="javascript: void(0);">sqlite</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090861&quot;,&quot;name&quot;:&quot;postgresql&quot;}" href="javascript: void(0);">postgresql</a>
+                        </li>
+                                    </ul>
+            </div>
+                    <div role="tabpanel" class="tab-pane " id="开发工具">
+                <ul class="taglist--inline">
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089459&quot;,&quot;name&quot;:&quot;git&quot;}" href="javascript: void(0);">git</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000091226&quot;,&quot;name&quot;:&quot;github&quot;}" href="javascript: void(0);">github</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089467&quot;,&quot;name&quot;:&quot;vim&quot;}" href="javascript: void(0);">vim</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089579&quot;,&quot;name&quot;:&quot;xcode&quot;}" href="javascript: void(0);">xcode</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000126097&quot;,&quot;name&quot;:&quot;sublime-text&quot;}" href="javascript: void(0);">sublime-text</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089509&quot;,&quot;name&quot;:&quot;eclipse&quot;}" href="javascript: void(0);">eclipse</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000002720957&quot;,&quot;name&quot;:&quot;visual-studio-code&quot;}" href="javascript: void(0);">visual-studio-code</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090560&quot;,&quot;name&quot;:&quot;intellij-idea&quot;}" href="javascript: void(0);">intellij-idea</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090186&quot;,&quot;name&quot;:&quot;maven&quot;}" href="javascript: void(0);">maven</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089447&quot;,&quot;name&quot;:&quot;svn&quot;}" href="javascript: void(0);">svn</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090473&quot;,&quot;name&quot;:&quot;ide&quot;}" href="javascript: void(0);">ide</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090524&quot;,&quot;name&quot;:&quot;atom&quot;}" href="javascript: void(0);">atom</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090231&quot;,&quot;name&quot;:&quot;visual-studio&quot;}" href="javascript: void(0);">visual-studio</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090216&quot;,&quot;name&quot;:&quot;emacs&quot;}" href="javascript: void(0);">emacs</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000183694&quot;,&quot;name&quot;:&quot;hg&quot;}" href="javascript: void(0);">hg</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089663&quot;,&quot;name&quot;:&quot;textmate&quot;}" href="javascript: void(0);">textmate</a>
+                        </li>
+                                    </ul>
+            </div>
+                    <div role="tabpanel" class="tab-pane " id="系统设备">
+                <ul class="taglist--inline">
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089658&quot;,&quot;name&quot;:&quot;android&quot;}" href="javascript: void(0);">android</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089442&quot;,&quot;name&quot;:&quot;ios&quot;}" href="javascript: void(0);">ios</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089407&quot;,&quot;name&quot;:&quot;chrome&quot;}" href="javascript: void(0);">chrome</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089709&quot;,&quot;name&quot;:&quot;windows&quot;}" href="javascript: void(0);">windows</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089498&quot;,&quot;name&quot;:&quot;iphone&quot;}" href="javascript: void(0);">iphone</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090217&quot;,&quot;name&quot;:&quot;firefox&quot;}" href="javascript: void(0);">firefox</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000125504&quot;,&quot;name&quot;:&quot;internet-explorer&quot;}" href="javascript: void(0);">internet-explorer</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089499&quot;,&quot;name&quot;:&quot;safari&quot;}" href="javascript: void(0);">safari</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090638&quot;,&quot;name&quot;:&quot;ipad&quot;}" href="javascript: void(0);">ipad</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090218&quot;,&quot;name&quot;:&quot;opera&quot;}" href="javascript: void(0);">opera</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000002871462&quot;,&quot;name&quot;:&quot;apple-watch&quot;}" href="javascript: void(0);">apple-watch</a>
+                        </li>
+                                    </ul>
+            </div>
+                    <div role="tabpanel" class="tab-pane " id="其它">
+                <ul class="taglist--inline">
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089409&quot;,&quot;name&quot;:&quot;html5&quot;}" href="javascript: void(0);">html5</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000002893277&quot;,&quot;name&quot;:&quot;react.js&quot;}" href="javascript: void(0);">react.js</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090137&quot;,&quot;name&quot;:&quot;\u641c\u7d22\u5f15\u64ce&quot;}" href="javascript: void(0);">搜索引擎</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000123810&quot;,&quot;name&quot;:&quot;virtualenv&quot;}" href="javascript: void(0);">virtualenv</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090316&quot;,&quot;name&quot;:&quot;lucene&quot;}" href="javascript: void(0);">lucene</a>
+                        </li>
+                                    </ul>
+            </div>
+            </div>
+</div>
+
+                                </div>
+                               
+                            </form>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-4 hidden-xs">
+                        <ul class="post-topheader__side list-unstyled">
+                            <li>
+                                <button type="button" class="btn btn-success btn-sm " data-id="1190000009309347" id="sideLike"><span id="sideLikeText">赞</span>&nbsp;&nbsp;<span class="seprator">|</span>&nbsp;&nbsp;
+                                            <span id="sideLikeNum">1</span></button><button type="button" id="sideBookmark" class="btn btn-default btn-sm " data-id="1190000009309347" data-type="article"><span id="sideBookmarkText">收藏</span>&nbsp;&nbsp;<span class="seprator">|</span>&nbsp;&nbsp;<span id="sideBookmarkNum">2</span></button>                            </li>
+                            <li>
+                                <strong class="no-stress">642</strong> 次浏览
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div><!-- end .post-topheader -->
+
+    <div class="container mt30">
+        <div class="row">
+            <div class="col-xs-12 col-md-9 main ">
+
+                
+                <div class="article fmt article__content" data-id="1190000009309347" data-license="">
+                    
+<p>上一篇介绍了hello-world的大概流程，那么hello-world的image里面到底包含了些什么呢？里面的格式是怎么样的呢？</p>
+<p>image所包含的内容以及格式都是有标准的，由<a href="https://www.opencontainers.org/" target="_blank">Open Containers Initiative</a>(OCI)负责维护，地址为<a href="https://github.com/opencontainers/image-spec/blob/master/spec.md" target="_blank">image-spec</a>，本文将对该标准做一个简单的解释。</p>
+<h2 id="articleHeader0">image包含的内容</h2>
+<p>一个image由<a href="https://github.com/opencontainers/image-spec/blob/master/manifest.md" target="_blank">manifest</a>、<a href="https://github.com/opencontainers/image-spec/blob/master/image-index.md" target="_blank">image index</a> (可选)、<a href="https://github.com/opencontainers/image-spec/blob/master/layer.md" target="_blank">filesystem layers</a>和<a href="https://github.com/opencontainers/image-spec/blob/master/config.md" target="_blank">configuration</a>四部分组成。</p>
+<h3 id="articleHeader1">关系图</h3>
+<p>先来看看构成image的四部分的关系图：</p>
+<div class="widget-codetool" style="display: none;">
+      <div class="widget-codetool--inner">
+      <span class="selectCode code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="全选"></span>
+      <span type="button" class="copyCode code-tool" data-toggle="tooltip" data-placement="top" data-clipboard-text="                    +-----------------------+
+                    | Image Index(optional) |
+                    +-----------------------+
+                               |
+                               | 1..*
+                               ↓
+                    +----------------------+
+                    |    Image Manifest    |
+                    +----------------------+
+                               |
+                     1..1      |     1..*
+               +---------------+--------------+
+               |                              |
+               ↓                              ↓
+       +--------------+             +-------------------+
+       | Image Config |             | Filesystem Layers |
+       +--------------+             +-------------------+" title="" data-original-title="复制"></span>
+      <span type="button" class="saveToNote code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="放进笔记"></span>
+      </div>
+      </div><pre class="hljs gherkin"><code>                    +-----------------------+
+                    |<span class="hljs-string"> Image Index(optional) </span>|
+                    +-----------------------+
+                               |<span class="hljs-string">
+                               </span>|<span class="hljs-string"> 1..*
+                               ↓
+                    +----------------------+
+                    </span>|<span class="hljs-string">    Image Manifest    </span>|
+                    +----------------------+
+                               |<span class="hljs-string">
+                     1..1      </span>|<span class="hljs-string">     1..*
+               +---------------+--------------+
+               </span>|<span class="hljs-string">                              </span>|
+               ↓                              ↓
+       +--------------+             +-------------------+
+       |<span class="hljs-string"> Image Config </span>|<span class="hljs-string">             </span>|<span class="hljs-string"> Filesystem Layers </span>|
+       +--------------+             +-------------------+</code></pre>
+<ul>
+<li><p>Image Index和Manifest的关系是"1..*"，表示它们是一对多的关系</p></li>
+<li><p>Image Manifest和Config的关系是"1..1"，表示它们是一对一的关系</p></li>
+<li><p>Image Manifest和Filesystem Layers是一对多的关系</p></li>
+</ul>
+<p>下面分别介绍它们各自都包含了哪些内容。</p>
+<h3 id="articleHeader2">Filesystem Layers</h3>
+<p>Filesystem Layer包含了文件系统的信息，即该image包含了哪些文件/目录，以及它们的属性和数据。</p>
+<h4>包含的内容</h4>
+<p>每个filesystem layer都包含了在上一个layer上的改动情况，主要包含三方面的内容：</p>
+<ul>
+<li><p>变化类型：是增加、修改还是删除了文件</p></li>
+<li><p>文件类型：每个变化发生在哪种文件类型上</p></li>
+<li><p>文件属性：文件的修改时间、用户ID、组ID、RWX权限等</p></li>
+</ul>
+<p>比如在某一层增加了一个文件，那么这一层所包含的内容就是增加的这个文件的数据以及它的属性，具体的细节请参考<a href="https://github.com/opencontainers/image-spec/blob/master/layer.md" target="_blank">标准文档</a>。</p>
+<h4>打包格式</h4>
+<p>最终每个layer都会打包成一个文件，这个文件的格式可以是tar和tar+gzip两种中的一种。</p>
+<p>对于这两种不同类型的文件格式，标准定义了两个新的media types，分别是application/vnd.oci.image.layer.v1.tar和application/vnd.oci.image.layer.v1.tar+gzip。</p>
+<p>同时标准还定义了application/vnd.oci.image.layer.nondistributable.v1.tar和application/vnd.oci.image.layer.nondistributable.v1.tar+gzip这两种对应于nondistributable的格式，其实这两种格式和前两种格式包含的内容是一样的，只是用不同的类型名称来区分它们的用途，对于名称中有nondistributable的layer，标准要求这种类型的layer不能上传，只能下载。</p>
+<blockquote><p>做过web开发的程序员对media type应该比较熟悉，简单点说，就是当客户端用http协议下载一个文件的时候，需要在http的首部带上Accept字段，告诉服务器端它支持哪些类型的文件，服务器返回文件的时候，需要在http的首部带上Content-Type字段，告诉客户端返回文件的类型，如<code>Accept: text/html,application/xml</code>和<code>Content-Type: text/html</code>。</p></blockquote>
+<h3 id="articleHeader3">Image Config</h3>
+<p>image config就是一个json文件，它的media type是<code>application/vnd.oci.image.config.v1+json</code>，这个json文件包含了对这个image的描述。先看看官方网站给的例子：</p>
+<div class="widget-codetool" style="display: none;">
+      <div class="widget-codetool--inner">
+      <span class="selectCode code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="全选"></span>
+      <span type="button" class="copyCode code-tool" data-toggle="tooltip" data-placement="top" data-clipboard-text="{
+    &quot;created&quot;: &quot;2015-10-31T22:22:56.015925234Z&quot;,
+    &quot;author&quot;: &quot;Alyssa P. Hacker &lt;alyspdev@example.com&gt;&quot;,
+    &quot;architecture&quot;: &quot;amd64&quot;,
+    &quot;os&quot;: &quot;linux&quot;,
+    &quot;config&quot;: {
+        &quot;User&quot;: &quot;alice&quot;,
+        &quot;ExposedPorts&quot;: {
+            &quot;8080/tcp&quot;: {}
+        },
+        &quot;Env&quot;: [
+            &quot;PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin&quot;,
+            &quot;FOO=oci_is_a&quot;,
+            &quot;BAR=well_written_spec&quot;
+        ],
+        &quot;Entrypoint&quot;: [
+            &quot;/bin/my-app-binary&quot;
+        ],
+        &quot;Cmd&quot;: [
+            &quot;--foreground&quot;,
+            &quot;--config&quot;,
+            &quot;/etc/my-app.d/default.cfg&quot;
+        ],
+        &quot;Volumes&quot;: {
+            &quot;/var/job-result-data&quot;: {},
+            &quot;/var/log/my-app-logs&quot;: {}
+        },
+        &quot;WorkingDir&quot;: &quot;/home/alice&quot;,
+        &quot;Labels&quot;: {
+            &quot;com.example.project.git.url&quot;: &quot;https://example.com/project.git&quot;,
+            &quot;com.example.project.git.commit&quot;: &quot;45a939b2999782a3f005621a8d0f29aa387e1d6b&quot;
+        }
+    },
+    &quot;rootfs&quot;: {
+      &quot;diff_ids&quot;: [
+        &quot;sha256:c6f988f4874bb0add23a778f753c65efe992244e148a1d2ec2a8b664fb66bbd1&quot;,
+        &quot;sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef&quot;
+      ],
+      &quot;type&quot;: &quot;layers&quot;
+    },
+    &quot;history&quot;: [
+      {
+        &quot;created&quot;: &quot;2015-10-31T22:22:54.690851953Z&quot;,
+        &quot;created_by&quot;: &quot;/bin/sh -c #(nop) ADD file:a3bc1e842b69636f9df5256c49c5374fb4eef1e281fe3f282c65fb853ee171c5 in /&quot;
+      },
+      {
+        &quot;created&quot;: &quot;2015-10-31T22:22:55.613815829Z&quot;,
+        &quot;created_by&quot;: &quot;/bin/sh -c #(nop) CMD [\&quot;sh\&quot;]&quot;,
+        &quot;empty_layer&quot;: true
+      }
+    ]
+}" title="" data-original-title="复制"></span>
+      <span type="button" class="saveToNote code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="放进笔记"></span>
+      </div>
+      </div><pre class="hljs json"><code>{
+    <span class="hljs-attr">"created"</span>: <span class="hljs-string">"2015-10-31T22:22:56.015925234Z"</span>,
+    <span class="hljs-attr">"author"</span>: <span class="hljs-string">"Alyssa P. Hacker &lt;alyspdev@example.com&gt;"</span>,
+    <span class="hljs-attr">"architecture"</span>: <span class="hljs-string">"amd64"</span>,
+    <span class="hljs-attr">"os"</span>: <span class="hljs-string">"linux"</span>,
+    <span class="hljs-attr">"config"</span>: {
+        <span class="hljs-attr">"User"</span>: <span class="hljs-string">"alice"</span>,
+        <span class="hljs-attr">"ExposedPorts"</span>: {
+            <span class="hljs-attr">"8080/tcp"</span>: {}
+        },
+        <span class="hljs-attr">"Env"</span>: [
+            <span class="hljs-string">"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"</span>,
+            <span class="hljs-string">"FOO=oci_is_a"</span>,
+            <span class="hljs-string">"BAR=well_written_spec"</span>
+        ],
+        <span class="hljs-attr">"Entrypoint"</span>: [
+            <span class="hljs-string">"/bin/my-app-binary"</span>
+        ],
+        <span class="hljs-attr">"Cmd"</span>: [
+            <span class="hljs-string">"--foreground"</span>,
+            <span class="hljs-string">"--config"</span>,
+            <span class="hljs-string">"/etc/my-app.d/default.cfg"</span>
+        ],
+        <span class="hljs-attr">"Volumes"</span>: {
+            <span class="hljs-attr">"/var/job-result-data"</span>: {},
+            <span class="hljs-attr">"/var/log/my-app-logs"</span>: {}
+        },
+        <span class="hljs-attr">"WorkingDir"</span>: <span class="hljs-string">"/home/alice"</span>,
+        <span class="hljs-attr">"Labels"</span>: {
+            <span class="hljs-attr">"com.example.project.git.url"</span>: <span class="hljs-string">"https://example.com/project.git"</span>,
+            <span class="hljs-attr">"com.example.project.git.commit"</span>: <span class="hljs-string">"45a939b2999782a3f005621a8d0f29aa387e1d6b"</span>
+        }
+    },
+    <span class="hljs-attr">"rootfs"</span>: {
+      <span class="hljs-attr">"diff_ids"</span>: [
+        <span class="hljs-string">"sha256:c6f988f4874bb0add23a778f753c65efe992244e148a1d2ec2a8b664fb66bbd1"</span>,
+        <span class="hljs-string">"sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"</span>
+      ],
+      <span class="hljs-attr">"type"</span>: <span class="hljs-string">"layers"</span>
+    },
+    <span class="hljs-attr">"history"</span>: [
+      {
+        <span class="hljs-attr">"created"</span>: <span class="hljs-string">"2015-10-31T22:22:54.690851953Z"</span>,
+        <span class="hljs-attr">"created_by"</span>: <span class="hljs-string">"/bin/sh -c #(nop) ADD file:a3bc1e842b69636f9df5256c49c5374fb4eef1e281fe3f282c65fb853ee171c5 in /"</span>
+      },
+      {
+        <span class="hljs-attr">"created"</span>: <span class="hljs-string">"2015-10-31T22:22:55.613815829Z"</span>,
+        <span class="hljs-attr">"created_by"</span>: <span class="hljs-string">"/bin/sh -c #(nop) CMD [\"sh\"]"</span>,
+        <span class="hljs-attr">"empty_layer"</span>: <span class="hljs-literal">true</span>
+      }
+    ]
+}</code></pre>
+<p>这里只介绍几个比较重要的属性，其它的请参考<a href="https://github.com/opencontainers/image-spec/blob/master/config.md" target="_blank">标准文档</a></p>
+<ul>
+<li><p><strong>architecture</strong>：CPU架构类型，现在大部分都是amd64，不过arm64估计会慢慢多起来</p></li>
+<li><p><strong>os</strong>：操作系统，本人只用过linux</p></li>
+<li><p><strong>config</strong>：当根据这个image启动container时，config里面的配置就是运行container时的默认参数，在后续介绍runtime的时候再仔细介绍每一项的意义</p></li>
+<li><p><strong>rootfs</strong>：指定了image所包含的filesystem layers，type的值必须是layers，diff_ids包含了layer的列表（顺序排列），每一个sha256就是每层layer对应tar包的sha256码</p></li>
+</ul>
+<h3 id="articleHeader4">manifest</h3>
+<p><a href="https://github.com/opencontainers/image-spec/blob/master/manifest.md" target="_blank">manifest</a>也是一个json文件，media type为<code>application/vnd.oci.image.manifest.v1+json</code>，这个文件包含了对前面filesystem layers和image config的描述，一看官方网站给出的示例就明白了：</p>
+<blockquote><p>manifest文件中config的sha256就是image的ID，即上面image config文件的sha256值，这里是b5b2b2c507a0944348e0303114d8d93aaaa081732b86451d9bce1f432a537bc7</p></blockquote>
+<div class="widget-codetool" style="display: none;">
+      <div class="widget-codetool--inner">
+      <span class="selectCode code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="全选"></span>
+      <span type="button" class="copyCode code-tool" data-toggle="tooltip" data-placement="top" data-clipboard-text="{
+  &quot;schemaVersion&quot;: 2,
+  &quot;config&quot;: {
+    &quot;mediaType&quot;: &quot;application/vnd.oci.image.config.v1+json&quot;,
+    &quot;size&quot;: 7023,
+    &quot;digest&quot;: &quot;sha256:b5b2b2c507a0944348e0303114d8d93aaaa081732b86451d9bce1f432a537bc7&quot;
+  },
+  &quot;layers&quot;: [
+    {
+      &quot;mediaType&quot;: &quot;application/vnd.oci.image.layer.v1.tar+gzip&quot;,
+      &quot;size&quot;: 32654,
+      &quot;digest&quot;: &quot;sha256:e692418e4cbaf90ca69d05a66403747baa33ee08806650b51fab815ad7fc331f&quot;
+    },
+    {
+      &quot;mediaType&quot;: &quot;application/vnd.oci.image.layer.v1.tar+gzip&quot;,
+      &quot;size&quot;: 16724,
+      &quot;digest&quot;: &quot;sha256:3c3a4604a545cdc127456d94e421cd355bca5b528f4a9c1905b15da2eb4a4c6b&quot;
+    },
+    {
+      &quot;mediaType&quot;: &quot;application/vnd.oci.image.layer.v1.tar+gzip&quot;,
+      &quot;size&quot;: 73109,
+      &quot;digest&quot;: &quot;sha256:ec4b8955958665577945c89419d1af06b5f7636b4ac3da7f12184802ad867736&quot;
+    }
+  ],
+  &quot;annotations&quot;: {
+    &quot;com.example.key1&quot;: &quot;value1&quot;,
+    &quot;com.example.key2&quot;: &quot;value2&quot;
+  }
+}" title="" data-original-title="复制"></span>
+      <span type="button" class="saveToNote code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="放进笔记"></span>
+      </div>
+      </div><pre class="hljs json"><code>{
+  <span class="hljs-attr">"schemaVersion"</span>: <span class="hljs-number">2</span>,
+  <span class="hljs-attr">"config"</span>: {
+    <span class="hljs-attr">"mediaType"</span>: <span class="hljs-string">"application/vnd.oci.image.config.v1+json"</span>,
+    <span class="hljs-attr">"size"</span>: <span class="hljs-number">7023</span>,
+    <span class="hljs-attr">"digest"</span>: <span class="hljs-string">"sha256:b5b2b2c507a0944348e0303114d8d93aaaa081732b86451d9bce1f432a537bc7"</span>
+  },
+  <span class="hljs-attr">"layers"</span>: [
+    {
+      <span class="hljs-attr">"mediaType"</span>: <span class="hljs-string">"application/vnd.oci.image.layer.v1.tar+gzip"</span>,
+      <span class="hljs-attr">"size"</span>: <span class="hljs-number">32654</span>,
+      <span class="hljs-attr">"digest"</span>: <span class="hljs-string">"sha256:e692418e4cbaf90ca69d05a66403747baa33ee08806650b51fab815ad7fc331f"</span>
+    },
+    {
+      <span class="hljs-attr">"mediaType"</span>: <span class="hljs-string">"application/vnd.oci.image.layer.v1.tar+gzip"</span>,
+      <span class="hljs-attr">"size"</span>: <span class="hljs-number">16724</span>,
+      <span class="hljs-attr">"digest"</span>: <span class="hljs-string">"sha256:3c3a4604a545cdc127456d94e421cd355bca5b528f4a9c1905b15da2eb4a4c6b"</span>
+    },
+    {
+      <span class="hljs-attr">"mediaType"</span>: <span class="hljs-string">"application/vnd.oci.image.layer.v1.tar+gzip"</span>,
+      <span class="hljs-attr">"size"</span>: <span class="hljs-number">73109</span>,
+      <span class="hljs-attr">"digest"</span>: <span class="hljs-string">"sha256:ec4b8955958665577945c89419d1af06b5f7636b4ac3da7f12184802ad867736"</span>
+    }
+  ],
+  <span class="hljs-attr">"annotations"</span>: {
+    <span class="hljs-attr">"com.example.key1"</span>: <span class="hljs-string">"value1"</span>,
+    <span class="hljs-attr">"com.example.key2"</span>: <span class="hljs-string">"value2"</span>
+  }
+}</code></pre>
+<ul>
+<li><p>config里面包含了对image config文件的描述，有media type，文件大小，以及sha256码</p></li>
+<li><p>layers包含了对每一个layer的描述，和对config文件的描述一样，也包含了media type，文件大小，以及sha256码</p></li>
+</ul>
+<blockquote><p>这里layer的sha256和image config文件中的diff_ids有可能不一样，比如这里的layer文件格式是tar+gzip，那么这里的sha256就是tar+gzip包的sha256码，而diff_ids是tar+gzip解压后tar文件的sha256码</p></blockquote>
+<h3 id="articleHeader5">Image Index(可选)</h3>
+<p><a href="https://github.com/opencontainers/image-spec/blob/master/image-index.md" target="_blank">image index</a>也是个json文件，media type是<code>application/vnd.oci.image.index.v1+json</code>。</p>
+<p>其实到manifest为止，已经有了整个image的完整描述，为什么还需要image index这个文件呢？主要原因是manifest描述的image只能支持一个平台，也没法支持多个tag，加上index文件的目的就是让这个image能支持多个平台和多tag。</p>
+<p>image index是v1.0.0-rc5才加进来的一个文件，还不稳定，后面可能还会修改，并且docker现在也不支持该文件，这里看看官方给的示例，先了解一下：</p>
+<div class="widget-codetool" style="display: none;">
+      <div class="widget-codetool--inner">
+      <span class="selectCode code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="全选"></span>
+      <span type="button" class="copyCode code-tool" data-toggle="tooltip" data-placement="top" data-clipboard-text="{
+  &quot;schemaVersion&quot;: 2,
+  &quot;manifests&quot;: [
+    {
+      &quot;mediaType&quot;: &quot;application/vnd.oci.image.manifest.v1+json&quot;,
+      &quot;size&quot;: 7143,
+      &quot;digest&quot;: &quot;sha256:e692418e4cbaf90ca69d05a66403747baa33ee08806650b51fab815ad7fc331f&quot;,
+      &quot;platform&quot;: {
+        &quot;architecture&quot;: &quot;ppc64le&quot;,
+        &quot;os&quot;: &quot;linux&quot;
+      }
+    },
+    {
+      &quot;mediaType&quot;: &quot;application/vnd.oci.image.manifest.v1+json&quot;,
+      &quot;size&quot;: 7682,
+      &quot;digest&quot;: &quot;sha256:5b0bcabd1ed22e9fb1310cf6c2dec7cdef19f0ad69efa1f392e94a4333501270&quot;,
+      &quot;platform&quot;: {
+        &quot;architecture&quot;: &quot;amd64&quot;,
+        &quot;os&quot;: &quot;linux&quot;,
+        &quot;os.features&quot;: [
+          &quot;sse4&quot;
+        ]
+      }
+    }
+  ],
+  &quot;annotations&quot;: {
+    &quot;com.example.key1&quot;: &quot;value1&quot;,
+    &quot;com.example.key2&quot;: &quot;value2&quot;
+  }
+}" title="" data-original-title="复制"></span>
+      <span type="button" class="saveToNote code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="放进笔记"></span>
+      </div>
+      </div><pre class="hljs json"><code>{
+  <span class="hljs-attr">"schemaVersion"</span>: <span class="hljs-number">2</span>,
+  <span class="hljs-attr">"manifests"</span>: [
+    {
+      <span class="hljs-attr">"mediaType"</span>: <span class="hljs-string">"application/vnd.oci.image.manifest.v1+json"</span>,
+      <span class="hljs-attr">"size"</span>: <span class="hljs-number">7143</span>,
+      <span class="hljs-attr">"digest"</span>: <span class="hljs-string">"sha256:e692418e4cbaf90ca69d05a66403747baa33ee08806650b51fab815ad7fc331f"</span>,
+      <span class="hljs-attr">"platform"</span>: {
+        <span class="hljs-attr">"architecture"</span>: <span class="hljs-string">"ppc64le"</span>,
+        <span class="hljs-attr">"os"</span>: <span class="hljs-string">"linux"</span>
+      }
+    },
+    {
+      <span class="hljs-attr">"mediaType"</span>: <span class="hljs-string">"application/vnd.oci.image.manifest.v1+json"</span>,
+      <span class="hljs-attr">"size"</span>: <span class="hljs-number">7682</span>,
+      <span class="hljs-attr">"digest"</span>: <span class="hljs-string">"sha256:5b0bcabd1ed22e9fb1310cf6c2dec7cdef19f0ad69efa1f392e94a4333501270"</span>,
+      <span class="hljs-attr">"platform"</span>: {
+        <span class="hljs-attr">"architecture"</span>: <span class="hljs-string">"amd64"</span>,
+        <span class="hljs-attr">"os"</span>: <span class="hljs-string">"linux"</span>,
+        <span class="hljs-attr">"os.features"</span>: [
+          <span class="hljs-string">"sse4"</span>
+        ]
+      }
+    }
+  ],
+  <span class="hljs-attr">"annotations"</span>: {
+    <span class="hljs-attr">"com.example.key1"</span>: <span class="hljs-string">"value1"</span>,
+    <span class="hljs-attr">"com.example.key2"</span>: <span class="hljs-string">"value2"</span>
+  }
+}</code></pre>
+<p>index文件包含了对image中所有manifest的描述，相当于一个manifest列表，包括每个manifest的media type，文件大小，sha256码，支持的平台以及平台特殊的配置。</p>
+<p>比如ubuntu想让它的image支持amd64和arm64平台，于是它在两个平台上都编译好相应的包，然后将两个平台的layer都放到这个image的filesystem layers里面，然后写两个config文件和两个manifest文件，再加上这样一个描述不同平台manifest的index文件，就可以让这个image支持两个平台了，两个平台的用户可以使用同样的命令得到自己平台想要的那些layer。</p>
+<blockquote><p>image index最新的标准里面并没有涉及到tag，不过估计后续会加上。</p></blockquote>
+<h2 id="articleHeader6">image layout</h2>
+<p>上面介绍了image所包含的内容，在开始介绍layout之前，先来回顾一下上一篇介绍hello-world时提到的从register服务器拉image的过程：</p>
+<ul>
+<li><p>首先获取image的manifests</p></li>
+<li><p>根据manifests文件中config的sha256码，得到image config文件</p></li>
+<li><p>遍历manifests里面的所有layer，根据其sha256码在本地找，如果找到对应的layer，则跳过，否则从服务器取相应layer的压缩包</p></li>
+<li><p>等上面的所有步骤完成后，就会拼出完整的image</p></li>
+</ul>
+<p>从上面的过程中可以看出，我们从服务器上取image的时候不需要知道image manifests和config文件的名字，也不需要知道layer压缩包的名字。</p>
+<p>那么image从服务器拉下来后，在本地应该怎么存储呢？文件名称和目录结构应该是怎样的呢？OCI也有相应的标准，名字叫<a href="https://github.com/opencontainers/image-spec/blob/master/image-layout.md" target="_blank">image layout</a>，有了这样的标准之后，我们就可以将整个image打成一个包，方便的在不同机器，不同容器平台之间导入导出。</p>
+<p>不过遗憾的是，OCI的这个标准还在变化中，根据github上所看到的，v1.0.0-rc5在v1.0.0-rc4上就有较大的修改，并且现在docker也不支持该标准。</p>
+<blockquote><p>docker对OCI image layout的支持还在开发中，相关动态请关注：<a href="https://github.com/moby/moby/pull/26369" target="_blank">Support OCI image layout in docker save/load</a></p></blockquote>
+<p>这里我们看看<a href="https://github.com/opencontainers/image-spec/blob/v1.0.0-rc4/image-layout.md" target="_blank">v1.0.0-rc4的格式</a>，下面是hello-world image的目录结构，了解一下：</p>
+<div class="widget-codetool" style="display:none;">
+      <div class="widget-codetool--inner">
+      <span class="selectCode code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="全选"></span>
+      <span type="button" class="copyCode code-tool" data-toggle="tooltip" data-placement="top" data-clipboard-text="dev@debian:~/images/hello-world$ tree
+.
+├── blobs
+│   └── sha256
+│       ├── 636fcf0bc8246e08d2df4771dc764d35ea50428b8dfaa904773b0707cb4f6303
+│       ├── 7520415ce76232cdd62ecc345cea5ea44f5b6b144dc62351f2cd2b08382532a3
+│       └── 9b8e3ce88f3a2aaa478cfe613632f38d27be5eddaa002a719fa1bfa9ff4f7f63
+├── oci-layout
+└── refs
+    └── latest
+" title="" data-original-title="复制"></span>
+      <span type="button" class="saveToNote code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="放进笔记"></span>
+      </div>
+      </div><pre class="hljs elixir"><code>dev<span class="hljs-variable">@debian</span><span class="hljs-symbol">:~/images/hello-world</span><span class="hljs-variable">$ </span>tree
+.
+├── blobs
+│&nbsp;&nbsp; └── sha256
+│&nbsp;&nbsp;     ├── <span class="hljs-number">636</span>fcf0bc8246e08d2df4771dc764d35ea50428b8dfaa904773b0707cb4f6303
+│&nbsp;&nbsp;     ├── <span class="hljs-number">7520415</span>ce76232cdd62ecc345cea5ea44f5b6b144dc62351f2cd2b08382532a3
+│&nbsp;&nbsp;     └── <span class="hljs-number">9</span>b8e3ce88f3a2aaa478cfe613632f38d27be5eddaa002a719fa1bfa9ff4f7f63
+├── oci-layout
+└── refs
+    └── latest
+</code></pre>
+<h4>oci-layout</h4>
+<p>包含image标准的版本信息</p>
+<div class="widget-codetool" style="display:none;">
+      <div class="widget-codetool--inner">
+      <span class="selectCode code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="全选"></span>
+      <span type="button" class="copyCode code-tool" data-toggle="tooltip" data-placement="top" data-clipboard-text="dev@debian:~/images/hello-world$ cat ./oci-layout| jq .
+{
+  &quot;imageLayoutVersion&quot;: &quot;1.0.0&quot;
+}" title="" data-original-title="复制"></span>
+      <span type="button" class="saveToNote code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="放进笔记"></span>
+      </div>
+      </div><pre class="hljs elixir"><code>dev<span class="hljs-variable">@debian</span><span class="hljs-symbol">:~/images/hello-world</span><span class="hljs-variable">$ </span>cat ./oci-layout| jq .
+{
+  <span class="hljs-string">"imageLayoutVersion"</span>: <span class="hljs-string">"1.0.0"</span>
+}</code></pre>
+<h4>refs</h4>
+<p>里面的每个文件就是一个tag（hello-world的image中只有一个latest tag），每个tag都是一个单独的image，相当于一个image的layout包里面可以包含多个有关系的image，文件的内容如下：</p>
+<div class="widget-codetool" style="display:none;">
+      <div class="widget-codetool--inner">
+      <span class="selectCode code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="全选"></span>
+      <span type="button" class="copyCode code-tool" data-toggle="tooltip" data-placement="top" data-clipboard-text="dev@debian:~/images/hello-world$ cat ./refs/latest | jq .
+{
+  &quot;mediaType&quot;: &quot;application/vnd.oci.image.manifest.v1+json&quot;,
+  &quot;digest&quot;: &quot;sha256:9b8e3ce88f3a2aaa478cfe613632f38d27be5eddaa002a719fa1bfa9ff4f7f63&quot;,
+  &quot;size&quot;: 347
+}" title="" data-original-title="复制"></span>
+      <span type="button" class="saveToNote code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="放进笔记"></span>
+      </div>
+      </div><pre class="hljs elixir"><code>dev<span class="hljs-variable">@debian</span><span class="hljs-symbol">:~/images/hello-world</span><span class="hljs-variable">$ </span>cat ./refs/latest | jq .
+{
+  <span class="hljs-string">"mediaType"</span>: <span class="hljs-string">"application/vnd.oci.image.manifest.v1+json"</span>,
+  <span class="hljs-string">"digest"</span>: <span class="hljs-string">"sha256:9b8e3ce88f3a2aaa478cfe613632f38d27be5eddaa002a719fa1bfa9ff4f7f63"</span>,
+  <span class="hljs-string">"size"</span>: <span class="hljs-number">347</span>
+}</code></pre>
+<p>其实就是对manifest文件的描述，根据sha256就可以在blobs的目录里面找到相应的manifest文件</p>
+<h4>blobs</h4>
+<p>里面包含了具体文件的内容，每个文件名都是其内容的sha256码，根据上面refs文件里面的sha256，就能在这里找到对应的manifest文件的内容，然后根据manifest文件的内容，就能一步一步的往下找到image config文件和filesystem layers文件。</p>
+<div class="widget-codetool" style="display:none;">
+      <div class="widget-codetool--inner">
+      <span class="selectCode code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="全选"></span>
+      <span type="button" class="copyCode code-tool" data-toggle="tooltip" data-placement="top" data-clipboard-text="dev@debian:~/images/hello-world$ file ./blobs/sha256/*
+./blobs/sha256/636fcf0bc8246e08d2df4771dc764d35ea50428b8dfaa904773b0707cb4f6303: ASCII text, with very long lines, with no line terminators
+./blobs/sha256/7520415ce76232cdd62ecc345cea5ea44f5b6b144dc62351f2cd2b08382532a3: gzip compressed data
+./blobs/sha256/9b8e3ce88f3a2aaa478cfe613632f38d27be5eddaa002a719fa1bfa9ff4f7f63: ASCII text, with very long lines, with no line terminators
+
+dev@debian:~/images/hello-world$ sha256sum ./blobs/sha256/*
+636fcf0bc8246e08d2df4771dc764d35ea50428b8dfaa904773b0707cb4f6303  ./blobs/sha256/636fcf0bc8246e08d2df4771dc764d35ea50428b8dfaa904773b0707cb4f6303
+7520415ce76232cdd62ecc345cea5ea44f5b6b144dc62351f2cd2b08382532a3  ./blobs/sha256/7520415ce76232cdd62ecc345cea5ea44f5b6b144dc62351f2cd2b08382532a3
+9b8e3ce88f3a2aaa478cfe613632f38d27be5eddaa002a719fa1bfa9ff4f7f63  ./blobs/sha256/9b8e3ce88f3a2aaa478cfe613632f38d27be5eddaa002a719fa1bfa9ff4f7f63" title="" data-original-title="复制"></span>
+      <span type="button" class="saveToNote code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="放进笔记"></span>
+      </div>
+      </div><pre class="hljs elixir"><code>dev<span class="hljs-variable">@debian</span><span class="hljs-symbol">:~/images/hello-world</span><span class="hljs-variable">$ </span>file ./blobs/sha256/*
+./blobs/sha256/<span class="hljs-number">636</span><span class="hljs-symbol">fcf0bc8246e08d2df4771dc764d35ea50428b8dfaa904773b0707cb4f6303:</span> ASCII text, with very long lines, with no line terminators
+./blobs/sha256/<span class="hljs-number">7520415</span><span class="hljs-symbol">ce76232cdd62ecc345cea5ea44f5b6b144dc62351f2cd2b08382532a3:</span> gzip compressed data
+./blobs/sha256/<span class="hljs-number">9</span><span class="hljs-symbol">b8e3ce88f3a2aaa478cfe613632f38d27be5eddaa002a719fa1bfa9ff4f7f63:</span> ASCII text, with very long lines, with no line terminators
+
+dev<span class="hljs-variable">@debian</span><span class="hljs-symbol">:~/images/hello-world</span><span class="hljs-variable">$ </span>sha256sum ./blobs/sha256/*
+<span class="hljs-number">636</span>fcf0bc8246e08d2df4771dc764d35ea50428b8dfaa904773b0707cb4f6303  ./blobs/sha256/<span class="hljs-number">636</span>fcf0bc8246e08d2df4771dc764d35ea50428b8dfaa904773b0707cb4f6303
+<span class="hljs-number">7520415</span>ce76232cdd62ecc345cea5ea44f5b6b144dc62351f2cd2b08382532a3  ./blobs/sha256/<span class="hljs-number">7520415</span>ce76232cdd62ecc345cea5ea44f5b6b144dc62351f2cd2b08382532a3
+<span class="hljs-number">9</span>b8e3ce88f3a2aaa478cfe613632f38d27be5eddaa002a719fa1bfa9ff4f7f63  ./blobs/sha256/<span class="hljs-number">9</span>b8e3ce88f3a2aaa478cfe613632f38d27be5eddaa002a719fa1bfa9ff4f7f63</code></pre>
+<h2 id="articleHeader7">下载image</h2>
+<p>上面介绍image layout时用到了hello-world的image，它是从哪里来的呢？</p>
+<p>为了快速的构建container的rootfs，docker在本地有它自己的一套image管理方式，有自己的layout，并且目前<code>docker save</code>命令也不支持导出OCI格式的image，只能导出docker自己的格式，所以我们只能借助其它的工具得到OCI格式的image。</p>
+<p>这里我们用<a href="https://github.com/projectatomic/skopeo" target="_blank">skopeo</a>来演示一下从docker hub上拉取hello-world的image，并把它在本地存成OCI的layout。</p>
+<blockquote><p>这里生成的layout和最新版本的标准有点差别，和v1.0.0-rc4的标准一致，如果你用同样的命令得到不一样的layout，说明skopeo有更新，支持了更新的标准。</p></blockquote>
+<div class="widget-codetool" style="display:none;">
+      <div class="widget-codetool--inner">
+      <span class="selectCode code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="全选"></span>
+      <span type="button" class="copyCode code-tool" data-toggle="tooltip" data-placement="top" data-clipboard-text="#这里的所有命令在debian 8.6的环节上运行通过
+#编译安装skopeo
+$ git clone https://github.com/projectatomic/skopeo $GOPATH/src/github.com/projectatomic/skopeo
+$ sudo apt-get install libgpgme11-dev libdevmapper-dev btrfs-tools go-md2man
+$ cd $GOPATH/src/github.com/projectatomic/skopeo 
+$ make binary-local
+$ sudo make install
+
+#下载hello-world的image
+$ skopeo copy docker://hello-world oci:hello-world
+$ tree hello-world/
+hello-world/
+├── blobs
+│   └── sha256
+│       ├── 636fcf0bc8246e08d2df4771dc764d35ea50428b8dfaa904773b0707cb4f6303
+│       ├── 7520415ce76232cdd62ecc345cea5ea44f5b6b144dc62351f2cd2b08382532a3
+│       └── 9b8e3ce88f3a2aaa478cfe613632f38d27be5eddaa002a719fa1bfa9ff4f7f63
+├── oci-layout
+└── refs
+    └── latest" title="" data-original-title="复制"></span>
+      <span type="button" class="saveToNote code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="放进笔记"></span>
+      </div>
+      </div><pre class="hljs gams"><code>#这里的所有命令在debian <span class="hljs-number">8.6</span>的环节上运行通过
+#编译安装skopeo
+<span class="hljs-symbol">$</span> git clone https:<span class="hljs-comment">//github.com/projectatomic/skopeo $GOPATH/src/github.com/projectatomic/skopeo</span>
+<span class="hljs-symbol">$</span> sudo apt-get install libgpgme11-dev libdevmapper-dev btrfs-tools go-md2man
+<span class="hljs-symbol">$</span> cd <span class="hljs-symbol">$</span>GOPATH/src/github.com/projectatomic/skopeo 
+<span class="hljs-symbol">$</span> make <span class="hljs-keyword">binary</span>-local
+<span class="hljs-symbol">$</span> sudo make install
+
+#下载hello-world的image
+<span class="hljs-symbol">$</span> skopeo copy docker:<span class="hljs-comment">//hello-world oci:hello-world</span>
+<span class="hljs-symbol">$</span> tree hello-world/
+hello-world/
+├── blobs
+│&nbsp;&nbsp; └── sha256
+│&nbsp;&nbsp;     ├── <span class="hljs-number">636</span>fcf0bc8246e08d2df4771dc764d35ea50428b8dfaa904773b0707cb4f6303
+│&nbsp;&nbsp;     ├── <span class="hljs-number">7520415</span>ce76232cdd62ecc345cea5ea44f5b6b144dc62351f2cd2b08382532a3
+│&nbsp;&nbsp;     └── <span class="hljs-number">9</span>b8e3ce88f3a2aaa478cfe613632f38d27be5eddaa002a719fa1bfa9ff4f7f63
+├── oci-layout
+└── refs
+    └── latest</code></pre>
+<h2 id="articleHeader8">结束语</h2>
+<p>虽然OCI iamge的标准还处于rc阶段，没有正式release，并且docker现在也不支持OCI image的layout，不过相信过不了多久，OCI image的标准就会被广泛支持，先了解一下还是很有必要的。</p>
+<h2 id="articleHeader9">参考</h2>
+<ul><li><p><a href="https://github.com/opencontainers/image-spec" target="_blank">OCI Image Format Specification</a></p></li></ul>
+
+                </div>
+                                                
+                <div class="clearfix mt10">
+                    <ul class="article-operation list-inline pull-left"><li><a href="https://segmentfault.com/a/1190000009309347">5月5日发布</a></li><li class="dropdown js__content-ops" data-module="article" data-id="1190000009309347" data-typetext="文章"><a href="javascript:void(0);" class="dropdown-toggle text-muted" data-toggle="dropdown"><i class="fa fa-ellipsis-h" aria-hidden="true"></i></a><ul class="dropdown-menu dropdown-menu-left"><li><a href="https://segmentfault.com/a/1190000009309347#911" data-toggle="modal" data-target="#911" data-action="report">举报</a></li></ul></li></ul>
+                    <div class="pull-right">
+                        <div class="widget-share__full" data-text="走进docker(02)：image(镜像)是什么？" data-url="https://segmentfault.com/a/1190000009309347" data-shorturl="http://sfau.lt/b5NdWV"><div class="widget-share-network sharer-0" style="display: block;"><ul class="sn-inline"><li data-network="weibo"><a href="javascript:void(0);" class="entypo-weibo icon-sn-weibo share-1" data-toggle="tooltip" data-placement="top" title="" data-original-title="分享至新浪微博">新浪微博</a></li><li data-network="wechart"><a href="javascript:void(0);" class="entypo-wechart icon-sn-weixin share-2" data-toggle="tooltip" data-placement="top" title="" data-original-title="分享至微信">微信</a></li><li data-network="twitter"><a href="javascript:void(0);" class="entypo-twitter icon-sn-twitter share-3" data-toggle="tooltip" data-placement="top" title="" data-original-title="分享至 Twitter">Twitter</a></li><li data-network="facebook"><a href="javascript:void(0);" class="entypo-facebook icon-sn-facebook share-4" data-toggle="tooltip" data-placement="top" title="" data-original-title="分享至 Facebook">Facebook</a></li></ul></div><a type="button" class="btn btn-sm shareMore btn-sn-more" data-toggle="popover" data-placement="top" data-url="https://segmentfault.com/a/1190000009309347" data-shorturl="http://sfau.lt/b5NdWV"><span class="icon-sn-dotted" data-original-title="" title=""></span><strong class="visible-xs-inline">•••</strong></a></div>
+
+
+                    </div>
+                </div>
+                <div class="mt10 text-center"><button type="button" id="mainLike" data-id="1190000009309347" class="btn btn-success btn-lg mr15 "><span id="mainLikeText">赞</span>&nbsp;&nbsp;<span class="seprator">|</span>&nbsp;&nbsp;
+                                <span id="mainLikeNum">1 </span></button><button type="button" id="mainBookmark" data-type="article" data-id="1190000009309347" class="btn btn-default btn-lg "><span id="mainBookmarkText">收藏</span>&nbsp;&nbsp;<span class="seprator">|</span>&nbsp;&nbsp;<span id="mainBookmarkNum">2</span></button></div>
+                                    <div class="recommend-post pt30 mt40 mb30 border-top">
+                        <div class="row">
+                            <div class="col-md-8">
+                                                                    <h4 class="mt0">你可能感兴趣的文章</h4>
+                                    <ul class="widget-links list-unstyled">
+                                                                                    <li class="widget-links__item">
+                                                <a href="https://segmentfault.com/a/1190000004491286" title="Docker 技巧：删除 Docker 容器和镜像">Docker 技巧：删除 Docker 容器和镜像</a>
+                                                <small class="text-muted">
+                                                    39 收藏，12.7k
+                                                    浏览
+                                                </small>
+                                            </li>
+                                                                                    <li class="widget-links__item">
+                                                <a href="https://segmentfault.com/a/1190000003090111" title="Docker开发-制作基础镜像">Docker开发-制作基础镜像</a>
+                                                <small class="text-muted">
+                                                    14 收藏，3k
+                                                    浏览
+                                                </small>
+                                            </li>
+                                                                                    <li class="widget-links__item">
+                                                <a href="https://segmentfault.com/a/1190000008535236" title="Docker 命令速查表">Docker 命令速查表</a>
+                                                <small class="text-muted">
+                                                    26 收藏，955
+                                                    浏览
+                                                </small>
+                                            </li>
+                                                                            </ul>
+                                                            </div>
+                            <div class="col-md-4">
+                                                                    <div class="article-license">
+                                                                                                                                                                    <img class="mb5" src="./走进docker(02)：image(镜像)是什么？ - 个人文章 - SegmentFault_files/creativecommons-cc.svg" height="24"><br>
+                                            <div class="license-item text-muted">
+                                            本作品采用<a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" class="alert-link">署名-非商业性使用-禁止演绎 4.0 国际许可协议</a> 进行许可
+                                            。
+                                        </div>
+                                        
+                                    </div>
+                                                            </div>
+                        </div>
+
+                    </div>
+                                <!-- <ul class="list-unstyled text-muted mt30">
+                                        <li>上一篇：<a href="/a/1190000009309297">走进docker(01)：hello-world的背后发生了什么？</a></li>
+                                                            <li class="mt5">下一篇：<a href="/a/1190000009309378">走进docker(03)：如何绕过docker运行hello-world？</a></li>
+                                    </ul> -->
+
+                <h2 class="h4 post-comment-title"></h2>
+                
+        <div class="comments--news comments--default comments--article 
+    " data-id="1190000009309347" data-user-id="" data-author-id="1030000006806480 " data-is-admin="null">
+                    <div class="mb10 clearfix">
+                <strong class="comments-stat pull-left mr10">评论</strong>
+
+                                                    <div class="btn-group btn-group-xs pull-right comments-sort btn-group-menu" role="menu">
+                        <a href="javascript:;" class="btn btn-default active" data-sort="default">默认排序</a>
+                        <a href="javascript:;" class="btn btn-default" data-sort="desc">时间排序</a>
+                    </div>
+                            </div>
+                <div class="comments-container">
+                                <div class="comments-list">
+            </div>
+    <div class="comments-loading hide">载入中...</div>
+        <div class="comments-more hide"><a href="javascript:;">显示更多评论</a></div>
+    
+
+                                    <div class="comments-box">
+                <div class="pull-left">
+                    <img class="avatar-32 " src="./走进docker(02)：image(镜像)是什么？ - 个人文章 - SegmentFault_files/user-128.png" alt="">
+                </div>
+                <div class="comments-box-content">
+                    <form action="https://segmentfault.com/api/article/1190000009309347/comments/add">
+                        <div class="form-group mb0">
+                            <textarea name="text" rows="3" class="form-control" placeholder="文明社会，理性评论"></textarea>
+                            <div class="mt15 text-right">
+                                <button type="button" class="hide"></button>
+                                <button class=" btn btn-primary" type="button">发布评论</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+                                                        </div>
+    </div>
+
+
+                                    
+                
+            </div><!-- /.main -->
+
+
+            <div class="col-xs-12 col-md-3 side">
+                
+                <div class="widget-box widget_lives pt0" style="border-top: none" id="live-recommend-wrapper">
+                    <h2 class="widget-box__title">
+                        讲堂推荐
+                        <i class="fa fa-youtube-play fa-sm" aria-hidden="true"></i>
+                        <a href="https://segmentfault.com/lives" class="pull-right more">更多</a>
+                    </h2>
+                    <div id="live-recommend" class="mb20">
+                <a href="https://segmentfault.com/l/1500000010412101?utm_source=ad_ad">
+                    <img class="live-recommend-img" src="./走进docker(02)：image(镜像)是什么？ - 个人文章 - SegmentFault_files/3066473104-59b787c524286" width="255" height="80">
+                </a>
+            </div>
+                </div>
+                
+                                <div id="mm_124884735_33830642_120592878" class="mb25"><div id="ac_wrap_mm_124884735_33830642_120592878" style="width:255px"><script async=""></script>
+<!-- 文章页右侧边栏方块 -->
+<ins class="adsbygoogle" style="display:inline-block;width:255px;height:213px" data-ad-client="ca-pub-6330872677300335" data-ad-slot="6800875204" data-adsbygoogle-status="done"><ins id="aswift_0_expand" style="display:inline-table;border:none;height:213px;margin:0;padding:0;position:relative;visibility:visible;width:255px;background-color:transparent;"><ins id="aswift_0_anchor" style="display:block;border:none;height:213px;margin:0;padding:0;position:relative;visibility:visible;width:255px;background-color:transparent;"><iframe width="255" height="213" frameborder="0" marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allowfullscreen="true" onload="var i=this.id,s=window.google_iframe_oncopy,H=s&amp;&amp;s.handlers,h=H&amp;&amp;H[i],w=this.contentWindow,d;try{d=w.document}catch(e){}if(h&amp;&amp;d&amp;&amp;(!d.body||!d.body.firstChild)){if(h.call){setTimeout(h,0)}else if(h.match){try{h=s.upd(h,i)}catch(e){}w.location.replace(h)}}" id="aswift_0" name="aswift_0" style="left:0;position:absolute;top:0;width:255px;height:213px;" src="./走进docker(02)：image(镜像)是什么？ - 个人文章 - SegmentFault_files/saved_resource.html"></iframe></ins></ins></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script><script type="text/javascript"></script><script type="text/javascript"></script><script type="text/javascript"></script><script type="text/javascript"></script><script type="text/javascript"></script></div></div>
+                                <div id="mm_124884735_33830642_121788665" class="mb25"></div>
+                
+                <div class="widget-box widget-box--blog-info">
+                    <div class="blog__sidebar-author blog__sidebar-author--noblog">
+                                                    <button type="button" class="btn btn-sm btn-success follow-user ml10 pull-right" data-do="follow" data-type="user" data-id="1030000006806480">关注作者
+                            </button>
+                        
+                        <div class="article__widget--author">
+                            <a href="https://segmentfault.com/u/wuyangchun">
+                                <img class="avatar-40" src="./走进docker(02)：image(镜像)是什么？ - 个人文章 - SegmentFault_files/user-64.png" alt="wuyangchun">
+                            </a>
+                            <a class="article__widget-author-name" href="https://segmentfault.com/u/wuyangchun">
+                                <strong>wuyangchun</strong>
+                            </a>
+                            <p class="article__widget-author-text-muted mb0">
+                                <span>524 声望</span>
+
+                            </p>
+
+
+                        </div>
+
+
+                    </div>
+                    
+
+                </div>
+                
+                                
+                 
+                <div class="post-nav hidden-xs side-outline hidden-sm" style="display: block; width: 100%; top: 0px;">
+                    <div class="panel panel-default widget-outline">
+                        <div class="panel-heading">目录</div>
+                        <div class="panel-body">
+                            <div class="nav-body" style="top: 0px;">
+                                <div class="highlight-title" style="display: none; top: 0px; height: 27px;"></div>
+                                <ul class="articleIndex"><li class=""><a href="https://segmentfault.com/a/1190000009309347#articleHeader0">image包含的内容</a></li><li style="list-style:none;"><ul><li class=""><a href="https://segmentfault.com/a/1190000009309347#articleHeader1">关系图</a></li><li class=""><a href="https://segmentfault.com/a/1190000009309347#articleHeader2">Filesystem Layers</a></li><li class=""><a href="https://segmentfault.com/a/1190000009309347#articleHeader3">Image Config</a></li><li class=""><a href="https://segmentfault.com/a/1190000009309347#articleHeader4">manifest</a></li><li class=""><a href="https://segmentfault.com/a/1190000009309347#articleHeader5">Image Index(可选)</a></li></ul></li><li class=""><a href="https://segmentfault.com/a/1190000009309347#articleHeader6">image layout</a></li><li><a href="https://segmentfault.com/a/1190000009309347#articleHeader7">下载image</a></li><li><a href="https://segmentfault.com/a/1190000009309347#articleHeader8">结束语</a></li><li><a href="https://segmentfault.com/a/1190000009309347#articleHeader9">参考</a></li></ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div><!-- /.side -->
+        </div>
+    </div>
+</div>
+
+<div id="shareToWeiboModal" class="modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">
+                    <span aria-hidden="true">×</span><span class="sr-only">Close</span>
+                </button>
+                <h4 class="modal-title">分享</h4>
+            </div>
+            <div class="modal-body">
+                <p class="sfModal-content">
+                    分享到微博？
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default dont-likeweibo" data-dismiss="modal">取消</button>
+                <a href="https://segmentfault.com/a/1190000009309347" id="shareLink" class="btn btn-primary done-btn" target="_blank" onclick="$(&#39;#shareToWeiboModal&#39;).modal(&#39;hide&#39;)">分享</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal widget-911" id="911" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button class="close" data-dismiss="modal" type="button">
+          <span aria-hidden="true">×</span>
+          <span class="sr-only">Close</span>
+        </button>
+        <h4 class="modal-title"><span data-model="action"></span><span data-model="type"></span></h4>
+      </div>
+      <div class="modal-body">
+        <form id="reportForm">
+          <!-- 后台返回信息 -->
+          <p class="alert alert-warning" data-model="returnMsg"></p>
+          <div data-role="base">
+            <p>
+              <strong class="required">我要<span data-model="action"></span>该<span data-model="type"></span>，理由是：</strong>
+            </p>
+            <ul class="list-unstyled" data-model="list"></ul>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-default pull-left" type="button" data-role="back" style="display:none">返回重选</button>
+                <button class="btn btn-default" data-dismiss="modal" type="button">取消</button>
+        <button class="btn btn-primary" data-role="submit" type="button">提交</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+
+
+
+<div class="container hidden-xs">
+    <div class="row">
+        <div class="col-md-9">
+            <div id="mm_124884735_33830642_143436142" style="padding:0 calc(50% - 364px)" class="mb20"><div id="ac_wrap_mm_124884735_33830642_143436142" style="width:728px"><script async=""></script>
+<!-- 底部广告位 -->
+<ins class="adsbygoogle" style="display:inline-block;width:728px;height:90px" data-ad-client="ca-pub-6330872677300335" data-ad-slot="5598290435" data-adsbygoogle-status="done"><ins id="aswift_1_expand" style="display:inline-table;border:none;height:90px;margin:0;padding:0;position:relative;visibility:visible;width:728px;background-color:transparent;"><ins id="aswift_1_anchor" style="display:block;border:none;height:90px;margin:0;padding:0;position:relative;visibility:visible;width:728px;background-color:transparent;"><iframe width="728" height="90" frameborder="0" marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allowfullscreen="true" onload="var i=this.id,s=window.google_iframe_oncopy,H=s&amp;&amp;s.handlers,h=H&amp;&amp;H[i],w=this.contentWindow,d;try{d=w.document}catch(e){}if(h&amp;&amp;d&amp;&amp;(!d.body||!d.body.firstChild)){if(h.call){setTimeout(h,0)}else if(h.match){try{h=s.upd(h,i)}catch(e){}w.location.replace(h)}}" id="aswift_1" name="aswift_1" style="left:0;position:absolute;top:0;width:728px;height:90px;" src="./走进docker(02)：image(镜像)是什么？ - 个人文章 - SegmentFault_files/saved_resource(1).html"></iframe></ins></ins></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script><script type="text/javascript"></script><script type="text/javascript"></script><script type="text/javascript"></script><script type="text/javascript"></script><script type="text/javascript"></script></div></div>
+        
+    </div>
+</div>
+
+
+
+<footer id="footer">
+    <div class="container">
+        <div class="row hidden-xs">
+            <dl class="col-sm-2 site-link">
+                <dt>网站相关</dt>
+                <dd><a href="https://segmentfault.com/about">关于我们</a></dd>
+                <dd><a href="https://segmentfault.com/tos">服务条款</a></dd>
+                <dd><a href="https://segmentfault.com/faq">帮助中心</a></dd>
+                <dd><a href="https://segmentfault.com/repu">声望与权限</a></dd>
+                <dd><a href="https://segmentfault.com/markdown">编辑器语法</a></dd>
+                <dd><a href="https://segmentfault.com/weekly">每周精选</a></dd>
+                                <dd><a href="https://segmentfault.com/community">社区服务中心</a></dd>
+            </dl>
+            <dl class="col-sm-2 site-link">
+                <dt>联系合作</dt>
+                <dd><a href="https://segmentfault.com/contact">联系我们</a></dd>
+                <dd><a href="https://segmentfault.com/hiring">加入我们</a></dd>
+                <dd><a href="https://segmentfault.com/link">合作伙伴</a></dd>
+                <dd><a href="https://segmentfault.com/press">媒体报道</a></dd>
+                <dd><a href="https://segmentfault.com/g/1570000009280187">建议反馈</a></dd>
+                                            </dl>
+            <dl class="col-sm-2 site-link">
+                <dt>常用链接</dt>
+                                                <dd><a href="https://chrome.google.com/webstore/detail/segmentfault-%E7%AC%94%E8%AE%B0/pjklfdmleagfaekibdccmhlhellefcfo" target="_blank">笔记插件: Chrome</a></dd>
+                                                                <dd><a href="https://addons.mozilla.org/zh-CN/firefox/addon/sf-note-ext/" target="_blank">笔记插件: Firefox</a></dd>
+                                                                <dd>订阅：<a href="https://segmentfault.com/feeds">问答</a> / <a href="https://segmentfault.com/feeds/blogs">文章</a></dd>
+                                                                <dd><a href="https://mirrors.segmentfault.com/" target="_blank">文档镜像</a></dd>
+                                                                <dd><a href="https://segmentfault.com/d-day" target="_blank">D-DAY 技术沙龙</a></dd>
+                                                                <dd><a href="https://segmentfault.com/hackathon" target="_blank">黑客马拉松 Hackathon</a></dd>
+                                                                <dd><a href="https://namebeta.com/" target="_blank">域名搜索注册</a></dd>
+                                                                <dd><a href="https://shop165859711.taobao.com/" target="_blank">周边店铺</a></dd>
+                                            </dl>
+            <dl class="col-sm-2 site-link">
+                <dt>社区日志</dt>
+                                <dd><a href="https://segmentfault.com/blog/segmentfault" target="_blank">产品技术日志</a></dd>
+                                <dd><a href="https://segmentfault.com/blog/community_admin" target="_blank">社区运营日志</a></dd>
+                                <dd><a href="https://segmentfault.com/blog/segmentfault_news" target="_blank">市场运营日志</a></dd>
+                                <dd><a href="https://segmentfault.com/blog/segmentfault_team" target="_blank">团队日志</a></dd>
+                                <dd><a href="https://segmentfault.com/blog/interview" target="_blank">社区访谈</a></dd>
+                                <dd>
+                    <ul class="sn-inline">
+                        <li>
+                            <a class="entypo-wechart icon-sn-weixin weixin-popover-qrcode" data-toggle="popover" data-placement="top" data-content="" data-original-title="" title="">微信</a>
+                        </li>
+                        <li>
+                            <a href="http://weibo.com/segmentfault" target="_blank" class="entypo-weibo icon-sn-weibo">新浪微博</a>
+                        </li>
+                        <li>
+                            <a href="https://github.com/SegmentFault" target="_blank" class="entypo-facebook icon-sn-github">Github</a>
+                        </li>
+                        <li>
+                            <a href="https://twitter.com/segment_fault" target="_blank" class="entypo-twitter icon-sn-twitter">Twitter</a>
+                        </li>
+                    </ul>
+                </dd>
+            </dl>
+            <dl class="col-sm-4 site-link" id="license">
+                <dt>内容许可</dt>
+                <dd>除特别说明外，用户内容均采用 <a rel="license" target="_blank" href="https://creativecommons.org/licenses/by-nc-nd/4.0/">知识共享署名-非商业性使用-禁止演绎 4.0 国际许可协议</a> 进行许可
+                </dd>
+                <dd>本站由 <a target="_blank" href="https://www.upyun.com/?utm_source=segmentfault&amp;utm_medium=link&amp;utm_campaign=upyun&amp;md=segmentfault">又拍云</a> 提供 CDN 存储服务
+                </dd>
+                <dd>
+                    <a href="https://segmentfault.com/app"><img src="./走进docker(02)：image(镜像)是什么？ - 个人文章 - SegmentFault_files/appQrcode.png" class="app-qrcode"></a>
+                    <div class="app-download-desc">
+                        <p>手机扫一扫</p>
+                        <p>下载官方 App</p>
+                    </div>
+                    
+                </dd>
+            </dl>
+            <div>
+            </div>
+        </div>
+        <div class="copyright">
+            Copyright © 2011-2017 SegmentFault. 当前呈现版本 17.06.16<br>
+            <a href="http://www.miibeian.gov.cn/" rel="nofollow">浙ICP备 15005796号-2</a> &nbsp;
+            <a target="_blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=33010602002000" rel="nofollow">浙公网安备 33010602002000号</a>
+            <span class="ml5">杭州堆栈科技有限公司版权所有</span>
+        </div>
+        <p class="text-center">
+            <a class="js__view--selector hidden-sm hidden-md hidden-lg" data-action="mobile" href="javascript:;">移动版</a>
+            <a class="js__view--selector hidden-sm hidden-md hidden-lg" data-action="desktop" href="javascript:;">桌面版</a>
+        </p>
+    </div>
+</footer>
+
+<div id="fixedTools" class="hidden-xs hidden-sm">
+    <a id="backtop" class="border-bottom hidden" href="https://segmentfault.com/a/1190000009309347#">回顶部</a>
+</div>
+
+<script src="./走进docker(02)：image(镜像)是什么？ - 个人文章 - SegmentFault_files/hm.js.下载"></script><script async="" src="./走进docker(02)：image(镜像)是什么？ - 个人文章 - SegmentFault_files/analytics.js.下载"></script><script id="loginModal" type="text/template">
+    <div class="row bg-white login-modal">
+        <div class="col-md-4 col-sm-12 col-md-push-7 login-wrap">
+            <h1 class="h4 text-muted login-title">用户登录</h1>
+            <form action="/api/user/login" method="POST" role="form" class="mt30">
+                <div class="form-group">
+                    <label for="username" class="control-label">手机号 或 Email</label>
+                    <input type="text" class="form-control" name="username" required placeholder="11 位手机号 或 Email"
+                           autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label class="control-label">密码</label><span class="pull-right"><a
+                                href="/user/forgot">忘记密码</a></span>
+                    <input type="password" class="form-control" name="password" required placeholder="密码">
+                </div>
+                <div class="form-group clearfix">
+                    <div class="checkbox pull-left">
+                        <label><input name="remember" type="checkbox" value="1" checked> 记住登录状态</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary pull-right pl20 pr20"
+                            onclick='ga("send", "event", "email login button", "clicked", "login modal");'>登录
+                    </button>
+                </div>
+            </form>
+            <p class="h4 text-muted visible-xs-block h4">快速登录</p>
+            <div class="widget-login mt30">
+                <p class="text-muted mt5 mr10 pull-left hidden-xs">快速登录</p>
+                <a href="/user/oauth/google" class=""
+                   onclick='ga("send", "event", "3rd login button", "clicked", "login modal", {media: "google"});'><span
+                            class="icon-sn-google"></span> <strong class="visible-xs-inline">Google 账号</strong></a>
+                <a href="/user/oauth/github" class=""
+                   onclick='ga("send", "event", "3rd login button", "clicked", "login modal", {media: "github"});");'><span
+                            class="icon-sn-github"></span> <strong class="visible-xs-inline">Github 账号</strong></a>
+                <a href="/user/oauth/weibo" class=""
+                   onclick='ga("send", "event", "3rd login button", "clicked", "login modal", {media: "weibo"});'><span
+                            class="icon-sn-weibo"></span> <strong class="visible-xs-inline">新浪微博账号</strong></a>
+                <a href="/user/oauth/qq" class=""
+                   onclick='ga("send", "event", "3rd login button", "clicked", "login modal", {media: "qq"});'><span
+                            class="icon-sn-qq"></span> <strong class="visible-xs-inline">QQ 账号</strong></a>
+                <a href="/user/oauth/weixin" class=""
+                   onclick='ga("send", "event", "3rd login button", "clicked", "login modal", {media: "qq"});'><span
+                            class="icon-sn-weixin"></span> <strong class="visible-xs-inline">微信账号</strong></a>
+                <a href="/user/oauth/linkedin" class=""
+                   onclick='ga("send", "event", "3rd login button", "clicked", "login modal", {media: "linkedin"});'><span
+                            class="icon-sn-linkedin"></span> <strong class="visible-xs-inline">LinkedIn 账号</strong></a>
+                <span id="loginShowMore" style="cursor: pointer" class="mb5"><span class="icon-sn-dotted"></span><strong
+                            class="visible-xs-inline">•••</strong></span>
+                <a href="/user/oauth/twitter" class=" hidden"
+                   onclick='ga("send", "event", "3rd login button", "clicked", "login modal", {media: "twitter"});'><span
+                            class="icon-sn-twitter"></span> <strong class="visible-xs-inline">Twitter 账号</strong></a>
+                <a href="/user/oauth/facebook" class=" hidden"
+                   onclick='ga("send", "event", "3rd login button", "clicked", "login modal", {media: "facebook"});'><span
+                            class="icon-sn-facebook"></span> <strong class="visible-xs-inline">Facebook 账号</strong></a>
+                <a href="/user/oauth/douban" class=" hidden"
+                   onclick='ga("send", "event", "3rd login button", "clicked", "login modal", {media: "douban"});'><span
+                            class="icon-sn-douban"></span> <strong class="visible-xs-inline">豆瓣账号</strong></a>
+            </div>
+        </div>
+        <div class="login-vline hidden-xs hidden-sm"></div>
+        <div class="col-md-4 col-md-pull-3 col-sm-12 login-wrap">
+            <h1 class="h4 text-muted login-title">注册新账号</h1>
+            <form action="/api/user/phone/register" method="POST" role="form" class="mt30">
+                <div class="form-group">
+                    <label for="name" class="control-label">名字</label>
+                    <input type="text" class="form-control" name="name" required placeholder="真实姓名或常用昵称">
+                </div>
+
+
+                <div class="form-group js-register-switch-box">
+                    <div class="mb10">
+                        <label class="radio-inline">
+                            <input type="radio" name="register_type" value="phone" checked> 用手机号注册
+                        </label>
+                        <label class="radio-inline">
+                            <input type="radio" name="register_type" value="mail"> 用 Email 注册
+                        </label>
+                    </div>
+                    <div class="js-register-switch-content">
+                        <input type="phone" class="form-control mb15" name="phone" required placeholder="仅支持大陆手机号"
+                               autocomplete="off">
+                        <div class="captchaInput mb10">
+                            <label class="required control-label mt5">验证码</label>
+                            <input type="text" class="form-control" name="captch" placeholder="请输入下方的验证码后，再点击获取验证码">
+                            <div class="mt10 ">
+                                <a id="loginReloadCaptcha" href="javascript:void(0)">
+                                <img src="/user/captcha?w=240&h=50" class="captcha" width="240" height="50"/></a>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <input name="code" type="text" class="form-control js-user-login__phone-code-value" placeholder="短信验证码">
+                            <span class="input-group-btn">
+                                <button class="btn btn-default js-user-login__phone-vaild-btn" style="width:96px;" type="button">
+                                获取验证码</button>
+                            </span>
+                        </div>
+                        
+                    </div>
+                </div>
+
+
+                <div class="form-group">
+                    <label for="password" class="control-label">密码</label>
+                    <input type="password" class="form-control" name="password" required placeholder="不少于 6 位">
+                </div>
+                <div class="form-group" style="display:none;">
+                    <label class="required control-label">验证码</label>
+                    <input type="text" class="form-control" id="captcha" name="captcha" placeholder="请输入下方的验证码">
+                    <div class="mt10"><a id="loginReloadCaptcha" href="javascript:void(0)"><img
+                                    src="/user/captcha?w=240&h=50" class="captcha" width="240" height="50"/></a>
+                    </div>
+                </div>
+                <div class="form-group clearfix">
+                    <div class="checkbox pull-left">
+                        同意并接受<a href="/tos" target="_blank">《服务条款》</a>
+                    </div>
+                    <button type="submit" class="btn btn-primary pl20 pr20 pull-right"
+                            onclick='ga("send", "event", "email register button", "clicked", "login modal");'>注册
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="text-center text-muted mt30">
+    </div>
+</script>
+<script id="bindPhoneModal" type="text/template">
+    <div class="bg-white bindphone-model">
+        <div class="alert alert-warning" role="alert">
+            为了保证账号安全，请先绑定手机
+        </div>
+        <div>
+            <form class="form-horizontal form__bindphone-apply" style="background-color:#fff;padding:0;">
+                <div class="form-group ">
+                    <label for="phoneNumber" class="col-sm-3 control-label required" >手机号码</label>
+                    <div class="col-sm-6">
+                        <input type="text" class="form-control bindphone--phone" id="phoneNumber" name="phone" placeholder="仅只支持大陆手机号">
+                    </div>
+                    <div class="col-sm-3"></div>
+                </div>
+                <div class="form-group">
+                    <label for="authCode" class="col-sm-3 control-label required">验证码</label>
+                    <div class="col-sm-6">
+                        <div class="input-group">
+                            <input type="text" class="form-control bindphone--code" name="code" placeholder="短信验证码">
+                            <span class="input-group-btn">
+                                <button class="btn btn-default user-bind__phone-vaild-btn" type="button">获取验证码</button>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-sm-3"></div>
+                </div>
+            </form>
+        </div>
+
+    </div>
+</script>
+
+
+
+<script>
+    (function (w) {
+        w.SF = {
+            staticUrl: "https://static.segmentfault.com/v-59f19486"
+        };
+        w.SF.token = (function () {
+    var _HKRS77 = //'O'
+'c'+'d'//'s5'
++/* 'eKX'//'eKX' */''+'0'//'Pb5'
++//'o'
+'c46'+//'uDr'
+'382'+//'l9'
+'a'+'e'//'2'
++'85'//'L'
++/* 'P8A'//'P8A' */''+/* 'CG'//'CG' */''+//'VH'
+'9d8'+'73'//'n'
++'0'//'KF'
++//'p1k'
+'97'+//'V6d'
+'bdf'+'a'//'rTI'
++//'f'
+'3f'+'d80'//'h'
++'a'//'r5C'
++'4'//'1n'
+, _F8vNKIo = [];
+
+    for (var i = 0; i < _F8vNKIo.length; i ++) {
+        _HKRS77 = _HKRS77.substring(0, _F8vNKIo[i][0]) + _HKRS77.substring(_F8vNKIo[i][1]);
+    }
+
+    return _HKRS77;
+})();;
+    })(window);
+
+                var lock = {
+        type: "",
+        text: '',
+        table: {"ban_post":[1,"\u4f60\u5df2\u7ecf\u88ab\u7981\u8a00, \u65e0\u6cd5\u8fdb\u884c\u6b64\u64cd\u4f5c, \u5982\u6709\u7591\u4e49\u8bf7\u63d0\u4ea4\u7533\u8bc9, \u6216\u8005\u53d1\u90ae\u4ef6\u5230pr@segmentfault.com"]}
+    };
+</script>
+
+     <script crossorigin="" src="./走进docker(02)：image(镜像)是什么？ - 个人文章 - SegmentFault_files/assets.js.下载"></script>
+         
+    <script crossorigin="" src="./走进docker(02)：image(镜像)是什么？ - 个人文章 - SegmentFault_files/post.min.js.下载"></script>
+    
+
+<script>
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-918487-8']);
+    _gaq.push(['_trackPageview']);
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+                    (i[r].q = i[r].q || []).push(arguments)
+                }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+                m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+
+                
+        
+
+            
+
+    ga('create', 'UA-918487-8', 'auto', {
+        'userID'
+    : 0,
+        'createdTime'
+    : 0,
+        'now'
+    : 1509007647,
+        'allowLinker'
+    : true });
+    ga('require', 'linker');
+    ga('linker:autoLink', ['docs.segmentfault.com'] );
+    ga('set', 'dimension1', 'guest');
+    ga('send', 'pageview');
+
+</script>
+
+<script>
+    var _hmt = _hmt || [];
+    (function () {
+        var hm = document.createElement("script");
+        hm.src = "//hm.baidu.com/hm.js?e23800c454aa573c0ccb16b52665ac26";
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(hm, s);
+    })();
+</script>
+
+
+        <script type="text/javascript" src="./走进docker(02)：image(镜像)是什么？ - 个人文章 - SegmentFault_files/k.js.下载"></script>
+            <ins id="ac_js86_mm_124884735_33830642_120592878" style="display: none;"></ins><script>
+                    ac_keywords_targeting = "docker";
+                _acM({
+            aid: "mm_124884735_33830642_120592878",
+            format: 1,
+            mode: 1,
+            gid: 1,
+            destid: "mm_124884735_33830642_120592878",
+            sendkeywords: 1,
+            serverbaseurl: "afpeng.alimama.com/"
+        });
+        </script><script></script><script type="text/javascript" src="./走进docker(02)：image(镜像)是什么？ - 个人文章 - SegmentFault_files/ex" id="ac_js86_$7232930429"></script>
+            <ins id="ac_js86_mm_124884735_33830642_121788665" style="display: none;"></ins><script>
+                _acM({
+            aid: "mm_124884735_33830642_121788665",
+            format: 1,
+            mode: 1,
+            gid: 1,
+            destid: "mm_124884735_33830642_121788665",
+            sendkeywords: 0,
+            serverbaseurl: "afpeng.alimama.com/"
+        });
+        </script><script type="text/javascript" src="./走进docker(02)：image(镜像)是什么？ - 个人文章 - SegmentFault_files/ex(1)" id="ac_js86_$8197421828"></script>
+     
+
+        <script type="text/javascript" src="./走进docker(02)：image(镜像)是什么？ - 个人文章 - SegmentFault_files/k.js.下载"></script>
+            <ins id="ac_js86_mm_124884735_33830642_143436142" style="display: none;"></ins><script>
+                _acM({
+            aid: "mm_124884735_33830642_143436142",
+            format: 1,
+            mode: 1,
+            gid: 1,
+            destid: "mm_124884735_33830642_143436142",
+            sendkeywords: 0,
+            serverbaseurl: "afpeng.alimama.com/"
+        });
+        </script><script></script><script type="text/javascript" src="./走进docker(02)：image(镜像)是什么？ - 个人文章 - SegmentFault_files/ex(2)" id="ac_js86_$1606631511"></script>
+     
+
+
+
+</div><div id="noteWidget" class="noteWidget hidden hidden-xs">
+    <div class="noteWidget-header clearfix">
+        <h2 class="h4 pull-left">记笔记</h2>
+        <ul class="list-inline pull-right mb0">
+            <li id="noteWidgetMinimize"><span class="icon-minimize"></span></li><li id="noteWidgetZoom"><span class="icon-zoom"></span></li><li id="noteWidgetClose"><span class="icon-close"></span></li>
+        </ul>
+    </div>
+    <form method="POST" action="https://segmentfault.com/api/notes/add" role="form">
+        <div class="form-group">
+            <label for="title" class="sr-only">标题</label>
+            <input type="hidden" value="" id="draftId">
+            <input type="text" name="title" data-error="" autocomplete="off" class="form-control" placeholder="笔记描述" value="">
+        </div>
+        <div class="editor-config clearfix">
+            <select name="lang" class="form-control pull-left input-sm">
+                <optgroup label="文本语法">
+                    <option value="text" data-mode="text">纯文本</option>
+                    <option value="markdown" data-mode="markdown">Markdown</option>
+                    <option value="javascript" data-mode="javascript">Javascript</option>
+                    <option value="css" data-mode="css">CSS</option>
+                    <option value="html5" data-mode="htmlmixed">HTML</option>
+                    <option value="php" data-mode="php">PHP</option>
+                    <option value="python" data-mode="python">Python</option>
+                    <option value="ruby" data-mode="ruby">Ruby</option>
+                    <option value="go" data-mode="go">Go</option>
+                    <option value="c" data-mode="clike">C/C++</option>
+                    <option value="java" data-mode="java">Java</option>
+                    <option value="bash" data-mode="shell">Shell/Bash</option>
+                </optgroup>
+            </select>
+            <div class="pull-right hidden-xs">
+                <select name="indentWithTabs" class="form-control inline-block input-sm">
+                    <optgroup label="缩进模式">
+                        <option value="false">空格缩进</option>
+                        <option value="true">Tabs 缩进</option>
+                    </optgroup>
+                </select>
+                <select name="tabSize" class="form-control inline-block input-sm">
+                    <optgroup label="缩进大小">
+                        <option value="2">2</option>
+                        <option value="4" selected="">4</option>
+                    </optgroup>
+                </select>
+                <select name="lineWrap" class="form-control inline-block input-sm">
+                    <optgroup label="换行方式">
+                        <option value="true">自动换行</option>
+                        <option value="false">不换行</option>
+                    </optgroup>
+                </select>
+            </div>
+        </div>
+        <textarea id="codeMirror" class="form-control" style="display: none;"></textarea><div class="CodeMirror cm-s-default CodeMirror-wrap"><div style="overflow: hidden; position: relative; width: 3px; height: 0px;"><textarea autocorrect="off" autocapitalize="off" spellcheck="false" style="position: absolute; padding: 0px; width: 1000px; height: 1em; outline: none;" tabindex="0"></textarea></div><div class="CodeMirror-hscrollbar" style="left: 0px;"><div style="height: 100%; min-height: 1px;"></div></div><div class="CodeMirror-vscrollbar"><div style="min-width: 1px;"></div></div><div class="CodeMirror-scrollbar-filler"></div><div class="CodeMirror-gutter-filler"></div><div class="CodeMirror-scroll" tabindex="-1"><div class="CodeMirror-sizer" style="margin-left: 0px;"><div style="position: relative;"><div class="CodeMirror-lines"><div style="position: relative; outline: none;"><div class="CodeMirror-measure"><pre><span>xxxxxxxxxx</span></pre></div><div class="CodeMirror-measure"></div><div style="position: relative; z-index: 1;"></div><div class="CodeMirror-cursors"></div><div class="CodeMirror-code"></div></div></div></div></div><div style="position: absolute; height: 30px; width: 1px;"></div><div class="CodeMirror-gutters"><div class="CodeMirror-gutter CodeMirror-linenumbers" style="width: 1px;"></div></div></div></div>
+        <div class="mt20 clearfix">
+            <div class="pull-right">
+                <span class="text-muted hidden" id="editorStatus">已保存</span>
+                <a id="dropIt" href="javascript:void(0);" class="mr10 hidden">[舍弃]</a>
+                <button data-type="note" id="publishIt2" class="btn btn-default ml10" data-id="" data-do="add" data-url="" data-text="保存私密笔记" data-name="">保存私密笔记</button>
+                <button data-type="note" id="publishIt" class="btn btn-primary ml10" data-id="" data-do="add" data-url="" data-text="保存公开笔记" data-name="">保存公开笔记</button>
+                </div>
+            </div>
+        </form></div>
+    
+<div id="atwho-container"><div id="atwho-ground-2e74eef31509007652443"><div class="atwho-view" id="at-view-64"><ul class="atwho-view-ul"></ul></div></div></div><iframe id="p_analyse_iframe" src="./走进docker(02)：image(镜像)是什么？ - 个人文章 - SegmentFault_files/saved_resource(2).html" style="display: none;"></iframe></body></html>

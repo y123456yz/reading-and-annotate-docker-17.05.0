@@ -125,6 +125,11 @@ func (daemon *Daemon) setupIpcDirs(c *container.Container) error {
 				shmSize = c.HostConfig.ShmSize
 			}
 			shmproperty := "mode=1777,size=" + strconv.FormatInt(shmSize, 10)
+			/*
+			shm：为容器分配的一个内存文件系统，后面会绑定到容器中的/dev/shm目录，可以由docker create的参数--shm-size控制其大小，默认是64M，
+			其本质上就是一个挂载到/dev/shm的tmpfs，由于这个目录的内容是放在内存中的，所以读写速度快，有些程序会利用这个特点而用到这个目录，
+			所以docker事先为容器准备好这个目录。
+			*/
 			if err := syscall.Mount("shm", shmPath, "tmpfs", uintptr(syscall.MS_NOEXEC|syscall.MS_NOSUID|syscall.MS_NODEV), label.FormatMountLabel(shmproperty, c.GetMountLabel())); err != nil {
 				return fmt.Errorf("mounting shm tmpfs: %s", err)
 			}
@@ -270,6 +275,10 @@ func setupPathsAndSandboxOptions(container *container.Container, sboxOptions *[]
 	}
 	*sboxOptions = append(*sboxOptions, libnetwork.OptionHostsPath(container.HostsPath))
 
+	/*
+	resolv.conf：里面包含了DNS服务器的IP，来自于hostconfig.json，由docker create命令的--dns参数指定，没有指定的话，
+	docker会根据容器的网络类型生成一个默认的，一般是主机配置的DNS服务器或者是docker bridge的IP。
+	*/
 	container.ResolvConfPath, err = container.GetRootResourcePath("resolv.conf")
 	if err != nil {
 		return err

@@ -353,6 +353,23 @@ func (t *tags) Untag(ctx context.Context, tag string) error {
 	panic("not implemented")
 }
 
+/*
+docker pull的大概过程
+如果对Image manifest，Image Config和Filesystem Layers等概念不是很了解，请先参考image(镜像)是什么。
+
+取image的大概过程如下：
+docker发送image的名称+tag（或者digest）给registry服务器，服务器根据收到的image的名称+tag（或者digest），找到相应image的manifest，然后将manifest返回给docker
+docker得到 manifest 后，读取里面image配置文件的digest(sha256)，这个sha256码就是image的ID
+根据ID在本地找有没有存在同样ID的image，有的话就不用继续下载了
+如果没有，那么会给registry服务器发请求（里面包含配置文件的sha256和media type），拿到image的配置文件（Image Config）
+根据配置文件中的diff_ids（每个diffid对应一个layer tar包的sha256，tar包相当于layer的原始格式），在本地找对应的layer是否存在
+如果layer不存在，则根据manifest里面layer的sha256和media type去服务器拿相应的layer（相当去拿压缩格式的包）。
+拿到后进行解压，并检查解压后tar包的sha256能否和配置文件（Image Config）中的diff_id对的上，对不上说明有问题，下载失败
+根据docker所用的后台文件系统类型，解压tar包并放到指定的目录
+等所有的layer都下载完成后，整个image下载完成，就可以使用了
+注意： 对于layer来说，config文件中diffid是layer的tar包的sha256，而manifest文件中的digest依赖于media type，比如media type是tar+gzip，
+那digest就是layer的tar包经过gzip压缩后的内容的sha256，如果media type就是tar的话，diffid和digest就会一样。
+*/
 type manifests struct {
 	name   reference.Named
 	ub     *v2.URLBuilder

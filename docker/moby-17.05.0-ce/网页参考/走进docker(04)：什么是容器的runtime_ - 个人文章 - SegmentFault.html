@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<!-- saved from url=(0043)https://segmentfault.com/a/1190000009583199 -->
+<html lang="zh-CN"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1"><meta name="renderer" content="webkit"><meta property="qc:admins" content="15317273575564615446375"><meta property="og:image" content="https://static.segmentfault.com/v-59f19486/global/img/touch-icon.png"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"><meta name="alexaVerifyID" content="LkzCRJ7rPEUwt6fVey2vhxiw1vQ"><meta name="apple-itunes-app" content="app-id=958101793, app-argument="><title>走进docker(04)：什么是容器的runtime? - 个人文章 - SegmentFault</title><meta name="description" content="我们都知道runc是容器runtime的一个实现，那到底什么是runtime？包含了哪些内容？ 容器的runtime和image一样，也有标准，也由OCI (Open Containers Initiative)负责维护，地址为Runtime Specification，了解runti..."><meta name="keywords" content="docker"><link rel="search" type="application/opensearchdescription+xml" href="https://segmentfault.com/opensearch.xml" title="SegmentFault"><link rel="shortcut icon" href="https://static.segmentfault.com/v-59f19486/global/img/favicon.ico"><link rel="apple-touch-icon" href="https://static.segmentfault.com/v-59f19486/global/img/touch-icon.png"><meta name="msapplication-TileColor" content="#009a61"><meta name="msapplication-square150x150logo" content="https://static.segmentfault.com/v-59f19486/global/img/touch-icon.png"><link rel="alternate" type="application/atom+xml" title="SegmentFault 最新问题" href="https://segmentfault.com/feeds/questions"><link rel="alternate" type="application/atom+xml" title="SegmentFault 最新文章" href="https://segmentfault.com/feeds/blogs"><link rel="stylesheet" href="./走进docker(04)：什么是容器的runtime_ - 个人文章 - SegmentFault_files/global.css"><link rel="stylesheet" href="./走进docker(04)：什么是容器的runtime_ - 个人文章 - SegmentFault_files/blog.css"><link rel="stylesheet" href="./走进docker(04)：什么是容器的runtime_ - 个人文章 - SegmentFault_files/responsive.css"><link rel="preload" href="./走进docker(04)：什么是容器的runtime_ - 个人文章 - SegmentFault_files/integrator.js.下载" as="script"><script src="./走进docker(04)：什么是容器的runtime_ - 个人文章 - SegmentFault_files/ca-pub-6330872677300335.js.下载"></script><script type="text/javascript" src="./走进docker(04)：什么是容器的runtime_ - 个人文章 - SegmentFault_files/integrator.js.下载"></script><link rel="prefetch" href="https://securepubads.g.doubleclick.net/static/3p_cookie.html"></head><body data-mod="blog" class="blog-post "><!--[if lt IE 9]><div class="alert alert-danger topframe" role="alert">你的浏览器实在<strong>太太太太太太旧了</strong>，放学别走，升级完浏览器再说 <a target="_blank" class="alert-link" href="http://browsehappy.com">立即升级</a></div><![endif]--><img id="icon4weChat" style="height: 0;width: 0;" data-src="https://static.segmentfault.com/v-59f19486/global/img/touch-icon-512.png"><div class="global-nav sf-header sf-header--index"><nav class="container nav"><div class="visible-xs header-response"><a href="https://segmentfault.com/search" style="display:block"><i class="fa fa-search" aria-hidden="true"></i></a><div class="sf-header__logo sf-header__logo--response"><h1><a href="https://segmentfault.com/" style="height:24px; background-size: auto 24px;"></a></h1></div><a href="https://segmentfault.com/user/login" class="pull-right login-btn"><i class="fa fa-user" aria-hidden="true"></i></a><div class="bottom-nav"><div class="opts"><a class="opts-group " href="https://segmentfault.com/questions"><i class="fa fa-comments" aria-hidden="true"></i><span>问答</span></a><a class="opts-group " href="https://segmentfault.com/news"><i class="fa fa-newspaper-o" aria-hidden="true"></i><span>头条</span></a><a class="opts-group active" href="https://segmentfault.com/blogs"><i class="fa fa-pencil-square" aria-hidden="true"></i><span>专栏</span></a><a class="opts-group " href="https://segmentfault.com/lives"><i class="fa fa-play-circle" aria-hidden="true"></i><span>讲堂</span></a><div class="opts-group"><div class="btn-group dropup"><i class="fa fa-bars dropdown hoverDropdown" data-toggle="dropdown" aria-hidden="true"><span>更多</span></i><ul class="dropdown-menu"><li><a href="https://segmentfault.com/jobs">职位</a></li><li><a href="https://segmentfault.com/events">活动</a></li><li><a href="https://segmentfault.com/tags">标签</a></li><li><a href="https://segmentfault.com/badges">徽章</a></li></ul></div></div></div></div></div><div class="row hidden-xs"><div class="col-sm-8 col-md-9 col-lg-9"><div class="sf-header__logo"><h1><a href="https://segmentfault.com/">SegmentFault</a></h1></div><div><ul class="menu list-inline pull-left hidden-xs"><li class="menu__item"><a href="https://segmentfault.com/questions" class="">问答</a></li><li class="menu__item"><a href="https://segmentfault.com/news" class="">头条</a></li><li class="menu__item"><a href="https://segmentfault.com/blogs" class="active-nav">专栏</a></li><li class="menu__item"><a href="https://segmentfault.com/lives" class="">讲堂</a></li><li class="menu__item menu__item--more dropdown"><a href="https://segmentfault.com/a/1190000009583199##" class="dropdown-toggle dropdownBtn" data-toggle="dropdown">
+                                        发现<i class="fa fa-caret-down" style="font-size: 14px;margin-left: 5px;" aria-hidden="true"></i></a><div class="dropdown-block hidden"><ul class="dropdown-content-menu"><li><a href="https://segmentfault.com/events">活动</a></li><li><a href="https://segmentfault.com/groups">技术圈<span class="notice notice-menu">hi</span></a></li><li><a href="https://segmentfault.com/jobs">找工作</a></li><li><a href="https://segmentfault.com/users">排行榜</a></li><li><a href="https://segmentfault.com/badges">徽章</a></li><li><a href="https://docs.segmentfault.com/" target="_blank">开发手册<i style="line-height: 20px;font-size: 12px;color: #F5A623;" class="ml10 fa fa-external-link-square"></i></a></li></ul></div></li><li class="menu__item visible-sm-inline-block"><a href="https://segmentfault.com/search"><span class="glyphicon glyphicon-search" style="vertical-align: middle;"></span></a></li></ul><form action="https://segmentfault.com/search" class="header-search  hidden-sm hidden-xs pull-right"><button class="btn btn-link"><span class="sr-only">搜索</span><span class="glyphicon glyphicon-search"></span></button><input id="searchBox" name="q" type="text" placeholder="搜索问题或关键字" class="form-control" value=""></form></div></div><div class="col-sm-4 col-md-3 col-lg-3 text-right"><ul class="opts list-inline hidden-xs"><li class="opts__item"><a href="https://segmentfault.com/user/login" class="SFLogin btn-signin" style="margin-bottom:2px;">立即登录</a><a href="https://segmentfault.com/user/login" class="SFLogin ml10 btn-signup" onclick="_gaq.push([&#39;_trackEvent&#39;, &#39;Button&#39;, &#39;Click&#39;, &#39;Login&#39;]);">免费注册</a></li></ul></div></div></nav></div>
+    
+<input id="articleId" value="1190000009583199" class="hidden">
+<div class="wrap" data-blogid="">
+            <div id="loginBanner" class="hidden-sm hidden-xs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6">
+                <h1 class="title">在 SegmentFault，解决技术问题</h1>
+                <p class="desc">每个月，我们帮助 1000 万的开发者解决各种各样的技术问题。并助力他们在技术能力、职业生涯、影响力上获得提升。</p>
+                <p class="img-desc">一线的工程师、著名开源项目的作者们，都在这里：</p>
+                <img src="./走进docker(04)：什么是容器的runtime_ - 个人文章 - SegmentFault_files/logos@2x.png">
+            </div>
+            <div class="col-md-4 col-md-offset-2">
+                <form class="text-center register-form clearfix" action="https://segmentfault.com/api/user/phone/register">
+
+                    <div class="form-group form-name"> <!-- 用户名 -->
+                        <input type="text" class="form-control " name="name" placeholder="真实姓名或常用昵称">
+                    </div>
+
+                    <div class="form-group form-getCode"> <!-- 手机号及验证码 -->
+                        <input type="text" class="form-control" name="phone" placeholder="手机号（仅支持大陆手机号）">
+                        <div class="captchaInput mt10 mb10">
+                            <input type="text" class="form-control" name="captch" placeholder="请输入下方的验证码后，再点击获取验证码">
+                            <div class="mt10">
+                                <img src="./走进docker(04)：什么是容器的runtime_ - 个人文章 - SegmentFault_files/captcha" class="captcha" width="240" height="50">
+                            </div>
+                        </div>
+                        <div class="input-group mt15">
+                            <input type="tel" class="form-control" name="code" placeholder="短信验证码" autocomplete="off">
+                            <span class="input-group-btn">
+                                <button class="btn btn-default getCode mt0" style="width:96px;" type="button">获取验证码</button>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="form-group form-password"> <!-- 密码 -->
+                        <input type="password" class="form-control " name="password" placeholder="密码（不少于 6 位）" autocomplete="off">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary register-button pull-right" onclick="ga(&quot;send&quot;, &quot;event&quot;, &quot;join button&quot;, &quot;clicked&quot;, &quot;welcome board&quot;);">注册</button>
+
+                    <div class="hasid">
+                        已有账号？<a href="https://segmentfault.com/user/login" class="login_now" onclick="_gaq.push([&#39;_trackEvent&#39;, &#39;Button&#39;, &#39;Click&#39;, &#39;Login&#39;]);">立即登录</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <i class="fa fa-times-circle" aria-hidden="true"></i>
+</div>        <div class="post-topheader custom-">
+        <div class="container">
+            <div class="block-for-right-border">
+                <div class="row">
+                    <div class="col-md-9 col-sm-8 col-xs-12">
+                        <div class="post-topheader__info" data-username="wuyangchun" data-userslug="wuyangchun" data-useravatar="https://static.segmentfault.com/v-59f19486/global/img/user-64.png">
+
+                            <h1 class="h3 post-topheader__info--title" id="articleTitle" data-id="1190000009583199">
+                                <a href="https://segmentfault.com/a/1190000009583199"> 走进docker(04)：什么是容器的runtime?</a>
+                            </h1>
+
+                            <div class="content__tech blog-type-common blog-type-0-before">
+                                <ul class="taglist--inline inline-block article__title--tag mr10">
+                                                                            <li class="tagPopup mb5"><a class="tag" href="https://segmentfault.com/t/docker/blogs" data-toggle="popover" data-img="https://sfault-avatar.b0.upaiyun.com/269/397/2693973775-1040000000366352_huge256" data-placement="top" data-original-title="docker" data-id="1040000000366352">docker</a></li>
+                                                                    </ul>
+                                                                                                <div class="article__author">
+                                    <a href="https://segmentfault.com/u/wuyangchun" class="mr5 "><strong>wuyangchun</strong></a>
+                                    5月27日发布
+                                                                                                        </div>
+                            </div>
+
+                                                        <form class="form form__tech hidden" data-action="#">
+                                <span class="pull-right">
+                                    <button class="btn btn-default save-tags-btn" type="button">保存</button>
+                                </span>
+                                <div class="form-group" style="margin-right: 65px">
+                                    <label for="tags" class="sr-only">标签：至少1个，最多5个</label>
+                                    <input class="tagsInput form-control hidden" data-init="[{&quot;name&quot;:&quot;docker&quot;,&quot;url&quot;:&quot;\/t\/docker&quot;,&quot;id&quot;:&quot;1040000000366352&quot;,&quot;thumbnailUrl&quot;:&quot;https:\/\/sfault-avatar.b0.upaiyun.com\/269\/397\/2693973775-1040000000366352_huge256&quot;}]" name="tags" type="text" placeholder="标签，如：php 可使用逗号,分号;分隔" data-role="tagsinput"><div class="sf-typeHelper"><span class="sf-typeHelper-item  ">docker<span data-role="remove">×</span></span><input type="text" data-role="sf_typeHelper-input" class="sf-typeHelper-input" placeholder="标签，如：php 可使用逗号,分号;分隔" style="width: 20em;"><ul class="sf-typeHelper-list dropdown-menu"></ul></div>
+                                    <div role="tabpanel" class="techTags panel panel-default techTags-panel" data-tech="{&quot;\u5f00\u53d1\u8bed\u8a00&quot;:[{&quot;id&quot;:&quot;1040000000089436&quot;,&quot;name&quot;:&quot;javascript&quot;},{&quot;id&quot;:&quot;1040000000089387&quot;,&quot;name&quot;:&quot;php&quot;},{&quot;id&quot;:&quot;1040000000089434&quot;,&quot;name&quot;:&quot;css&quot;},{&quot;id&quot;:&quot;1040000000089571&quot;,&quot;name&quot;:&quot;html&quot;},{&quot;id&quot;:&quot;1040000000089449&quot;,&quot;name&quot;:&quot;java&quot;},{&quot;id&quot;:&quot;1040000000089534&quot;,&quot;name&quot;:&quot;python&quot;},{&quot;id&quot;:&quot;1040000000089409&quot;,&quot;name&quot;:&quot;html5&quot;},{&quot;id&quot;:&quot;1040000000089918&quot;,&quot;name&quot;:&quot;node.js&quot;},{&quot;id&quot;:&quot;1040000000089741&quot;,&quot;name&quot;:&quot;c++&quot;},{&quot;id&quot;:&quot;1040000000089457&quot;,&quot;name&quot;:&quot;c&quot;},{&quot;id&quot;:&quot;1040000000090209&quot;,&quot;name&quot;:&quot;objective-c&quot;},{&quot;id&quot;:&quot;1040000000090203&quot;,&quot;name&quot;:&quot;golang&quot;},{&quot;id&quot;:&quot;1040000000089669&quot;,&quot;name&quot;:&quot;shell&quot;},{&quot;id&quot;:&quot;1040000000531223&quot;,&quot;name&quot;:&quot;swift&quot;},{&quot;id&quot;:&quot;1040000000089581&quot;,&quot;name&quot;:&quot;c#&quot;},{&quot;id&quot;:&quot;1040000000089699&quot;,&quot;name&quot;:&quot;ruby&quot;},{&quot;id&quot;:&quot;1040000000089686&quot;,&quot;name&quot;:&quot;bash&quot;},{&quot;id&quot;:&quot;1040000000091262&quot;,&quot;name&quot;:&quot;sass&quot;},{&quot;id&quot;:&quot;1040000000365394&quot;,&quot;name&quot;:&quot;typescript&quot;},{&quot;id&quot;:&quot;1040000000090433&quot;,&quot;name&quot;:&quot;asp.net&quot;},{&quot;id&quot;:&quot;1040000000090600&quot;,&quot;name&quot;:&quot;less&quot;},{&quot;id&quot;:&quot;1040000000090208&quot;,&quot;name&quot;:&quot;lua&quot;},{&quot;id&quot;:&quot;1040000000090228&quot;,&quot;name&quot;:&quot;scala&quot;},{&quot;id&quot;:&quot;1040000000161068&quot;,&quot;name&quot;:&quot;coffeescript&quot;},{&quot;id&quot;:&quot;1040000000090194&quot;,&quot;name&quot;:&quot;actionscript&quot;},{&quot;id&quot;:&quot;1040000000090201&quot;,&quot;name&quot;:&quot;erlang&quot;},{&quot;id&quot;:&quot;1040000000089698&quot;,&quot;name&quot;:&quot;perl&quot;},{&quot;id&quot;:&quot;1040000000311191&quot;,&quot;name&quot;:&quot;rust&quot;}],&quot;\u5e73\u53f0\u6846\u67b6&quot;:[{&quot;id&quot;:&quot;1040000000196640&quot;,&quot;name&quot;:&quot;laravel&quot;},{&quot;id&quot;:&quot;1040000000125263&quot;,&quot;name&quot;:&quot;flask&quot;},{&quot;id&quot;:&quot;1040000000090103&quot;,&quot;name&quot;:&quot;spring&quot;},{&quot;id&quot;:&quot;1040000000089564&quot;,&quot;name&quot;:&quot;django&quot;},{&quot;id&quot;:&quot;1040000000166256&quot;,&quot;name&quot;:&quot;express&quot;},{&quot;id&quot;:&quot;1040000000089646&quot;,&quot;name&quot;:&quot;ruby-on-rails&quot;},{&quot;id&quot;:&quot;1040000000090398&quot;,&quot;name&quot;:&quot;yii&quot;},{&quot;id&quot;:&quot;1040000000116331&quot;,&quot;name&quot;:&quot;tornado&quot;},{&quot;id&quot;:&quot;1040000000622042&quot;,&quot;name&quot;:&quot;koa&quot;},{&quot;id&quot;:&quot;1040000000089638&quot;,&quot;name&quot;:&quot;struts&quot;}],&quot;\u670d\u52a1\u5668&quot;:[{&quot;id&quot;:&quot;1040000000089392&quot;,&quot;name&quot;:&quot;linux&quot;},{&quot;id&quot;:&quot;1040000000090145&quot;,&quot;name&quot;:&quot;nginx&quot;},{&quot;id&quot;:&quot;1040000000089761&quot;,&quot;name&quot;:&quot;apache&quot;},{&quot;id&quot;:&quot;1040000000366352&quot;,&quot;name&quot;:&quot;docker&quot;},{&quot;id&quot;:&quot;1040000000090245&quot;,&quot;name&quot;:&quot;ubuntu&quot;},{&quot;id&quot;:&quot;1040000000090249&quot;,&quot;name&quot;:&quot;centos&quot;},{&quot;id&quot;:&quot;1040000000090401&quot;,&quot;name&quot;:&quot;\u7f13\u5b58&quot;},{&quot;id&quot;:&quot;1040000000090117&quot;,&quot;name&quot;:&quot;tomcat&quot;},{&quot;id&quot;:&quot;1040000000090107&quot;,&quot;name&quot;:&quot;\u8d1f\u8f7d\u5747\u8861&quot;},{&quot;id&quot;:&quot;1040000000090646&quot;,&quot;name&quot;:&quot;unix&quot;},{&quot;id&quot;:&quot;1040000000089648&quot;,&quot;name&quot;:&quot;hadoop&quot;},{&quot;id&quot;:&quot;1040000000090609&quot;,&quot;name&quot;:&quot;windows-server&quot;}],&quot;\u6570\u636e\u5e93\u548c\u7f13\u5b58&quot;:[{&quot;id&quot;:&quot;1040000000089439&quot;,&quot;name&quot;:&quot;mysql&quot;},{&quot;id&quot;:&quot;1040000000090049&quot;,&quot;name&quot;:&quot;sql&quot;},{&quot;id&quot;:&quot;1040000000089431&quot;,&quot;name&quot;:&quot;redis&quot;},{&quot;id&quot;:&quot;1040000000089488&quot;,&quot;name&quot;:&quot;mongodb&quot;},{&quot;id&quot;:&quot;1040000000090701&quot;,&quot;name&quot;:&quot;oracle&quot;},{&quot;id&quot;:&quot;1040000000089432&quot;,&quot;name&quot;:&quot;nosql&quot;},{&quot;id&quot;:&quot;1040000000089873&quot;,&quot;name&quot;:&quot;memcached&quot;},{&quot;id&quot;:&quot;1040000000090424&quot;,&quot;name&quot;:&quot;sqlserver&quot;},{&quot;id&quot;:&quot;1040000000090354&quot;,&quot;name&quot;:&quot;sqlite&quot;},{&quot;id&quot;:&quot;1040000000090861&quot;,&quot;name&quot;:&quot;postgresql&quot;}],&quot;\u5f00\u53d1\u5de5\u5177&quot;:[{&quot;id&quot;:&quot;1040000000089459&quot;,&quot;name&quot;:&quot;git&quot;},{&quot;id&quot;:&quot;1040000000091226&quot;,&quot;name&quot;:&quot;github&quot;},{&quot;id&quot;:&quot;1040000000089467&quot;,&quot;name&quot;:&quot;vim&quot;},{&quot;id&quot;:&quot;1040000000089579&quot;,&quot;name&quot;:&quot;xcode&quot;},{&quot;id&quot;:&quot;1040000000126097&quot;,&quot;name&quot;:&quot;sublime-text&quot;},{&quot;id&quot;:&quot;1040000000089509&quot;,&quot;name&quot;:&quot;eclipse&quot;},{&quot;id&quot;:&quot;1040000002720957&quot;,&quot;name&quot;:&quot;visual-studio-code&quot;},{&quot;id&quot;:&quot;1040000000090560&quot;,&quot;name&quot;:&quot;intellij-idea&quot;},{&quot;id&quot;:&quot;1040000000090186&quot;,&quot;name&quot;:&quot;maven&quot;},{&quot;id&quot;:&quot;1040000000089447&quot;,&quot;name&quot;:&quot;svn&quot;},{&quot;id&quot;:&quot;1040000000090473&quot;,&quot;name&quot;:&quot;ide&quot;},{&quot;id&quot;:&quot;1040000000090524&quot;,&quot;name&quot;:&quot;atom&quot;},{&quot;id&quot;:&quot;1040000000090231&quot;,&quot;name&quot;:&quot;visual-studio&quot;},{&quot;id&quot;:&quot;1040000000090216&quot;,&quot;name&quot;:&quot;emacs&quot;},{&quot;id&quot;:&quot;1040000000183694&quot;,&quot;name&quot;:&quot;hg&quot;},{&quot;id&quot;:&quot;1040000000089663&quot;,&quot;name&quot;:&quot;textmate&quot;}],&quot;\u7cfb\u7edf\u8bbe\u5907&quot;:[{&quot;id&quot;:&quot;1040000000089658&quot;,&quot;name&quot;:&quot;android&quot;},{&quot;id&quot;:&quot;1040000000089442&quot;,&quot;name&quot;:&quot;ios&quot;},{&quot;id&quot;:&quot;1040000000089407&quot;,&quot;name&quot;:&quot;chrome&quot;},{&quot;id&quot;:&quot;1040000000089709&quot;,&quot;name&quot;:&quot;windows&quot;},{&quot;id&quot;:&quot;1040000000089498&quot;,&quot;name&quot;:&quot;iphone&quot;},{&quot;id&quot;:&quot;1040000000090217&quot;,&quot;name&quot;:&quot;firefox&quot;},{&quot;id&quot;:&quot;1040000000125504&quot;,&quot;name&quot;:&quot;internet-explorer&quot;},{&quot;id&quot;:&quot;1040000000089499&quot;,&quot;name&quot;:&quot;safari&quot;},{&quot;id&quot;:&quot;1040000000090638&quot;,&quot;name&quot;:&quot;ipad&quot;},{&quot;id&quot;:&quot;1040000000090218&quot;,&quot;name&quot;:&quot;opera&quot;},{&quot;id&quot;:&quot;1040000002871462&quot;,&quot;name&quot;:&quot;apple-watch&quot;}],&quot;\u5176\u5b83&quot;:[{&quot;id&quot;:&quot;1040000000089409&quot;,&quot;name&quot;:&quot;html5&quot;},{&quot;id&quot;:&quot;1040000002893277&quot;,&quot;name&quot;:&quot;react.js&quot;},{&quot;id&quot;:&quot;1040000000090137&quot;,&quot;name&quot;:&quot;\u641c\u7d22\u5f15\u64ce&quot;},{&quot;id&quot;:&quot;1040000000123810&quot;,&quot;name&quot;:&quot;virtualenv&quot;},{&quot;id&quot;:&quot;1040000000090316&quot;,&quot;name&quot;:&quot;lucene&quot;}]}">
+    <ul class="nav nav-tabs" role="tablist">
+                    <li role="presentation" class="active"><a href="https://segmentfault.com/a/1190000009583199#开发语言" aria-controls="type" role="tab" data-toggle="tab">开发语言</a>
+            </li>
+                    <li role="presentation" class=""><a href="https://segmentfault.com/a/1190000009583199#平台框架" aria-controls="type" role="tab" data-toggle="tab">平台框架</a>
+            </li>
+                    <li role="presentation" class=""><a href="https://segmentfault.com/a/1190000009583199#服务器" aria-controls="type" role="tab" data-toggle="tab">服务器</a>
+            </li>
+                    <li role="presentation" class=""><a href="https://segmentfault.com/a/1190000009583199#数据库和缓存" aria-controls="type" role="tab" data-toggle="tab">数据库和缓存</a>
+            </li>
+                    <li role="presentation" class=""><a href="https://segmentfault.com/a/1190000009583199#开发工具" aria-controls="type" role="tab" data-toggle="tab">开发工具</a>
+            </li>
+                    <li role="presentation" class=""><a href="https://segmentfault.com/a/1190000009583199#系统设备" aria-controls="type" role="tab" data-toggle="tab">系统设备</a>
+            </li>
+                    <li role="presentation" class=""><a href="https://segmentfault.com/a/1190000009583199#其它" aria-controls="type" role="tab" data-toggle="tab">其它</a>
+            </li>
+            </ul>
+    <div class="tab-content">
+                    <div role="tabpanel" class="tab-pane active" id="开发语言">
+                <ul class="taglist--inline">
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089436&quot;,&quot;name&quot;:&quot;javascript&quot;}" href="javascript: void(0);">javascript</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089387&quot;,&quot;name&quot;:&quot;php&quot;}" href="javascript: void(0);">php</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089434&quot;,&quot;name&quot;:&quot;css&quot;}" href="javascript: void(0);">css</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089571&quot;,&quot;name&quot;:&quot;html&quot;}" href="javascript: void(0);">html</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089449&quot;,&quot;name&quot;:&quot;java&quot;}" href="javascript: void(0);">java</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089534&quot;,&quot;name&quot;:&quot;python&quot;}" href="javascript: void(0);">python</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089409&quot;,&quot;name&quot;:&quot;html5&quot;}" href="javascript: void(0);">html5</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089918&quot;,&quot;name&quot;:&quot;node.js&quot;}" href="javascript: void(0);">node.js</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089741&quot;,&quot;name&quot;:&quot;c++&quot;}" href="javascript: void(0);">c++</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089457&quot;,&quot;name&quot;:&quot;c&quot;}" href="javascript: void(0);">c</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090209&quot;,&quot;name&quot;:&quot;objective-c&quot;}" href="javascript: void(0);">objective-c</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090203&quot;,&quot;name&quot;:&quot;golang&quot;}" href="javascript: void(0);">golang</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089669&quot;,&quot;name&quot;:&quot;shell&quot;}" href="javascript: void(0);">shell</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000531223&quot;,&quot;name&quot;:&quot;swift&quot;}" href="javascript: void(0);">swift</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089581&quot;,&quot;name&quot;:&quot;c#&quot;}" href="javascript: void(0);">c#</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089699&quot;,&quot;name&quot;:&quot;ruby&quot;}" href="javascript: void(0);">ruby</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089686&quot;,&quot;name&quot;:&quot;bash&quot;}" href="javascript: void(0);">bash</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000091262&quot;,&quot;name&quot;:&quot;sass&quot;}" href="javascript: void(0);">sass</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000365394&quot;,&quot;name&quot;:&quot;typescript&quot;}" href="javascript: void(0);">typescript</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090433&quot;,&quot;name&quot;:&quot;asp.net&quot;}" href="javascript: void(0);">asp.net</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090600&quot;,&quot;name&quot;:&quot;less&quot;}" href="javascript: void(0);">less</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090208&quot;,&quot;name&quot;:&quot;lua&quot;}" href="javascript: void(0);">lua</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090228&quot;,&quot;name&quot;:&quot;scala&quot;}" href="javascript: void(0);">scala</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000161068&quot;,&quot;name&quot;:&quot;coffeescript&quot;}" href="javascript: void(0);">coffeescript</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090194&quot;,&quot;name&quot;:&quot;actionscript&quot;}" href="javascript: void(0);">actionscript</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090201&quot;,&quot;name&quot;:&quot;erlang&quot;}" href="javascript: void(0);">erlang</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089698&quot;,&quot;name&quot;:&quot;perl&quot;}" href="javascript: void(0);">perl</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000311191&quot;,&quot;name&quot;:&quot;rust&quot;}" href="javascript: void(0);">rust</a>
+                        </li>
+                                    </ul>
+            </div>
+                    <div role="tabpanel" class="tab-pane " id="平台框架">
+                <ul class="taglist--inline">
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000196640&quot;,&quot;name&quot;:&quot;laravel&quot;}" href="javascript: void(0);">laravel</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000125263&quot;,&quot;name&quot;:&quot;flask&quot;}" href="javascript: void(0);">flask</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090103&quot;,&quot;name&quot;:&quot;spring&quot;}" href="javascript: void(0);">spring</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089564&quot;,&quot;name&quot;:&quot;django&quot;}" href="javascript: void(0);">django</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000166256&quot;,&quot;name&quot;:&quot;express&quot;}" href="javascript: void(0);">express</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089646&quot;,&quot;name&quot;:&quot;ruby-on-rails&quot;}" href="javascript: void(0);">ruby-on-rails</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090398&quot;,&quot;name&quot;:&quot;yii&quot;}" href="javascript: void(0);">yii</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000116331&quot;,&quot;name&quot;:&quot;tornado&quot;}" href="javascript: void(0);">tornado</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000622042&quot;,&quot;name&quot;:&quot;koa&quot;}" href="javascript: void(0);">koa</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089638&quot;,&quot;name&quot;:&quot;struts&quot;}" href="javascript: void(0);">struts</a>
+                        </li>
+                                    </ul>
+            </div>
+                    <div role="tabpanel" class="tab-pane " id="服务器">
+                <ul class="taglist--inline">
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089392&quot;,&quot;name&quot;:&quot;linux&quot;}" href="javascript: void(0);">linux</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090145&quot;,&quot;name&quot;:&quot;nginx&quot;}" href="javascript: void(0);">nginx</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089761&quot;,&quot;name&quot;:&quot;apache&quot;}" href="javascript: void(0);">apache</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000366352&quot;,&quot;name&quot;:&quot;docker&quot;}" href="javascript: void(0);">docker</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090245&quot;,&quot;name&quot;:&quot;ubuntu&quot;}" href="javascript: void(0);">ubuntu</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090249&quot;,&quot;name&quot;:&quot;centos&quot;}" href="javascript: void(0);">centos</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090401&quot;,&quot;name&quot;:&quot;\u7f13\u5b58&quot;}" href="javascript: void(0);">缓存</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090117&quot;,&quot;name&quot;:&quot;tomcat&quot;}" href="javascript: void(0);">tomcat</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090107&quot;,&quot;name&quot;:&quot;\u8d1f\u8f7d\u5747\u8861&quot;}" href="javascript: void(0);">负载均衡</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090646&quot;,&quot;name&quot;:&quot;unix&quot;}" href="javascript: void(0);">unix</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089648&quot;,&quot;name&quot;:&quot;hadoop&quot;}" href="javascript: void(0);">hadoop</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090609&quot;,&quot;name&quot;:&quot;windows-server&quot;}" href="javascript: void(0);">windows-server</a>
+                        </li>
+                                    </ul>
+            </div>
+                    <div role="tabpanel" class="tab-pane " id="数据库和缓存">
+                <ul class="taglist--inline">
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089439&quot;,&quot;name&quot;:&quot;mysql&quot;}" href="javascript: void(0);">mysql</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090049&quot;,&quot;name&quot;:&quot;sql&quot;}" href="javascript: void(0);">sql</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089431&quot;,&quot;name&quot;:&quot;redis&quot;}" href="javascript: void(0);">redis</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089488&quot;,&quot;name&quot;:&quot;mongodb&quot;}" href="javascript: void(0);">mongodb</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090701&quot;,&quot;name&quot;:&quot;oracle&quot;}" href="javascript: void(0);">oracle</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089432&quot;,&quot;name&quot;:&quot;nosql&quot;}" href="javascript: void(0);">nosql</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089873&quot;,&quot;name&quot;:&quot;memcached&quot;}" href="javascript: void(0);">memcached</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090424&quot;,&quot;name&quot;:&quot;sqlserver&quot;}" href="javascript: void(0);">sqlserver</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090354&quot;,&quot;name&quot;:&quot;sqlite&quot;}" href="javascript: void(0);">sqlite</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090861&quot;,&quot;name&quot;:&quot;postgresql&quot;}" href="javascript: void(0);">postgresql</a>
+                        </li>
+                                    </ul>
+            </div>
+                    <div role="tabpanel" class="tab-pane " id="开发工具">
+                <ul class="taglist--inline">
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089459&quot;,&quot;name&quot;:&quot;git&quot;}" href="javascript: void(0);">git</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000091226&quot;,&quot;name&quot;:&quot;github&quot;}" href="javascript: void(0);">github</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089467&quot;,&quot;name&quot;:&quot;vim&quot;}" href="javascript: void(0);">vim</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089579&quot;,&quot;name&quot;:&quot;xcode&quot;}" href="javascript: void(0);">xcode</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000126097&quot;,&quot;name&quot;:&quot;sublime-text&quot;}" href="javascript: void(0);">sublime-text</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089509&quot;,&quot;name&quot;:&quot;eclipse&quot;}" href="javascript: void(0);">eclipse</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000002720957&quot;,&quot;name&quot;:&quot;visual-studio-code&quot;}" href="javascript: void(0);">visual-studio-code</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090560&quot;,&quot;name&quot;:&quot;intellij-idea&quot;}" href="javascript: void(0);">intellij-idea</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090186&quot;,&quot;name&quot;:&quot;maven&quot;}" href="javascript: void(0);">maven</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089447&quot;,&quot;name&quot;:&quot;svn&quot;}" href="javascript: void(0);">svn</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090473&quot;,&quot;name&quot;:&quot;ide&quot;}" href="javascript: void(0);">ide</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090524&quot;,&quot;name&quot;:&quot;atom&quot;}" href="javascript: void(0);">atom</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090231&quot;,&quot;name&quot;:&quot;visual-studio&quot;}" href="javascript: void(0);">visual-studio</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090216&quot;,&quot;name&quot;:&quot;emacs&quot;}" href="javascript: void(0);">emacs</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000183694&quot;,&quot;name&quot;:&quot;hg&quot;}" href="javascript: void(0);">hg</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089663&quot;,&quot;name&quot;:&quot;textmate&quot;}" href="javascript: void(0);">textmate</a>
+                        </li>
+                                    </ul>
+            </div>
+                    <div role="tabpanel" class="tab-pane " id="系统设备">
+                <ul class="taglist--inline">
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089658&quot;,&quot;name&quot;:&quot;android&quot;}" href="javascript: void(0);">android</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089442&quot;,&quot;name&quot;:&quot;ios&quot;}" href="javascript: void(0);">ios</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089407&quot;,&quot;name&quot;:&quot;chrome&quot;}" href="javascript: void(0);">chrome</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089709&quot;,&quot;name&quot;:&quot;windows&quot;}" href="javascript: void(0);">windows</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089498&quot;,&quot;name&quot;:&quot;iphone&quot;}" href="javascript: void(0);">iphone</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090217&quot;,&quot;name&quot;:&quot;firefox&quot;}" href="javascript: void(0);">firefox</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000125504&quot;,&quot;name&quot;:&quot;internet-explorer&quot;}" href="javascript: void(0);">internet-explorer</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089499&quot;,&quot;name&quot;:&quot;safari&quot;}" href="javascript: void(0);">safari</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090638&quot;,&quot;name&quot;:&quot;ipad&quot;}" href="javascript: void(0);">ipad</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090218&quot;,&quot;name&quot;:&quot;opera&quot;}" href="javascript: void(0);">opera</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000002871462&quot;,&quot;name&quot;:&quot;apple-watch&quot;}" href="javascript: void(0);">apple-watch</a>
+                        </li>
+                                    </ul>
+            </div>
+                    <div role="tabpanel" class="tab-pane " id="其它">
+                <ul class="taglist--inline">
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089409&quot;,&quot;name&quot;:&quot;html5&quot;}" href="javascript: void(0);">html5</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000002893277&quot;,&quot;name&quot;:&quot;react.js&quot;}" href="javascript: void(0);">react.js</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090137&quot;,&quot;name&quot;:&quot;\u641c\u7d22\u5f15\u64ce&quot;}" href="javascript: void(0);">搜索引擎</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000123810&quot;,&quot;name&quot;:&quot;virtualenv&quot;}" href="javascript: void(0);">virtualenv</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090316&quot;,&quot;name&quot;:&quot;lucene&quot;}" href="javascript: void(0);">lucene</a>
+                        </li>
+                                    </ul>
+            </div>
+            </div>
+</div>
+
+                                </div>
+                               
+                            </form>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-4 hidden-xs">
+                        <ul class="post-topheader__side list-unstyled">
+                            <li>
+                                <button type="button" class="btn btn-success btn-sm " data-id="1190000009583199" id="sideLike"><span id="sideLikeText">赞</span>&nbsp;&nbsp;<span class="seprator">|</span>&nbsp;&nbsp;
+                                            <span id="sideLikeNum">1</span></button><button type="button" id="sideBookmark" class="btn btn-default btn-sm " data-id="1190000009583199" data-type="article"><span id="sideBookmarkText">收藏</span>&nbsp;&nbsp;<span class="seprator">|</span>&nbsp;&nbsp;<span id="sideBookmarkNum">1</span></button>                            </li>
+                            <li>
+                                <strong class="no-stress">547</strong> 次浏览
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div><!-- end .post-topheader -->
+
+    <div class="container mt30">
+        <div class="row">
+            <div class="col-xs-12 col-md-9 main ">
+
+                
+                <div class="article fmt article__content" data-id="1190000009583199" data-license="">
+                    
+<p>我们都知道runc是容器runtime的一个实现，那到底什么是runtime？包含了哪些内容？</p>
+<p>容器的runtime和image一样，也有标准，也由<a href="https://www.opencontainers.org/" target="_blank">OCI (Open Containers Initiative)</a>负责维护，地址为<a href="https://github.com/opencontainers/runtime-spec/blob/master/spec.md" target="_blank">Runtime Specification</a>，了解runtime标准有利于我们更好的理解docker和runc的关系，本文将对该标准做一个简单的解释。</p>
+<h2 id="articleHeader0">规范内容</h2>
+<p>在Linux平台上，跟runtime有关的规范主要有四个，分别是<a href="https://github.com/opencontainers/runtime-spec/blob/master/runtime.md" target="_blank">Runtime and Lifecycle (runtime.md)</a>、<a href="https://github.com/opencontainers/runtime-spec/blob/master/config.md" target="_blank">Container Configuration file (config.md)</a>、<a href="https://github.com/opencontainers/runtime-spec/blob/master/config-linux.md" target="_blank">Linux Container Configuration (config-linux.md)</a>和<a href="https://github.com/opencontainers/runtime-spec/blob/master/runtime-linux.md" target="_blank">Linux Runtime (runtime-linux.md)</a> .</p>
+<p>除了这四个之外，还有一个<a href="https://github.com/opencontainers/runtime-spec/blob/master/bundle.md" target="_blank">Filesystem Bundle (bundle.md)</a>。</p>
+<p>下面分别介绍这些规范。</p>
+<h3 id="articleHeader1"><a href="https://github.com/opencontainers/runtime-spec/blob/master/bundle.md" target="_blank">Filesystem Bundle</a></h3>
+<p>在<a href="https://segmentfault.com/a/1190000009309378">上一篇</a>中，已经用过bundle了，hello-world的bundle看起来是这个样子的：</p>
+<div class="widget-codetool" style="display:none;">
+      <div class="widget-codetool--inner">
+      <span class="selectCode code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="全选"></span>
+      <span type="button" class="copyCode code-tool" data-toggle="tooltip" data-placement="top" data-clipboard-text="dev@debian:~/images$ tree hello-world-bundle
+hello-world-bundle
+├── config.json
+└── rootfs
+    └── hello
+
+1 directory, 2 files" title="" data-original-title="复制"></span>
+      <span type="button" class="saveToNote code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="放进笔记"></span>
+      </div>
+      </div><pre><code class="bash">dev@debian:~/images$ tree hello-world-bundle
+hello-world-bundle
+├── config.json
+└── rootfs
+    └── hello
+
+1 directory, 2 files</code></pre>
+<p>bundle中包含了运行容器所需要的所有信息，有了这个bundle后，符合runtime标准的程序（比如runc）就可以根据bundle启动容器了。</p>
+<p>bundle包含一个config.json文件和容器的根文件系统目录，config.json就是后面要介绍的<code>Container Configuration file</code>，标准要求该配置文件必须叫这个名字，不过对容器的根文件系统目录没有要求，只要在config.json里面将路径配置正确就可以了，不过一般约定俗成都叫rootfs。</p>
+<p>实际使用过程中，根文件系统目录可能在其它的地方，只要config.json里面配置正确的路径就可以了，但如果bundle需要打包和其它人分享的话，必须将根文件系统和config.json打包在一起，并且不包含外层的文件夹。</p>
+<h3 id="articleHeader2"><a href="https://github.com/opencontainers/runtime-spec/blob/master/config.md" target="_blank">Container Configuration file</a></h3>
+<p>该规范定义了上面介绍的config.json里面应该包含哪些内容，字段很多，这里不一一详细介绍，只简单说明一下，完整的示例请参考<a href="https://github.com/opencontainers/runtime-spec/blob/master/config.md#configuration-schema-example" target="_blank">这里</a>：</p>
+<ul>
+<li><p>ociVersion（必须）：对应的OCI标准版本</p></li>
+<li><p>root（必须）：根文件系统的位置</p></li>
+<li><p>mounts：需要挂载哪些目录到容器里面。如果是Linux平台，这里面必须要包含/proc、/sys，/dev/pts，/dev/shm这四个目录</p></li>
+<li><p>process：容器启动后执行什么命令</p></li>
+<li><p>hostname：容器的主机名，相关原理可参考<a href="https://segmentfault.com/a/1190000006908598">UTS namespace (CLONE_NEWUTS)</a></p></li>
+<li><p>platform（必须）：平台信息，如 amd64 + Linux</p></li>
+<li><p>linux：Linux平台的特殊配置，这里包含下面要介绍的<code>Linux Container Configuration</code>里面的内容</p></li>
+<li><p>hooks：配置容器运行生命周期中会调用的hooks，包括prestart、poststart和poststop，容器的生命周期见后面<code>Runtime and Lifecycle</code>介绍。</p></li>
+<li><p>annotations：容器的注释，相当于容器标签，key:value格式</p></li>
+</ul>
+<h3 id="articleHeader3"><a href="https://github.com/opencontainers/runtime-spec/blob/master/config-linux.md" target="_blank">Linux Container Configuration</a></h3>
+<p>该规范是Linux平台上对<a href="https://github.com/opencontainers/runtime-spec/blob/master/config.md" target="_blank">Container Configuration file</a>的扩展，这部分的内容也包含在上面的config.json文件中。</p>
+<ul>
+<li><p>namespaces: namespace相关的配置，相关原理可参考<a href="https://segmentfault.com/a/1190000006908272">Namespace概述</a>及这些namespace（<a href="https://segmentfault.com/a/1190000006908598" target="_blank">UTS</a>、<a href="https://segmentfault.com/a/1190000006908729">IPC</a>、<a href="https://segmentfault.com/a/1190000006912742" target="_blank">mount</a>、<a href="https://segmentfault.com/a/1190000006912878">pid</a>、<a href="https://segmentfault.com/a/1190000006912930" target="_blank">network</a>、<a href="https://segmentfault.com/a/1190000006913195">user 1</a>、<a href="https://segmentfault.com/a/1190000006913499" target="_blank">user 2</a>）。</p></li>
+<li><p>uidMappings，gidMappings：配置主机和容器用户/组之间的对应关系，原理可参考<a href="https://segmentfault.com/a/1190000006913195">user namespace</a></p></li>
+<li><p>devices：设置哪些设备可以在容器内被访问到。除了这里指定的设备外，/dev/null、/dev/zero、/dev/full、/dev/random、/dev/urandom、/dev/tty、/dev/console（如果在process的配置里面启动terminal的话）和/dev/ptmx这些设备默认就能在容器内访问到，即runtime的实现需要默认将这些设备bind到容器内，dev/tty和/dev/ptmx的原理可以参考<a href="https://segmentfault.com/a/1190000009082089" target="_blank">TTY/PTS概述</a></p></li>
+<li><p>cgroupsPath：cgroup的路径，可参考<a href="https://segmentfault.com/a/1190000006917884">Cgroup概述</a></p></li>
+<li><p>resources：Cgroup中具体子项的配置，包括<a href="https://www.kernel.org/doc/Documentation/cgroup-v1/devices.txt" target="_blank">device whitelist</a>, <a href="https://segmentfault.com/a/1190000008125359">memory</a>, <a href="https://segmentfault.com/a/1190000008323952" target="_blank">cpu</a>, <a href="https://www.kernel.org/doc/Documentation/cgroup-v1/blkio-controller.txt" target="_blank">blockIO</a>, <a href="https://www.kernel.org/doc/Documentation/cgroup-v1/hugetlb.txt" target="_blank">hugepageLimits</a>, network(<a href="https://www.kernel.org/doc/Documentation/cgroup-v1/net_cls.txt" target="_blank">net_cls cgroup</a>和<a href="https://www.kernel.org/doc/Documentation/cgroup-v1/net_prio.txt" target="_blank">net_prio cgroup</a>), <a href="https://segmentfault.com/a/1190000007468509">pids</a></p></li>
+<li><p>intelRdt：和<a href="https://www.kernel.org/doc/Documentation/x86/intel_rdt_ui.txt" target="_blank">Intel Resource Director Technology</a>有关</p></li>
+<li><p>sysctl：调整容器运行时的kernel参数，主要是一些网络参数，因为每个network namespace都有自己的协议栈，所以可以修改自己协议栈的参数而不影响别人</p></li>
+<li><p>seccomp：和安全相关的配置，见<a href="https://www.kernel.org/doc/Documentation/prctl/seccomp_filter.txt" target="_blank">Seccomp </a></p></li>
+<li><p>rootfsPropagation：设置Propagation类型。可以参考<a href="https://segmentfault.com/a/1190000006899213">Shared subtrees</a></p></li>
+<li><p>maskedPaths：设置容器内的哪些目录对用户不可见</p></li>
+<li><p>readonlyPaths：设置容器内的哪些目录是只读的</p></li>
+<li><p>mountLabel：和Selinux有关。</p></li>
+</ul>
+<h3 id="articleHeader4"><a href="https://github.com/opencontainers/runtime-spec/blob/master/runtime.md" target="_blank">Runtime and Lifecycle</a></h3>
+<p>该规范主要定义了跟容器运行时相关的三部分内容，容器的状态、容器相关的操作以及容器的生命周期。</p>
+<h4>容器的状态</h4>
+<p>当查询容器的状态时，返回的状态里面至少包含如下信息：</p>
+<div class="widget-codetool" style="display:none;">
+      <div class="widget-codetool--inner">
+      <span class="selectCode code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="全选"></span>
+      <span type="button" class="copyCode code-tool" data-toggle="tooltip" data-placement="top" data-clipboard-text="{
+    &quot;ociVersion&quot;: &quot;0.2.0&quot;,
+    &quot;id&quot;: &quot;oci-container1&quot;,
+    &quot;status&quot;: &quot;running&quot;,
+    &quot;pid&quot;: 4422,
+    &quot;bundle&quot;: &quot;/containers/redis&quot;,
+    &quot;annotations&quot;: {
+        &quot;myKey&quot;: &quot;myValue&quot;
+    }
+}" title="" data-original-title="复制"></span>
+      <span type="button" class="saveToNote code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="放进笔记"></span>
+      </div>
+      </div><pre class="hljs json"><code>{
+    <span class="hljs-attr">"ociVersion"</span>: <span class="hljs-string">"0.2.0"</span>,
+    <span class="hljs-attr">"id"</span>: <span class="hljs-string">"oci-container1"</span>,
+    <span class="hljs-attr">"status"</span>: <span class="hljs-string">"running"</span>,
+    <span class="hljs-attr">"pid"</span>: <span class="hljs-number">4422</span>,
+    <span class="hljs-attr">"bundle"</span>: <span class="hljs-string">"/containers/redis"</span>,
+    <span class="hljs-attr">"annotations"</span>: {
+        <span class="hljs-attr">"myKey"</span>: <span class="hljs-string">"myValue"</span>
+    }
+}</code></pre>
+<ul>
+<li><p>ociVersion (必须)： 创建该容器时使用的OCI runtime的版本</p></li>
+<li><p>id (必须): 容器ID，本机全局唯一</p></li>
+<li>
+<p>status (必须): 容器的运行时状态，包含如下状态:</p>
+<div class="widget-codetool" style="display:none;">
+      <div class="widget-codetool--inner">
+      <span class="selectCode code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="全选"></span>
+      <span type="button" class="copyCode code-tool" data-toggle="tooltip" data-placement="top" data-clipboard-text="creating: 创建中
+created: 创建完成
+running: 运行中
+stopped: 运行结束
+
+实现runtime时可以包含更多的状态，但不能改变这几个状态的含义" title="" data-original-title="复制"></span>
+      <span type="button" class="saveToNote code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="放进笔记"></span>
+      </div>
+      </div><pre class="hljs http"><code><span class="hljs-attribute">creating</span>: 创建中
+<span class="hljs-attribute">created</span>: 创建完成
+<span class="hljs-attribute">running</span>: 运行中
+<span class="hljs-attribute">stopped</span>: 运行结束
+
+<span class="gradle">实现<span class="hljs-keyword">runtime</span>时可以包含更多的状态，但不能改变这几个状态的含义</span></code></pre>
+</li>
+<li><p>pid (容器是running状态时必须)： 容器内第一个进程在系统初始pid namespace中的pid，即在容器外面看到的pid</p></li>
+<li><p>bundle (REQUIRED)： bundle所在位置的绝对路径。bundle里面包含了容器的配置文件和根文件系统。</p></li>
+<li><p>annotations： 容器的注释，相当于容器标签，来自于容器的配置文件，key：value格式。</p></li>
+</ul>
+<h4>容器相关的操作</h4>
+<p>该部分定义了一个符合runtime标准的实现（如runc）至少需要实现下面这些命令：</p>
+<ul>
+<li><p>state: 返回容器的状态，包含上面介绍的那些内容.</p></li>
+<li><p>create： 创建容器，这一步执行完成后，容器创建完成，修改bundle中的config.json将不再对已创建的容器产生影响</p></li>
+<li><p>start： 启动容器，执行config.json中process部分指定的进程</p></li>
+<li><p>kill： 通过给容器发送信号来停止容器，信号的内容由kill命令的参数指定</p></li>
+<li><p>delete： 删除容器，如果容器正在运行中，则删除失败。删除操作会删除掉create操作时创建的所有内容。</p></li>
+</ul>
+<h4>容器的生命周期</h4>
+<blockquote><p>这里以runc为例，说明容器的生命周期</p></blockquote>
+<ol>
+<li><p>执行命令<code>runc create</code>创建容器，参数中指定bundle的位置以及容器的ID，容器的状态变为creating</p></li>
+<li><p>runc根据bundle中的config.json，准备好容器运行时需要的环境和资源，但不运行process中指定的进程，这步执行完成之后，表示容器创建成功，修改config.json将不再对创建的容器产生影响，这时容器的状态变成created。</p></li>
+<li><p>执行命令<code>runc start</code>启动容器</p></li>
+<li><p>runc执行config.json中配置的prestart钩子</p></li>
+<li><p>runc执行config.json中process指定的程序，这时容器状态变成了running</p></li>
+<li><p>runc执行poststart钩子。</p></li>
+<li><p>容器由于某些原因退出，比如容器中的第一个进程主动退出，挂掉或者被kill掉等。这时容器状态变成了stoped</p></li>
+<li><p>执行命令<code>runc delete</code>删除容器，这时runc就会删除掉上面第2步所做的所有工作。</p></li>
+<li><p>runc执行poststop钩子</p></li>
+</ol>
+<h3 id="articleHeader5"><a href="https://github.com/opencontainers/runtime-spec/blob/master/runtime-linux.md" target="_blank">Linux Runtime</a></h3>
+<p>该规范是Linux平台上对<a href="https://github.com/opencontainers/runtime-spec/blob/master/runtime.md" target="_blank">Runtime and Lifecycle</a>的补充，目前该规范很简单，只要求容器运行起来后，里面必须建立下面这些软连接：</p>
+<div class="widget-codetool" style="display:none;">
+      <div class="widget-codetool--inner">
+      <span class="selectCode code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="全选"></span>
+      <span type="button" class="copyCode code-tool" data-toggle="tooltip" data-placement="top" data-clipboard-text="# ls -l /dev/fd /dev/std*
+lrwxrwxrwx    1 root     root            13 May  4 12:32 /dev/fd -&gt; /proc/self/fd
+lrwxrwxrwx    1 root     root            15 May  4 12:32 /dev/stderr -&gt; /proc/self/fd/2
+lrwxrwxrwx    1 root     root            15 May  4 12:32 /dev/stdin -&gt; /proc/self/fd/0
+lrwxrwxrwx    1 root     root            15 May  4 12:32 /dev/stdout -&gt; /proc/self/fd/1" title="" data-original-title="复制"></span>
+      <span type="button" class="saveToNote code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="放进笔记"></span>
+      </div>
+      </div><pre class="hljs tcl"><code><span class="hljs-comment"># ls -l /dev/fd /dev/std*</span>
+lrwxrwxrwx    <span class="hljs-number">1</span> root     root            <span class="hljs-number">13</span> May  <span class="hljs-number">4</span> <span class="hljs-number">12</span>:<span class="hljs-number">32</span> /dev/fd -&gt; /<span class="hljs-keyword">proc</span>/self/fd<span class="hljs-title">
+lrwxrwxrwx</span>    1<span class="hljs-title"> root</span> <span class="hljs-title">    root</span>            15<span class="hljs-title"> May</span>  4 12:32 /dev/stderr -&gt; /<span class="hljs-keyword">proc</span>/self/fd/2<span class="hljs-title">
+lrwxrwxrwx</span>    1<span class="hljs-title"> root</span> <span class="hljs-title">    root</span>            15<span class="hljs-title"> May</span>  4 12:32 /dev/stdin -&gt; /<span class="hljs-keyword">proc</span>/self/fd/0<span class="hljs-title">
+lrwxrwxrwx</span>    1<span class="hljs-title"> root</span> <span class="hljs-title">    root</span>            15<span class="hljs-title"> May</span>  4 12:32 /dev/stdout -&gt; /<span class="hljs-keyword">proc</span>/self/fd/1</code></pre>
+<h2 id="articleHeader6">结束语</h2>
+<p>简单点说，docker负责准备runtime的bundle，而runc负责运行该bundle，并管理容器的整个生命周期。</p>
+<p>但对于docker来说，并不是只要准备好根文件系统和配置文件就可以了，比如对于网络，runtime没有做任何要求，只要在config.json中指定network namespace就行了（不指定就新建一个），而至于这个network namespace里面有哪些东西则完全由docker负责，docker需要保证新network namespace里面有合适的设备来和外界通信。</p>
+<h2 id="articleHeader7">参考</h2>
+<ul><li><p><a href="https://github.com/opencontainers/runtime-spec" target="_blank">Open Container Initiative Runtime Specification</a></p></li></ul>
+
+                </div>
+                                                
+                <div class="clearfix mt10">
+                    <ul class="article-operation list-inline pull-left"><li><a href="https://segmentfault.com/a/1190000009583199">5月27日发布</a></li><li class="dropdown js__content-ops" data-module="article" data-id="1190000009583199" data-typetext="文章"><a href="javascript:void(0);" class="dropdown-toggle text-muted" data-toggle="dropdown"><i class="fa fa-ellipsis-h" aria-hidden="true"></i></a><ul class="dropdown-menu dropdown-menu-left"><li><a href="https://segmentfault.com/a/1190000009583199#911" data-toggle="modal" data-target="#911" data-action="report">举报</a></li></ul></li></ul>
+                    <div class="pull-right">
+                        <div class="widget-share__full" data-text="走进docker(04)：什么是容器的runtime?" data-url="https://segmentfault.com/a/1190000009583199" data-shorturl="http://sfau.lt/b5OnbT"><div class="widget-share-network sharer-0" style="display: block;"><ul class="sn-inline"><li data-network="weibo"><a href="javascript:void(0);" class="entypo-weibo icon-sn-weibo share-1" data-toggle="tooltip" data-placement="top" title="" data-original-title="分享至新浪微博">新浪微博</a></li><li data-network="wechart"><a href="javascript:void(0);" class="entypo-wechart icon-sn-weixin share-2" data-toggle="tooltip" data-placement="top" title="" data-original-title="分享至微信">微信</a></li><li data-network="twitter"><a href="javascript:void(0);" class="entypo-twitter icon-sn-twitter share-3" data-toggle="tooltip" data-placement="top" title="" data-original-title="分享至 Twitter">Twitter</a></li><li data-network="facebook"><a href="javascript:void(0);" class="entypo-facebook icon-sn-facebook share-4" data-toggle="tooltip" data-placement="top" title="" data-original-title="分享至 Facebook">Facebook</a></li></ul></div><a type="button" class="btn btn-sm shareMore btn-sn-more" data-toggle="popover" data-placement="top" data-url="https://segmentfault.com/a/1190000009583199" data-shorturl="http://sfau.lt/b5OnbT"><span class="icon-sn-dotted" data-original-title="" title=""></span><strong class="visible-xs-inline">•••</strong></a></div>
+
+
+                    </div>
+                </div>
+                <div class="mt10 text-center"><button type="button" id="mainLike" data-id="1190000009583199" class="btn btn-success btn-lg mr15 "><span id="mainLikeText">赞</span>&nbsp;&nbsp;<span class="seprator">|</span>&nbsp;&nbsp;
+                                <span id="mainLikeNum">1 </span></button><button type="button" id="mainBookmark" data-type="article" data-id="1190000009583199" class="btn btn-default btn-lg "><span id="mainBookmarkText">收藏</span>&nbsp;&nbsp;<span class="seprator">|</span>&nbsp;&nbsp;<span id="mainBookmarkNum">1</span></button></div>
+                                    <div class="recommend-post pt30 mt40 mb30 border-top">
+                        <div class="row">
+                            <div class="col-md-8">
+                                                                    <h4 class="mt0">你可能感兴趣的文章</h4>
+                                    <ul class="widget-links list-unstyled">
+                                                                                    <li class="widget-links__item">
+                                                <a href="https://segmentfault.com/a/1190000003495351" title="Rocket 希望以硬件隔离引领潮流，Docker说” NO”">Rocket 希望以硬件隔离引领潮流，Docker说” NO”</a>
+                                                <small class="text-muted">
+                                                    500
+                                                    浏览
+                                                </small>
+                                            </li>
+                                                                                    <li class="widget-links__item">
+                                                <a href="https://segmentfault.com/a/1190000009115502" title="Docker战略结盟Rancher，提供企业级落地技术支持">Docker战略结盟Rancher，提供企业级落地技术支持</a>
+                                                <small class="text-muted">
+                                                    254
+                                                    浏览
+                                                </small>
+                                            </li>
+                                                                                    <li class="widget-links__item">
+                                                <a href="https://segmentfault.com/a/1190000011294361" title="docker进程模型，架构分析">docker进程模型，架构分析</a>
+                                                <small class="text-muted">
+                                                    1 收藏，165
+                                                    浏览
+                                                </small>
+                                            </li>
+                                                                            </ul>
+                                                            </div>
+                            <div class="col-md-4">
+                                                                    <div class="article-license">
+                                                                                                                                                                    <img class="mb5" src="./走进docker(04)：什么是容器的runtime_ - 个人文章 - SegmentFault_files/creativecommons-cc.svg" height="24"><br>
+                                            <div class="license-item text-muted">
+                                            本作品采用<a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" class="alert-link">署名-非商业性使用-禁止演绎 4.0 国际许可协议</a> 进行许可
+                                            。
+                                        </div>
+                                        
+                                    </div>
+                                                            </div>
+                        </div>
+
+                    </div>
+                                <!-- <ul class="list-unstyled text-muted mt30">
+                                        <li>上一篇：<a href="/a/1190000009582874">git：cherry-pick、revert、reset介绍</a></li>
+                                                            <li class="mt5">下一篇：<a href="/a/1190000009583786">Vue全家桶+Mint-Ui打造高仿QQMusic，搭配详细说明</a></li>
+                                    </ul> -->
+
+                <h2 class="h4 post-comment-title"></h2>
+                
+        <div class="comments--news comments--default comments--article 
+    " data-id="1190000009583199" data-user-id="" data-author-id="1030000006806480 " data-is-admin="null">
+                    <div class="mb10 clearfix">
+                <strong class="comments-stat pull-left mr10">评论</strong>
+
+                                                    <div class="btn-group btn-group-xs pull-right comments-sort btn-group-menu" role="menu">
+                        <a href="javascript:;" class="btn btn-default active" data-sort="default">默认排序</a>
+                        <a href="javascript:;" class="btn btn-default" data-sort="desc">时间排序</a>
+                    </div>
+                            </div>
+                <div class="comments-container">
+                                <div class="comments-list">
+            </div>
+    <div class="comments-loading hide">载入中...</div>
+        <div class="comments-more hide"><a href="javascript:;">显示更多评论</a></div>
+    
+
+                                    <div class="comments-box">
+                <div class="pull-left">
+                    <img class="avatar-32 " src="./走进docker(04)：什么是容器的runtime_ - 个人文章 - SegmentFault_files/user-128.png" alt="">
+                </div>
+                <div class="comments-box-content">
+                    <form action="https://segmentfault.com/api/article/1190000009583199/comments/add">
+                        <div class="form-group mb0">
+                            <textarea name="text" rows="3" class="form-control" placeholder="文明社会，理性评论"></textarea>
+                            <div class="mt15 text-right">
+                                <button type="button" class="hide"></button>
+                                <button class=" btn btn-primary" type="button">发布评论</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+                                                        </div>
+    </div>
+
+
+                                    
+                
+            </div><!-- /.main -->
+
+
+            <div class="col-xs-12 col-md-3 side">
+                
+                <div class="widget-box widget_lives pt0" style="border-top: none" id="live-recommend-wrapper">
+                    <h2 class="widget-box__title">
+                        讲堂推荐
+                        <i class="fa fa-youtube-play fa-sm" aria-hidden="true"></i>
+                        <a href="https://segmentfault.com/lives" class="pull-right more">更多</a>
+                    </h2>
+                    <div id="live-recommend" class="mb20">
+                <a href="https://segmentfault.com/l/1500000008757392?utm_source=ad_ad">
+                    <img class="live-recommend-img" src="./走进docker(04)：什么是容器的runtime_ - 个人文章 - SegmentFault_files/1387544687-59b78502d71e9" width="255" height="80">
+                </a>
+            </div>
+                </div>
+                
+                                <div id="mm_124884735_33830642_120592878" class="mb25"><div id="ac_wrap_mm_124884735_33830642_120592878" style="width:255px"><script async=""></script>
+<!-- 文章页右侧边栏方块 -->
+<ins class="adsbygoogle" style="display:inline-block;width:255px;height:213px" data-ad-client="ca-pub-6330872677300335" data-ad-slot="6800875204" data-adsbygoogle-status="done"><ins id="aswift_0_expand" style="display:inline-table;border:none;height:213px;margin:0;padding:0;position:relative;visibility:visible;width:255px;background-color:transparent;"><ins id="aswift_0_anchor" style="display:block;border:none;height:213px;margin:0;padding:0;position:relative;visibility:visible;width:255px;background-color:transparent;"><iframe width="255" height="213" frameborder="0" marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allowfullscreen="true" onload="var i=this.id,s=window.google_iframe_oncopy,H=s&amp;&amp;s.handlers,h=H&amp;&amp;H[i],w=this.contentWindow,d;try{d=w.document}catch(e){}if(h&amp;&amp;d&amp;&amp;(!d.body||!d.body.firstChild)){if(h.call){setTimeout(h,0)}else if(h.match){try{h=s.upd(h,i)}catch(e){}w.location.replace(h)}}" id="aswift_0" name="aswift_0" style="left:0;position:absolute;top:0;width:255px;height:213px;" src="./走进docker(04)：什么是容器的runtime_ - 个人文章 - SegmentFault_files/saved_resource.html"></iframe></ins></ins></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script><script type="text/javascript"></script><script type="text/javascript"></script><script type="text/javascript"></script><script type="text/javascript"></script><script type="text/javascript"></script></div></div>
+                                <div id="mm_124884735_33830642_121788665" class="mb25"></div>
+                
+                <div class="widget-box widget-box--blog-info">
+                    <div class="blog__sidebar-author blog__sidebar-author--noblog">
+                                                    <button type="button" class="btn btn-sm btn-success follow-user ml10 pull-right" data-do="follow" data-type="user" data-id="1030000006806480">关注作者
+                            </button>
+                        
+                        <div class="article__widget--author">
+                            <a href="https://segmentfault.com/u/wuyangchun">
+                                <img class="avatar-40" src="./走进docker(04)：什么是容器的runtime_ - 个人文章 - SegmentFault_files/user-64.png" alt="wuyangchun">
+                            </a>
+                            <a class="article__widget-author-name" href="https://segmentfault.com/u/wuyangchun">
+                                <strong>wuyangchun</strong>
+                            </a>
+                            <p class="article__widget-author-text-muted mb0">
+                                <span>524 声望</span>
+
+                            </p>
+
+
+                        </div>
+
+
+                    </div>
+                    
+
+                </div>
+                
+                                
+                 
+                <div class="post-nav hidden-xs side-outline hidden-sm" style="display: block;">
+                    <div class="panel panel-default widget-outline">
+                        <div class="panel-heading">目录</div>
+                        <div class="panel-body">
+                            <div class="nav-body" style="top: 0px;">
+                                <div class="highlight-title"></div>
+                                <ul class="articleIndex"><li><a href="https://segmentfault.com/a/1190000009583199#articleHeader0">规范内容</a></li><li style="list-style:none;"><ul><li><a href="https://segmentfault.com/a/1190000009583199#articleHeader1">Filesystem Bundle</a></li><li><a href="https://segmentfault.com/a/1190000009583199#articleHeader2">Container Configuration file</a></li><li><a href="https://segmentfault.com/a/1190000009583199#articleHeader3">Linux Container Configuration</a></li><li><a href="https://segmentfault.com/a/1190000009583199#articleHeader4">Runtime and Lifecycle</a></li><li><a href="https://segmentfault.com/a/1190000009583199#articleHeader5">Linux Runtime</a></li></ul></li><li><a href="https://segmentfault.com/a/1190000009583199#articleHeader6">结束语</a></li><li><a href="https://segmentfault.com/a/1190000009583199#articleHeader7">参考</a></li></ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div><!-- /.side -->
+        </div>
+    </div>
+</div>
+
+<div id="shareToWeiboModal" class="modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">
+                    <span aria-hidden="true">×</span><span class="sr-only">Close</span>
+                </button>
+                <h4 class="modal-title">分享</h4>
+            </div>
+            <div class="modal-body">
+                <p class="sfModal-content">
+                    分享到微博？
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default dont-likeweibo" data-dismiss="modal">取消</button>
+                <a href="https://segmentfault.com/a/1190000009583199" id="shareLink" class="btn btn-primary done-btn" target="_blank" onclick="$(&#39;#shareToWeiboModal&#39;).modal(&#39;hide&#39;)">分享</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal widget-911" id="911" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button class="close" data-dismiss="modal" type="button">
+          <span aria-hidden="true">×</span>
+          <span class="sr-only">Close</span>
+        </button>
+        <h4 class="modal-title"><span data-model="action"></span><span data-model="type"></span></h4>
+      </div>
+      <div class="modal-body">
+        <form id="reportForm">
+          <!-- 后台返回信息 -->
+          <p class="alert alert-warning" data-model="returnMsg"></p>
+          <div data-role="base">
+            <p>
+              <strong class="required">我要<span data-model="action"></span>该<span data-model="type"></span>，理由是：</strong>
+            </p>
+            <ul class="list-unstyled" data-model="list"></ul>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-default pull-left" type="button" data-role="back" style="display:none">返回重选</button>
+                <button class="btn btn-default" data-dismiss="modal" type="button">取消</button>
+        <button class="btn btn-primary" data-role="submit" type="button">提交</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+
+
+
+<div class="container hidden-xs">
+    <div class="row">
+        <div class="col-md-9">
+            <div id="mm_124884735_33830642_143436142" style="padding:0 calc(50% - 364px)" class="mb20"><div id="ac_wrap_mm_124884735_33830642_143436142" style="width:728px"><script async=""></script>
+<!-- 底部广告位 -->
+<ins class="adsbygoogle" style="display:inline-block;width:728px;height:90px" data-ad-client="ca-pub-6330872677300335" data-ad-slot="5598290435" data-adsbygoogle-status="done"><ins id="aswift_1_expand" style="display:inline-table;border:none;height:90px;margin:0;padding:0;position:relative;visibility:visible;width:728px;background-color:transparent;"><ins id="aswift_1_anchor" style="display:block;border:none;height:90px;margin:0;padding:0;position:relative;visibility:visible;width:728px;background-color:transparent;"><iframe width="728" height="90" frameborder="0" marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allowfullscreen="true" onload="var i=this.id,s=window.google_iframe_oncopy,H=s&amp;&amp;s.handlers,h=H&amp;&amp;H[i],w=this.contentWindow,d;try{d=w.document}catch(e){}if(h&amp;&amp;d&amp;&amp;(!d.body||!d.body.firstChild)){if(h.call){setTimeout(h,0)}else if(h.match){try{h=s.upd(h,i)}catch(e){}w.location.replace(h)}}" id="aswift_1" name="aswift_1" style="left:0;position:absolute;top:0;width:728px;height:90px;" src="./走进docker(04)：什么是容器的runtime_ - 个人文章 - SegmentFault_files/saved_resource(1).html"></iframe></ins></ins></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script><script type="text/javascript"></script><script type="text/javascript"></script><script type="text/javascript"></script><script type="text/javascript"></script><script type="text/javascript"></script></div></div>
+        
+    </div>
+</div>
+
+
+
+<footer id="footer">
+    <div class="container">
+        <div class="row hidden-xs">
+            <dl class="col-sm-2 site-link">
+                <dt>网站相关</dt>
+                <dd><a href="https://segmentfault.com/about">关于我们</a></dd>
+                <dd><a href="https://segmentfault.com/tos">服务条款</a></dd>
+                <dd><a href="https://segmentfault.com/faq">帮助中心</a></dd>
+                <dd><a href="https://segmentfault.com/repu">声望与权限</a></dd>
+                <dd><a href="https://segmentfault.com/markdown">编辑器语法</a></dd>
+                <dd><a href="https://segmentfault.com/weekly">每周精选</a></dd>
+                                <dd><a href="https://segmentfault.com/community">社区服务中心</a></dd>
+            </dl>
+            <dl class="col-sm-2 site-link">
+                <dt>联系合作</dt>
+                <dd><a href="https://segmentfault.com/contact">联系我们</a></dd>
+                <dd><a href="https://segmentfault.com/hiring">加入我们</a></dd>
+                <dd><a href="https://segmentfault.com/link">合作伙伴</a></dd>
+                <dd><a href="https://segmentfault.com/press">媒体报道</a></dd>
+                <dd><a href="https://segmentfault.com/g/1570000009280187">建议反馈</a></dd>
+                                            </dl>
+            <dl class="col-sm-2 site-link">
+                <dt>常用链接</dt>
+                                                <dd><a href="https://chrome.google.com/webstore/detail/segmentfault-%E7%AC%94%E8%AE%B0/pjklfdmleagfaekibdccmhlhellefcfo" target="_blank">笔记插件: Chrome</a></dd>
+                                                                <dd><a href="https://addons.mozilla.org/zh-CN/firefox/addon/sf-note-ext/" target="_blank">笔记插件: Firefox</a></dd>
+                                                                <dd>订阅：<a href="https://segmentfault.com/feeds">问答</a> / <a href="https://segmentfault.com/feeds/blogs">文章</a></dd>
+                                                                <dd><a href="https://mirrors.segmentfault.com/" target="_blank">文档镜像</a></dd>
+                                                                <dd><a href="https://segmentfault.com/d-day" target="_blank">D-DAY 技术沙龙</a></dd>
+                                                                <dd><a href="https://segmentfault.com/hackathon" target="_blank">黑客马拉松 Hackathon</a></dd>
+                                                                <dd><a href="https://namebeta.com/" target="_blank">域名搜索注册</a></dd>
+                                                                <dd><a href="https://shop165859711.taobao.com/" target="_blank">周边店铺</a></dd>
+                                            </dl>
+            <dl class="col-sm-2 site-link">
+                <dt>社区日志</dt>
+                                <dd><a href="https://segmentfault.com/blog/segmentfault" target="_blank">产品技术日志</a></dd>
+                                <dd><a href="https://segmentfault.com/blog/community_admin" target="_blank">社区运营日志</a></dd>
+                                <dd><a href="https://segmentfault.com/blog/segmentfault_news" target="_blank">市场运营日志</a></dd>
+                                <dd><a href="https://segmentfault.com/blog/segmentfault_team" target="_blank">团队日志</a></dd>
+                                <dd><a href="https://segmentfault.com/blog/interview" target="_blank">社区访谈</a></dd>
+                                <dd>
+                    <ul class="sn-inline">
+                        <li>
+                            <a class="entypo-wechart icon-sn-weixin weixin-popover-qrcode" data-toggle="popover" data-placement="top" data-content="" data-original-title="" title="">微信</a>
+                        </li>
+                        <li>
+                            <a href="http://weibo.com/segmentfault" target="_blank" class="entypo-weibo icon-sn-weibo">新浪微博</a>
+                        </li>
+                        <li>
+                            <a href="https://github.com/SegmentFault" target="_blank" class="entypo-facebook icon-sn-github">Github</a>
+                        </li>
+                        <li>
+                            <a href="https://twitter.com/segment_fault" target="_blank" class="entypo-twitter icon-sn-twitter">Twitter</a>
+                        </li>
+                    </ul>
+                </dd>
+            </dl>
+            <dl class="col-sm-4 site-link" id="license">
+                <dt>内容许可</dt>
+                <dd>除特别说明外，用户内容均采用 <a rel="license" target="_blank" href="https://creativecommons.org/licenses/by-nc-nd/4.0/">知识共享署名-非商业性使用-禁止演绎 4.0 国际许可协议</a> 进行许可
+                </dd>
+                <dd>本站由 <a target="_blank" href="https://www.upyun.com/?utm_source=segmentfault&amp;utm_medium=link&amp;utm_campaign=upyun&amp;md=segmentfault">又拍云</a> 提供 CDN 存储服务
+                </dd>
+                <dd>
+                    <a href="https://segmentfault.com/app"><img src="./走进docker(04)：什么是容器的runtime_ - 个人文章 - SegmentFault_files/appQrcode.png" class="app-qrcode"></a>
+                    <div class="app-download-desc">
+                        <p>手机扫一扫</p>
+                        <p>下载官方 App</p>
+                    </div>
+                    
+                </dd>
+            </dl>
+            <div>
+            </div>
+        </div>
+        <div class="copyright">
+            Copyright © 2011-2017 SegmentFault. 当前呈现版本 17.06.16<br>
+            <a href="http://www.miibeian.gov.cn/" rel="nofollow">浙ICP备 15005796号-2</a> &nbsp;
+            <a target="_blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=33010602002000" rel="nofollow">浙公网安备 33010602002000号</a>
+            <span class="ml5">杭州堆栈科技有限公司版权所有</span>
+        </div>
+        <p class="text-center">
+            <a class="js__view--selector hidden-sm hidden-md hidden-lg" data-action="mobile" href="javascript:;">移动版</a>
+            <a class="js__view--selector hidden-sm hidden-md hidden-lg" data-action="desktop" href="javascript:;">桌面版</a>
+        </p>
+    </div>
+</footer>
+
+<div id="fixedTools" class="hidden-xs hidden-sm">
+    <a id="backtop" class="hidden border-bottom" href="https://segmentfault.com/a/1190000009583199#">回顶部</a>
+</div>
+
+<script src="./走进docker(04)：什么是容器的runtime_ - 个人文章 - SegmentFault_files/hm.js.下载"></script><script async="" src="./走进docker(04)：什么是容器的runtime_ - 个人文章 - SegmentFault_files/analytics.js.下载"></script><script id="loginModal" type="text/template">
+    <div class="row bg-white login-modal">
+        <div class="col-md-4 col-sm-12 col-md-push-7 login-wrap">
+            <h1 class="h4 text-muted login-title">用户登录</h1>
+            <form action="/api/user/login" method="POST" role="form" class="mt30">
+                <div class="form-group">
+                    <label for="username" class="control-label">手机号 或 Email</label>
+                    <input type="text" class="form-control" name="username" required placeholder="11 位手机号 或 Email"
+                           autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label class="control-label">密码</label><span class="pull-right"><a
+                                href="/user/forgot">忘记密码</a></span>
+                    <input type="password" class="form-control" name="password" required placeholder="密码">
+                </div>
+                <div class="form-group clearfix">
+                    <div class="checkbox pull-left">
+                        <label><input name="remember" type="checkbox" value="1" checked> 记住登录状态</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary pull-right pl20 pr20"
+                            onclick='ga("send", "event", "email login button", "clicked", "login modal");'>登录
+                    </button>
+                </div>
+            </form>
+            <p class="h4 text-muted visible-xs-block h4">快速登录</p>
+            <div class="widget-login mt30">
+                <p class="text-muted mt5 mr10 pull-left hidden-xs">快速登录</p>
+                <a href="/user/oauth/google" class=""
+                   onclick='ga("send", "event", "3rd login button", "clicked", "login modal", {media: "google"});'><span
+                            class="icon-sn-google"></span> <strong class="visible-xs-inline">Google 账号</strong></a>
+                <a href="/user/oauth/github" class=""
+                   onclick='ga("send", "event", "3rd login button", "clicked", "login modal", {media: "github"});");'><span
+                            class="icon-sn-github"></span> <strong class="visible-xs-inline">Github 账号</strong></a>
+                <a href="/user/oauth/weibo" class=""
+                   onclick='ga("send", "event", "3rd login button", "clicked", "login modal", {media: "weibo"});'><span
+                            class="icon-sn-weibo"></span> <strong class="visible-xs-inline">新浪微博账号</strong></a>
+                <a href="/user/oauth/qq" class=""
+                   onclick='ga("send", "event", "3rd login button", "clicked", "login modal", {media: "qq"});'><span
+                            class="icon-sn-qq"></span> <strong class="visible-xs-inline">QQ 账号</strong></a>
+                <a href="/user/oauth/weixin" class=""
+                   onclick='ga("send", "event", "3rd login button", "clicked", "login modal", {media: "qq"});'><span
+                            class="icon-sn-weixin"></span> <strong class="visible-xs-inline">微信账号</strong></a>
+                <a href="/user/oauth/linkedin" class=""
+                   onclick='ga("send", "event", "3rd login button", "clicked", "login modal", {media: "linkedin"});'><span
+                            class="icon-sn-linkedin"></span> <strong class="visible-xs-inline">LinkedIn 账号</strong></a>
+                <span id="loginShowMore" style="cursor: pointer" class="mb5"><span class="icon-sn-dotted"></span><strong
+                            class="visible-xs-inline">•••</strong></span>
+                <a href="/user/oauth/twitter" class=" hidden"
+                   onclick='ga("send", "event", "3rd login button", "clicked", "login modal", {media: "twitter"});'><span
+                            class="icon-sn-twitter"></span> <strong class="visible-xs-inline">Twitter 账号</strong></a>
+                <a href="/user/oauth/facebook" class=" hidden"
+                   onclick='ga("send", "event", "3rd login button", "clicked", "login modal", {media: "facebook"});'><span
+                            class="icon-sn-facebook"></span> <strong class="visible-xs-inline">Facebook 账号</strong></a>
+                <a href="/user/oauth/douban" class=" hidden"
+                   onclick='ga("send", "event", "3rd login button", "clicked", "login modal", {media: "douban"});'><span
+                            class="icon-sn-douban"></span> <strong class="visible-xs-inline">豆瓣账号</strong></a>
+            </div>
+        </div>
+        <div class="login-vline hidden-xs hidden-sm"></div>
+        <div class="col-md-4 col-md-pull-3 col-sm-12 login-wrap">
+            <h1 class="h4 text-muted login-title">注册新账号</h1>
+            <form action="/api/user/phone/register" method="POST" role="form" class="mt30">
+                <div class="form-group">
+                    <label for="name" class="control-label">名字</label>
+                    <input type="text" class="form-control" name="name" required placeholder="真实姓名或常用昵称">
+                </div>
+
+
+                <div class="form-group js-register-switch-box">
+                    <div class="mb10">
+                        <label class="radio-inline">
+                            <input type="radio" name="register_type" value="phone" checked> 用手机号注册
+                        </label>
+                        <label class="radio-inline">
+                            <input type="radio" name="register_type" value="mail"> 用 Email 注册
+                        </label>
+                    </div>
+                    <div class="js-register-switch-content">
+                        <input type="phone" class="form-control mb15" name="phone" required placeholder="仅支持大陆手机号"
+                               autocomplete="off">
+                        <div class="captchaInput mb10">
+                            <label class="required control-label mt5">验证码</label>
+                            <input type="text" class="form-control" name="captch" placeholder="请输入下方的验证码后，再点击获取验证码">
+                            <div class="mt10 ">
+                                <a id="loginReloadCaptcha" href="javascript:void(0)">
+                                <img src="/user/captcha?w=240&h=50" class="captcha" width="240" height="50"/></a>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <input name="code" type="text" class="form-control js-user-login__phone-code-value" placeholder="短信验证码">
+                            <span class="input-group-btn">
+                                <button class="btn btn-default js-user-login__phone-vaild-btn" style="width:96px;" type="button">
+                                获取验证码</button>
+                            </span>
+                        </div>
+                        
+                    </div>
+                </div>
+
+
+                <div class="form-group">
+                    <label for="password" class="control-label">密码</label>
+                    <input type="password" class="form-control" name="password" required placeholder="不少于 6 位">
+                </div>
+                <div class="form-group" style="display:none;">
+                    <label class="required control-label">验证码</label>
+                    <input type="text" class="form-control" id="captcha" name="captcha" placeholder="请输入下方的验证码">
+                    <div class="mt10"><a id="loginReloadCaptcha" href="javascript:void(0)"><img
+                                    src="/user/captcha?w=240&h=50" class="captcha" width="240" height="50"/></a>
+                    </div>
+                </div>
+                <div class="form-group clearfix">
+                    <div class="checkbox pull-left">
+                        同意并接受<a href="/tos" target="_blank">《服务条款》</a>
+                    </div>
+                    <button type="submit" class="btn btn-primary pl20 pr20 pull-right"
+                            onclick='ga("send", "event", "email register button", "clicked", "login modal");'>注册
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="text-center text-muted mt30">
+    </div>
+</script>
+<script id="bindPhoneModal" type="text/template">
+    <div class="bg-white bindphone-model">
+        <div class="alert alert-warning" role="alert">
+            为了保证账号安全，请先绑定手机
+        </div>
+        <div>
+            <form class="form-horizontal form__bindphone-apply" style="background-color:#fff;padding:0;">
+                <div class="form-group ">
+                    <label for="phoneNumber" class="col-sm-3 control-label required" >手机号码</label>
+                    <div class="col-sm-6">
+                        <input type="text" class="form-control bindphone--phone" id="phoneNumber" name="phone" placeholder="仅只支持大陆手机号">
+                    </div>
+                    <div class="col-sm-3"></div>
+                </div>
+                <div class="form-group">
+                    <label for="authCode" class="col-sm-3 control-label required">验证码</label>
+                    <div class="col-sm-6">
+                        <div class="input-group">
+                            <input type="text" class="form-control bindphone--code" name="code" placeholder="短信验证码">
+                            <span class="input-group-btn">
+                                <button class="btn btn-default user-bind__phone-vaild-btn" type="button">获取验证码</button>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-sm-3"></div>
+                </div>
+            </form>
+        </div>
+
+    </div>
+</script>
+
+
+
+<script>
+    (function (w) {
+        w.SF = {
+            staticUrl: "https://static.segmentfault.com/v-59f19486"
+        };
+        w.SF.token = (function () {
+    var _h9Rc = //'c'
+'ff'+//'z'
+'0f8'+//'97c'
+'4f3'+//'yU'
+'d91'+//'C'
+'97'+'4c'//'mI'
++//'oyi'
+'b'+'05'//'8lM'
++'2'//'zPL'
++''///*'O3z'*/'O3z'
++//'u4'
+'c'+//'0'
+'40'+'b'//'8R'
++//'NUa'
+'39'+'46d'//'CtS'
++'53c'//'W'
++//'D'
+'a', _kWCnD = [];
+
+    for (var i = 0; i < _kWCnD.length; i ++) {
+        _h9Rc = _h9Rc.substring(0, _kWCnD[i][0]) + _h9Rc.substring(_kWCnD[i][1]);
+    }
+
+    return _h9Rc;
+})();;
+    })(window);
+
+                var lock = {
+        type: "",
+        text: '',
+        table: {"ban_post":[1,"\u4f60\u5df2\u7ecf\u88ab\u7981\u8a00, \u65e0\u6cd5\u8fdb\u884c\u6b64\u64cd\u4f5c, \u5982\u6709\u7591\u4e49\u8bf7\u63d0\u4ea4\u7533\u8bc9, \u6216\u8005\u53d1\u90ae\u4ef6\u5230pr@segmentfault.com"]}
+    };
+</script>
+
+     <script crossorigin="" src="./走进docker(04)：什么是容器的runtime_ - 个人文章 - SegmentFault_files/assets.js.下载"></script>
+         
+    <script crossorigin="" src="./走进docker(04)：什么是容器的runtime_ - 个人文章 - SegmentFault_files/post.min.js.下载"></script>
+    
+
+<script>
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-918487-8']);
+    _gaq.push(['_trackPageview']);
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+                    (i[r].q = i[r].q || []).push(arguments)
+                }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+                m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+
+                
+        
+
+            
+
+    ga('create', 'UA-918487-8', 'auto', {
+        'userID'
+    : 0,
+        'createdTime'
+    : 0,
+        'now'
+    : 1509011802,
+        'allowLinker'
+    : true });
+    ga('require', 'linker');
+    ga('linker:autoLink', ['docs.segmentfault.com'] );
+    ga('set', 'dimension1', 'guest');
+    ga('send', 'pageview');
+
+</script>
+
+<script>
+    var _hmt = _hmt || [];
+    (function () {
+        var hm = document.createElement("script");
+        hm.src = "//hm.baidu.com/hm.js?e23800c454aa573c0ccb16b52665ac26";
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(hm, s);
+    })();
+</script>
+
+
+        <script type="text/javascript" src="./走进docker(04)：什么是容器的runtime_ - 个人文章 - SegmentFault_files/k.js.下载"></script>
+            <ins id="ac_js86_mm_124884735_33830642_120592878" style="display: none;"></ins><script>
+                    ac_keywords_targeting = "docker";
+                _acM({
+            aid: "mm_124884735_33830642_120592878",
+            format: 1,
+            mode: 1,
+            gid: 1,
+            destid: "mm_124884735_33830642_120592878",
+            sendkeywords: 1,
+            serverbaseurl: "afpeng.alimama.com/"
+        });
+        </script><script></script><script type="text/javascript" src="./走进docker(04)：什么是容器的runtime_ - 个人文章 - SegmentFault_files/ex" id="ac_js86_$5902203973"></script>
+            <ins id="ac_js86_mm_124884735_33830642_121788665" style="display: none;"></ins><script>
+                _acM({
+            aid: "mm_124884735_33830642_121788665",
+            format: 1,
+            mode: 1,
+            gid: 1,
+            destid: "mm_124884735_33830642_121788665",
+            sendkeywords: 0,
+            serverbaseurl: "afpeng.alimama.com/"
+        });
+        </script><script type="text/javascript" src="./走进docker(04)：什么是容器的runtime_ - 个人文章 - SegmentFault_files/ex(1)" id="ac_js86_$4616349104"></script>
+     
+
+        <script type="text/javascript" src="./走进docker(04)：什么是容器的runtime_ - 个人文章 - SegmentFault_files/k.js.下载"></script>
+            <ins id="ac_js86_mm_124884735_33830642_143436142" style="display: none;"></ins><script>
+                _acM({
+            aid: "mm_124884735_33830642_143436142",
+            format: 1,
+            mode: 1,
+            gid: 1,
+            destid: "mm_124884735_33830642_143436142",
+            sendkeywords: 0,
+            serverbaseurl: "afpeng.alimama.com/"
+        });
+        </script><script></script><script type="text/javascript" src="./走进docker(04)：什么是容器的runtime_ - 个人文章 - SegmentFault_files/ex(2)" id="ac_js86_$6652480929"></script>
+     
+
+
+
+</div><div id="noteWidget" class="noteWidget hidden hidden-xs">
+    <div class="noteWidget-header clearfix">
+        <h2 class="h4 pull-left">记笔记</h2>
+        <ul class="list-inline pull-right mb0">
+            <li id="noteWidgetMinimize"><span class="icon-minimize"></span></li><li id="noteWidgetZoom"><span class="icon-zoom"></span></li><li id="noteWidgetClose"><span class="icon-close"></span></li>
+        </ul>
+    </div>
+    <form method="POST" action="https://segmentfault.com/api/notes/add" role="form">
+        <div class="form-group">
+            <label for="title" class="sr-only">标题</label>
+            <input type="hidden" value="" id="draftId">
+            <input type="text" name="title" data-error="" autocomplete="off" class="form-control" placeholder="笔记描述" value="">
+        </div>
+        <div class="editor-config clearfix">
+            <select name="lang" class="form-control pull-left input-sm">
+                <optgroup label="文本语法">
+                    <option value="text" data-mode="text">纯文本</option>
+                    <option value="markdown" data-mode="markdown">Markdown</option>
+                    <option value="javascript" data-mode="javascript">Javascript</option>
+                    <option value="css" data-mode="css">CSS</option>
+                    <option value="html5" data-mode="htmlmixed">HTML</option>
+                    <option value="php" data-mode="php">PHP</option>
+                    <option value="python" data-mode="python">Python</option>
+                    <option value="ruby" data-mode="ruby">Ruby</option>
+                    <option value="go" data-mode="go">Go</option>
+                    <option value="c" data-mode="clike">C/C++</option>
+                    <option value="java" data-mode="java">Java</option>
+                    <option value="bash" data-mode="shell">Shell/Bash</option>
+                </optgroup>
+            </select>
+            <div class="pull-right hidden-xs">
+                <select name="indentWithTabs" class="form-control inline-block input-sm">
+                    <optgroup label="缩进模式">
+                        <option value="false">空格缩进</option>
+                        <option value="true">Tabs 缩进</option>
+                    </optgroup>
+                </select>
+                <select name="tabSize" class="form-control inline-block input-sm">
+                    <optgroup label="缩进大小">
+                        <option value="2">2</option>
+                        <option value="4" selected="">4</option>
+                    </optgroup>
+                </select>
+                <select name="lineWrap" class="form-control inline-block input-sm">
+                    <optgroup label="换行方式">
+                        <option value="true">自动换行</option>
+                        <option value="false">不换行</option>
+                    </optgroup>
+                </select>
+            </div>
+        </div>
+        <textarea id="codeMirror" class="form-control" style="display: none;"></textarea><div class="CodeMirror cm-s-default CodeMirror-wrap"><div style="overflow: hidden; position: relative; width: 3px; height: 0px;"><textarea autocorrect="off" autocapitalize="off" spellcheck="false" style="position: absolute; padding: 0px; width: 1000px; height: 1em; outline: none;" tabindex="0"></textarea></div><div class="CodeMirror-hscrollbar" style="left: 0px;"><div style="height: 100%; min-height: 1px;"></div></div><div class="CodeMirror-vscrollbar"><div style="min-width: 1px;"></div></div><div class="CodeMirror-scrollbar-filler"></div><div class="CodeMirror-gutter-filler"></div><div class="CodeMirror-scroll" tabindex="-1"><div class="CodeMirror-sizer" style="margin-left: 0px;"><div style="position: relative;"><div class="CodeMirror-lines"><div style="position: relative; outline: none;"><div class="CodeMirror-measure"><pre><span>xxxxxxxxxx</span></pre></div><div class="CodeMirror-measure"></div><div style="position: relative; z-index: 1;"></div><div class="CodeMirror-cursors"></div><div class="CodeMirror-code"></div></div></div></div></div><div style="position: absolute; height: 30px; width: 1px;"></div><div class="CodeMirror-gutters"><div class="CodeMirror-gutter CodeMirror-linenumbers" style="width: 1px;"></div></div></div></div>
+        <div class="mt20 clearfix">
+            <div class="pull-right">
+                <span class="text-muted hidden" id="editorStatus">已保存</span>
+                <a id="dropIt" href="javascript:void(0);" class="mr10 hidden">[舍弃]</a>
+                <button data-type="note" id="publishIt2" class="btn btn-default ml10" data-id="" data-do="add" data-url="" data-text="保存私密笔记" data-name="">保存私密笔记</button>
+                <button data-type="note" id="publishIt" class="btn btn-primary ml10" data-id="" data-do="add" data-url="" data-text="保存公开笔记" data-name="">保存公开笔记</button>
+                </div>
+            </div>
+        </form></div>
+    
+<div id="atwho-container"><div id="atwho-ground-6ac265c01509011806559"><div class="atwho-view" id="at-view-64"><ul class="atwho-view-ul"></ul></div></div></div><iframe id="p_analyse_iframe" src="./走进docker(04)：什么是容器的runtime_ - 个人文章 - SegmentFault_files/saved_resource(2).html" style="display: none;"></iframe></body></html>

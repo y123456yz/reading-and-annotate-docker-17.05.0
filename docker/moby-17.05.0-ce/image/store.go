@@ -66,9 +66,13 @@ type store struct { //初始化赋值见 NewImageStore   该结构类型源头�
 }
 
 // NewImageStore returns new store object for given layer store
+/*
+遍历/var/lib/docker/image/{driver}/imagedb/content/sha256文件夹中的hex目录,然后读取其中的文件内容，通过diff_ids计算出chainID,然后获取
+/var/lib/docker/image/devicemapper/layerdb/sha256/$chainID的 roLayer 信息，然后存入 store.images[]中
+*/
 // image/store.go  创建镜像仓库实例  LayerGetReleaser中的接口从实参 Daemon.layerStore 获得
 func NewImageStore(fs StoreBackend, ls LayerGetReleaser) (Store, error) { //NewDaemon 中调用
-	is := &store{
+	is := &store {
 		ls:        ls,
 		images:    make(map[ID]*imageMeta),
 		fs:        fs,  ///var/lib/docker/image/{driver}/imagedb

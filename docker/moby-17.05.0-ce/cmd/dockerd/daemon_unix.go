@@ -82,6 +82,10 @@ func (cli *DaemonCli) getPlatformRemoteOptions() []libcontainerd.RemoteOption {
 
 // getLibcontainerdRoot gets the root directory for libcontainerd/containerd to
 // store their state.
+/*
+只有当容器在运行的时候，目录/run/docker/libcontainerd/967438113fba0b7a3005bcb6efae6a77055d6be53945f30389888802ea8b0368才
+存在，容器停止执行后该目录会被删除掉，下一次启动的时候会再次被创建。  参考https://segmentfault.com/a/1190000010057763
+*/
 func (cli *DaemonCli) getLibcontainerdRoot() string {
 	return filepath.Join(cli.Config.ExecRoot, "libcontainerd")
 }

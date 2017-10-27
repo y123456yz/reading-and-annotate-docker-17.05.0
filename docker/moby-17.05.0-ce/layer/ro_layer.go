@@ -31,7 +31,7 @@ type roLayer struct { //对应/var/lib/docker/image/overlay/layerdb/sha256/目�
 /*  参考http://licyhust.com/%E5%AE%B9%E5%99%A8%E6%8A%80%E6%9C%AF/2016/09/27/docker-image-data-structure/
 diff-id：通过docker pull下载镜像时，镜像的json文件中每一个layer都有一个唯一的diff-id
 chain-id：chain-id是根据parent的chain-id和自身的diff-id生成的，假如没有parent，则chain-id等于diff-id，假如有parent，则chain-id等于sha256sum( “parent-chain-id diff-id”)
-cache-id：随机生成的64个16进制数。cache-id标识了这个layer的数据具体存放位置
+cache-id：随机生成的64个16进制数。cache-id标识了这个layer的数据具体存放位置  #cache-id是docker下载layer的时候在本地生成的一个随机uuid，指向真正存放layer文件的地方
 
 //只读层元数据的持久化位于 /var/lib/docker/image/devicemapper/layerdb/sha256/[chainID]/文件夹下
 // 可读写层(也叫容器层)存储在 /var/lib/docker/image/[graph_driver]/layerdb/mounts/[chain_id]/路径下
@@ -40,12 +40,63 @@ cache-id：随机生成的64个16进制数。cache-id标识了这个layer的数�
 diffID计算出来的，具体算法如下:
 1. 如果该镜像层是最底层(没有父镜像层)，该层的diffID便是chainID.
 2. 该镜像层的chainID计算公式为chainID(n)=SHA256(chain(n-1) diffID(n))
+
+镜像xxxx的属性信息存在下面这里：  参考https://segmentfault.com/a/1190000009730986
+/var/lib/docker/image/devicemapper/imagedb/content/sha256/xxxx
+chainID计算过程：假设某个镜像diff_ids如下  cat /var/lib/docker/image/devicemapper/imagedb/content/sha256/xxxx | jq .
+  ....
+  "rootfs": {
+    "type": "layers",
+    "diff_ids": [
+      "sha256:51a45fddc531d0138a18ad6f073310daab3a3fe4862997b51b6c8571f3776b62",  #1
+      "sha256:5792d8202a821076989a52ced68d1382fc0596f937e7808abbd5ffc1db93fffb",  #2
+      "sha256:b7bbef1946d74cdfd84b0db815b4fe9fc9405451190aa65b9eab6ae198c560b4",  #3
+    ]
+  }
+
+      镜像xxxx包含三层只读层，每层的diff_id如上。
+      docker计算chainid时，用到了所有祖先layer的信息，从而能保证根据chainid得到的rootfs是唯一的。比如我在debian和ubuntu的image基
+  础上都添加了一个同样的文件，那么commit之后新增加的这两个layer具有相同的内容，相同的diffid，但由于他们的父layer不一样，所以他们
+  的chainid会不一样，从而根据chainid能找到唯一的rootfs。
+      docker通过#1 #2 #3从仓库里面拉取各层内容的时候，存放在那呢？例如#1对应的只读层内容存到哪里？给每层计算一个chainid，然后在把该层
+  相关内容记录到/var/lib/docker/image/devicemapper/layerdb/sha256/$chainID目录下的相关文件。
+      #1的chainID就是#1的sha256,因为他没有parent父层ID，它就是最底层。
+      root@fd-mesos-xxx.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ ls 51a45fddc531d0138a18ad6f073310daab3a3fe4862997b51b6c8571f3776b62/
+	cache-id  diff  size  tar-split.json.gz   //注意没有parent文件
+      root@fd-mesos-xxx.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$cat 51a45fddc531d0138a18ad6f073310daab3a3fe4862997b51b6c8571f3776b62/diff
+	sha256:51a45fddc531d0138a18ad6f073310daab3a3fe4862997b51b6c8571f3776b62 //diff和diff_ids第一层一样
+
+
+      #2的chainID计算方法：(父层的chainID(第一层chainID)和第二层的diff_id计算sha256sum的结果)
+      root@fd-mesos-xxx.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ echo -n "sha256:51a45fddc531d0138a18ad6f073310daab3a3fe4862997b51b6c8571f3776b62 sha256:5792d8202a821076989a52ced68d1382fc0596f937e7808abbd5ffc1db93fffb" | sha256sum
+      e299130128d155d60bac3991100c2cda6a35c5ad0b542a5ffab2679654dfd445  -
+      root@fd-mesos-master04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ cat e299130128d155d60bac3991100c2cda6a35c5ad0b542a5ffab2679654dfd445/diff
+      sha256:5792d8202a821076989a52ced68d1382fc0596f937e7808abbd5ffc1db93fffb  //diff内容就和diff_ids第二层一样
+      root@fd-mesos-master04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$
+      root@fd-mesos-master04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ cat e299130128d155d60bac3991100c2cda6a35c5ad0b542a5ffab2679654dfd445/parent
+      sha256:51a45fddc531d0138a18ad6f073310daab3a3fe4862997b51b6c8571f3776b62  //parent内容就是第一层chainID
+      root@fd-mesos-master04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$
+      root@fd-mesos-master04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$
+
+      #3的chainID计算方法：(父层的chainID(第二层chainID)和第三层的diff_id计算sha256sum的结果)
+        root@fd-mesos-xxx.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ echo -n "sha256:e299130128d155d60bac3991100c2cda6a35c5ad0b542a5ffab2679654dfd445 sha256:b7bbef1946d74cdfd84b0db815b4fe9fc9405451190aa65b9eab6ae198c560b4" | sha256sum
+	c6c38436b063046117fb9b4210a54c0d29aa8b5f350964d1723468e6a324e1a8  -
+	root@fd-mesos-master04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ ls c6c38436b063046117fb9b4210a54c0d29aa8b5f350964d1723468e6a324e1a8/
+	cache-id  diff  parent  size  tar-split.json.gz
+	root@fd-mesos-master04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ cat c6c38436b063046117fb9b4210a54c0d29aa8b5f350964d1723468e6a324e1a8/parent
+	sha256:e299130128d155d60bac3991100c2cda6a35c5ad0b542a5ffab2679654dfd445  //parent内容就是第二层chainID
+	root@fd-mesos-master04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$
+	root@fd-mesos-master04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ cat c6c38436b063046117fb9b4210a54c0d29aa8b5f350964d1723468e6a324e1a8/diff
+	sha256:b7bbef1946d74cdfd84b0db815b4fe9fc9405451190aa65b9eab6ae198c560b4 //diff内容就和diff_ids第二层一样
+	root@fd-mesos-master04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$
 */
 	chainID    ChainID //chainID和parent可以从所属image元数据计算出来
+	// /var/lib/docker/image/devicemapper/layerdb/sha256/$chainID/diff内容也就是/var/lib/docker/image/devicemapper/imagedb/content/sha256/$image中的diff_ids对应的层
 	diffID     DiffID  //diffID和size可以通过一个该镜像层包计算出来
-	//赋值见loadLayer
+	//赋值见loadLayer 也就是/var/lib/docker/image/devicemapper/imagedb/content/sha256/$image中的diff_ids本层的上一层diffID
 	parent     *roLayer  //每一层都包括指向父层的指针。如果没有这个指针，说明处于最底层。
 	//在docker宿主机上随机生成的uuid,在当前宿主机上与该镜像层一一对应，用于标识和索引graphdriver中的镜像层文件
+	//cache-id是docker下载layer的时候在本地生成的一个随机uuid，指向真正存放layer文件的地方
 	cacheID    string //知名layer数据存放位置，/var/lib/docker/devicemapper/metadata/cache-id
 
 	size       int64 //diffID和size可以通过一个该镜像层包计算出来

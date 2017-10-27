@@ -80,7 +80,7 @@ type StoreOptions struct { //初始化赋值见 NewDaemon
 // NewStoreFromOptions creates a new Store instance
 /*
 
-*/ //NewDaemon 中执行
+*/ //NewDaemon 中执行   初始化/var/lib/docker/image/devicemapper/layerdb/相关操作的接口并初始化存储驱动devicemapper等
 func NewStoreFromOptions(options StoreOptions) (Store, error) { //返回 layerStore 类型
 	//NewDaemon->NewStoreFromOptions->graphdriver.New   //存储驱动的初始化
 	//这里的driver也就是 driver.go中的 drivers map[string]InitFunc 获取到的，见GetDriver
@@ -506,12 +506,12 @@ func (ls *layerStore) Release(l Layer) ([]Metadata, error) {
 	return ls.releaseLayer(layer)
 }
 
-//create.go中的setRWLayer函数调用
-//如果是最底层parent为""，如果不是底层，则parent指向父id
+//create.go中的setRWLayer函数调用  //setRWLayer->CreateRWLayer
+//如果是最底层parent为""，如果不是底层，则parent指向父id   name容器名   parent为镜像层ID   opts为创建容器时指定的部分参数
 func (ls *layerStore) CreateRWLayer(name string, parent ChainID, opts *CreateRWLayerOpts) (RWLayer, error) {
 	var (
 		storageOpt map[string]string
-		initFunc   MountInit
+		initFunc   MountInit   //daemon.getLayerInit(),
 		mountLabel string
 	)
 
@@ -537,7 +537,7 @@ func (ls *layerStore) CreateRWLayer(name string, parent ChainID, opts *CreateRWL
 	var pid string
 	var p *roLayer
 	if string(parent) != "" { //每一层都包括指向父层的指针。如果没有这个指针，说明处于最底层。
-		p = ls.get(parent)
+		p = ls.get(parent) //根据parent获取该parent对应的镜像层 roLayer 信息
 		if p == nil {
 			return nil, ErrLayerDoesNotExist
 		}
@@ -553,10 +553,10 @@ func (ls *layerStore) CreateRWLayer(name string, parent ChainID, opts *CreateRWL
 		}()
 	}
 
-	m = &mountedLayer{
-		name:       name,
+	m = &mountedLayer {
+		name:       name, //容器名
 		parent:     p,
-		mountID:    ls.mountID(name),
+		mountID:    ls.mountID(name),  //创建容器的时候根据容器名生成容器随机ID
 		layerStore: ls,
 		references: map[RWLayer]*referencedRWLayer{},
 	}
@@ -679,14 +679,15 @@ func (ls *layerStore) saveMount(mount *mountedLayer) error {
 	return nil
 }
 
+//graphID为容器层ID， parent为创建容器时候需要的镜像层ID目录中的cache-id中的内容(也就是roLayer.cacheID) initFunc为daemon.getLayerInit(),
 func (ls *layerStore) initMount(graphID, parent, mountLabel string, initFunc MountInit, storageOpt map[string]string) (string, error) {
 	// Use "<graph-id>-init" to maintain compatibility with graph drivers
 	// which are expecting this layer with this special name. If all
 	// graph drivers can be updated to not rely on knowing about this layer
 	// then the initID should be randomly generated.
-	initID := fmt.Sprintf("%s-init", graphID)
+	initID := fmt.Sprintf("%s-init", graphID) //容器ID+ "-init"
 
-	createOpts := &graphdriver.CreateOpts{
+	createOpts := &graphdriver.CreateOpts {
 		MountLabel: mountLabel,
 		StorageOpt: storageOpt,
 	}

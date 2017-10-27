@@ -86,7 +86,7 @@ type CommonTLSOptions struct {
 // common across platforms.
 // It includes json tags to deserialize configuration from a file
 // using the same names that the flags in the command line use.
-type CommonConfig struct { //包含在config\config_unix.go中的Config结构中
+type CommonConfig struct { //包含在config\config_unix.go中的 Config 结构中
 	AuthzMiddleware      *authorization.Middleware `json:"-"`
 	AuthorizationPlugins []string                  `json:"authorization-plugins,omitempty"` // AuthorizationPlugins holds list of authorization plugins
 	//是否一致支持创建容器的重启

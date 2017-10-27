@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+<!-- saved from url=(0043)https://segmentfault.com/a/1190000009730986 -->
+<html lang="zh-CN"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1"><meta name="renderer" content="webkit"><meta property="qc:admins" content="15317273575564615446375"><meta property="og:image" content="https://static.segmentfault.com/v-59f19486/global/img/touch-icon.png"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"><meta name="alexaVerifyID" content="LkzCRJ7rPEUwt6fVey2vhxiw1vQ"><meta name="apple-itunes-app" content="app-id=958101793, app-argument="><title>走进docker(05)：docker在本地如何管理image（镜像）? - 个人文章 - SegmentFault</title><meta name="description" content="docker里面可以通过docker pull、docker build、docker commit、docker load、docker import等方式得到一个image，得到image之后docker在本地是怎么存储的呢？本篇将以git pull为例，简述image的获取和存储方式。..."><meta name="keywords" content="docker"><link rel="search" type="application/opensearchdescription+xml" href="https://segmentfault.com/opensearch.xml" title="SegmentFault"><link rel="shortcut icon" href="https://static.segmentfault.com/v-59f19486/global/img/favicon.ico"><link rel="apple-touch-icon" href="https://static.segmentfault.com/v-59f19486/global/img/touch-icon.png"><meta name="msapplication-TileColor" content="#009a61"><meta name="msapplication-square150x150logo" content="https://static.segmentfault.com/v-59f19486/global/img/touch-icon.png"><link rel="alternate" type="application/atom+xml" title="SegmentFault 最新问题" href="https://segmentfault.com/feeds/questions"><link rel="alternate" type="application/atom+xml" title="SegmentFault 最新文章" href="https://segmentfault.com/feeds/blogs"><link rel="stylesheet" href="./走进docker(05)：docker在本地如何管理image（镜像）_ - 个人文章 - SegmentFault_files/global.css"><link rel="stylesheet" href="./走进docker(05)：docker在本地如何管理image（镜像）_ - 个人文章 - SegmentFault_files/blog.css"><link rel="stylesheet" href="./走进docker(05)：docker在本地如何管理image（镜像）_ - 个人文章 - SegmentFault_files/responsive.css"><link rel="preload" href="./走进docker(05)：docker在本地如何管理image（镜像）_ - 个人文章 - SegmentFault_files/integrator.js.下载" as="script"><script src="./走进docker(05)：docker在本地如何管理image（镜像）_ - 个人文章 - SegmentFault_files/ca-pub-6330872677300335.js.下载"></script><script type="text/javascript" src="./走进docker(05)：docker在本地如何管理image（镜像）_ - 个人文章 - SegmentFault_files/integrator.js.下载"></script><link rel="prefetch" href="https://securepubads.g.doubleclick.net/static/3p_cookie.html"></head><body data-mod="blog" class="blog-post "><!--[if lt IE 9]><div class="alert alert-danger topframe" role="alert">你的浏览器实在<strong>太太太太太太旧了</strong>，放学别走，升级完浏览器再说 <a target="_blank" class="alert-link" href="http://browsehappy.com">立即升级</a></div><![endif]--><img id="icon4weChat" style="height: 0;width: 0;" data-src="https://static.segmentfault.com/v-59f19486/global/img/touch-icon-512.png"><div class="global-nav sf-header sf-header--index"><nav class="container nav"><div class="visible-xs header-response"><a href="https://segmentfault.com/search" style="display:block"><i class="fa fa-search" aria-hidden="true"></i></a><div class="sf-header__logo sf-header__logo--response"><h1><a href="https://segmentfault.com/" style="height:24px; background-size: auto 24px;"></a></h1></div><a href="https://segmentfault.com/user/login" class="pull-right login-btn"><i class="fa fa-user" aria-hidden="true"></i></a><div class="bottom-nav"><div class="opts"><a class="opts-group " href="https://segmentfault.com/questions"><i class="fa fa-comments" aria-hidden="true"></i><span>问答</span></a><a class="opts-group " href="https://segmentfault.com/news"><i class="fa fa-newspaper-o" aria-hidden="true"></i><span>头条</span></a><a class="opts-group active" href="https://segmentfault.com/blogs"><i class="fa fa-pencil-square" aria-hidden="true"></i><span>专栏</span></a><a class="opts-group " href="https://segmentfault.com/lives"><i class="fa fa-play-circle" aria-hidden="true"></i><span>讲堂</span></a><div class="opts-group"><div class="btn-group dropup"><i class="fa fa-bars dropdown hoverDropdown" data-toggle="dropdown" aria-hidden="true"><span>更多</span></i><ul class="dropdown-menu"><li><a href="https://segmentfault.com/jobs">职位</a></li><li><a href="https://segmentfault.com/events">活动</a></li><li><a href="https://segmentfault.com/tags">标签</a></li><li><a href="https://segmentfault.com/badges">徽章</a></li></ul></div></div></div></div></div><div class="row hidden-xs"><div class="col-sm-8 col-md-9 col-lg-9"><div class="sf-header__logo"><h1><a href="https://segmentfault.com/">SegmentFault</a></h1></div><div><ul class="menu list-inline pull-left hidden-xs"><li class="menu__item"><a href="https://segmentfault.com/questions" class="">问答</a></li><li class="menu__item"><a href="https://segmentfault.com/news" class="">头条</a></li><li class="menu__item"><a href="https://segmentfault.com/blogs" class="active-nav">专栏</a></li><li class="menu__item"><a href="https://segmentfault.com/lives" class="">讲堂</a></li><li class="menu__item menu__item--more dropdown"><a href="https://segmentfault.com/a/1190000009730986##" class="dropdown-toggle dropdownBtn" data-toggle="dropdown">
+                                        发现<i class="fa fa-caret-down" style="font-size: 14px;margin-left: 5px;" aria-hidden="true"></i></a><div class="dropdown-block hidden"><ul class="dropdown-content-menu"><li><a href="https://segmentfault.com/events">活动</a></li><li><a href="https://segmentfault.com/groups">技术圈<span class="notice notice-menu">hi</span></a></li><li><a href="https://segmentfault.com/jobs">找工作</a></li><li><a href="https://segmentfault.com/users">排行榜</a></li><li><a href="https://segmentfault.com/badges">徽章</a></li><li><a href="https://docs.segmentfault.com/" target="_blank">开发手册<i style="line-height: 20px;font-size: 12px;color: #F5A623;" class="ml10 fa fa-external-link-square"></i></a></li></ul></div></li><li class="menu__item visible-sm-inline-block"><a href="https://segmentfault.com/search"><span class="glyphicon glyphicon-search" style="vertical-align: middle;"></span></a></li></ul><form action="https://segmentfault.com/search" class="header-search  hidden-sm hidden-xs pull-right"><button class="btn btn-link"><span class="sr-only">搜索</span><span class="glyphicon glyphicon-search"></span></button><input id="searchBox" name="q" type="text" placeholder="搜索问题或关键字" class="form-control" value=""></form></div></div><div class="col-sm-4 col-md-3 col-lg-3 text-right"><ul class="opts list-inline hidden-xs"><li class="opts__item"><a href="https://segmentfault.com/user/login" class="SFLogin btn-signin" style="margin-bottom:2px;">立即登录</a><a href="https://segmentfault.com/user/login" class="SFLogin ml10 btn-signup" onclick="_gaq.push([&#39;_trackEvent&#39;, &#39;Button&#39;, &#39;Click&#39;, &#39;Login&#39;]);">免费注册</a></li></ul></div></div></nav></div>
+    
+<input id="articleId" value="1190000009730986" class="hidden">
+<div class="wrap" data-blogid="">
+            <div id="loginBanner" class="hidden-sm hidden-xs">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6">
+                <h1 class="title">在 SegmentFault，解决技术问题</h1>
+                <p class="desc">每个月，我们帮助 1000 万的开发者解决各种各样的技术问题。并助力他们在技术能力、职业生涯、影响力上获得提升。</p>
+                <p class="img-desc">一线的工程师、著名开源项目的作者们，都在这里：</p>
+                <img src="./走进docker(05)：docker在本地如何管理image（镜像）_ - 个人文章 - SegmentFault_files/logos@2x.png">
+            </div>
+            <div class="col-md-4 col-md-offset-2">
+                <form class="text-center register-form clearfix" action="https://segmentfault.com/api/user/phone/register">
+
+                    <div class="form-group form-name"> <!-- 用户名 -->
+                        <input type="text" class="form-control " name="name" placeholder="真实姓名或常用昵称">
+                    </div>
+
+                    <div class="form-group form-getCode"> <!-- 手机号及验证码 -->
+                        <input type="text" class="form-control" name="phone" placeholder="手机号（仅支持大陆手机号）">
+                        <div class="captchaInput mt10 mb10">
+                            <input type="text" class="form-control" name="captch" placeholder="请输入下方的验证码后，再点击获取验证码">
+                            <div class="mt10">
+                                <img src="./走进docker(05)：docker在本地如何管理image（镜像）_ - 个人文章 - SegmentFault_files/captcha" class="captcha" width="240" height="50">
+                            </div>
+                        </div>
+                        <div class="input-group mt15">
+                            <input type="tel" class="form-control" name="code" placeholder="短信验证码" autocomplete="off">
+                            <span class="input-group-btn">
+                                <button class="btn btn-default getCode mt0" style="width:96px;" type="button">获取验证码</button>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="form-group form-password"> <!-- 密码 -->
+                        <input type="password" class="form-control " name="password" placeholder="密码（不少于 6 位）" autocomplete="off">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary register-button pull-right" onclick="ga(&quot;send&quot;, &quot;event&quot;, &quot;join button&quot;, &quot;clicked&quot;, &quot;welcome board&quot;);">注册</button>
+
+                    <div class="hasid">
+                        已有账号？<a href="https://segmentfault.com/user/login" class="login_now" onclick="_gaq.push([&#39;_trackEvent&#39;, &#39;Button&#39;, &#39;Click&#39;, &#39;Login&#39;]);">立即登录</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <i class="fa fa-times-circle" aria-hidden="true"></i>
+</div>        <div class="post-topheader custom-">
+        <div class="container">
+            <div class="block-for-right-border">
+                <div class="row">
+                    <div class="col-md-9 col-sm-8 col-xs-12">
+                        <div class="post-topheader__info" data-username="wuyangchun" data-userslug="wuyangchun" data-useravatar="https://static.segmentfault.com/v-59f19486/global/img/user-64.png">
+
+                            <h1 class="h3 post-topheader__info--title" id="articleTitle" data-id="1190000009730986">
+                                <a href="https://segmentfault.com/a/1190000009730986"> 走进docker(05)：docker在本地如何管理image（镜像）?</a>
+                            </h1>
+
+                            <div class="content__tech blog-type-common blog-type-0-before">
+                                <ul class="taglist--inline inline-block article__title--tag mr10">
+                                                                            <li class="tagPopup mb5"><a class="tag" href="https://segmentfault.com/t/docker/blogs" data-toggle="popover" data-img="https://sfault-avatar.b0.upaiyun.com/269/397/2693973775-1040000000366352_huge256" data-placement="top" data-original-title="docker" data-id="1040000000366352">docker</a></li>
+                                                                    </ul>
+                                                                                                <div class="article__author">
+                                    <a href="https://segmentfault.com/u/wuyangchun" class="mr5 "><strong>wuyangchun</strong></a>
+                                    6月10日发布
+                                                                                                        </div>
+                            </div>
+
+                                                        <form class="form form__tech hidden" data-action="#">
+                                <span class="pull-right">
+                                    <button class="btn btn-default save-tags-btn" type="button">保存</button>
+                                </span>
+                                <div class="form-group" style="margin-right: 65px">
+                                    <label for="tags" class="sr-only">标签：至少1个，最多5个</label>
+                                    <input class="tagsInput form-control hidden" data-init="[{&quot;name&quot;:&quot;docker&quot;,&quot;url&quot;:&quot;\/t\/docker&quot;,&quot;id&quot;:&quot;1040000000366352&quot;,&quot;thumbnailUrl&quot;:&quot;https:\/\/sfault-avatar.b0.upaiyun.com\/269\/397\/2693973775-1040000000366352_huge256&quot;}]" name="tags" type="text" placeholder="标签，如：php 可使用逗号,分号;分隔" data-role="tagsinput"><div class="sf-typeHelper"><span class="sf-typeHelper-item  ">docker<span data-role="remove">×</span></span><input type="text" data-role="sf_typeHelper-input" class="sf-typeHelper-input" placeholder="标签，如：php 可使用逗号,分号;分隔" style="width: 20em;"><ul class="sf-typeHelper-list dropdown-menu" style="display: none;"></ul></div>
+                                    <div role="tabpanel" class="techTags panel panel-default techTags-panel" data-tech="{&quot;\u5f00\u53d1\u8bed\u8a00&quot;:[{&quot;id&quot;:&quot;1040000000089436&quot;,&quot;name&quot;:&quot;javascript&quot;},{&quot;id&quot;:&quot;1040000000089387&quot;,&quot;name&quot;:&quot;php&quot;},{&quot;id&quot;:&quot;1040000000089434&quot;,&quot;name&quot;:&quot;css&quot;},{&quot;id&quot;:&quot;1040000000089571&quot;,&quot;name&quot;:&quot;html&quot;},{&quot;id&quot;:&quot;1040000000089449&quot;,&quot;name&quot;:&quot;java&quot;},{&quot;id&quot;:&quot;1040000000089534&quot;,&quot;name&quot;:&quot;python&quot;},{&quot;id&quot;:&quot;1040000000089409&quot;,&quot;name&quot;:&quot;html5&quot;},{&quot;id&quot;:&quot;1040000000089918&quot;,&quot;name&quot;:&quot;node.js&quot;},{&quot;id&quot;:&quot;1040000000089741&quot;,&quot;name&quot;:&quot;c++&quot;},{&quot;id&quot;:&quot;1040000000089457&quot;,&quot;name&quot;:&quot;c&quot;},{&quot;id&quot;:&quot;1040000000090209&quot;,&quot;name&quot;:&quot;objective-c&quot;},{&quot;id&quot;:&quot;1040000000090203&quot;,&quot;name&quot;:&quot;golang&quot;},{&quot;id&quot;:&quot;1040000000089669&quot;,&quot;name&quot;:&quot;shell&quot;},{&quot;id&quot;:&quot;1040000000531223&quot;,&quot;name&quot;:&quot;swift&quot;},{&quot;id&quot;:&quot;1040000000089581&quot;,&quot;name&quot;:&quot;c#&quot;},{&quot;id&quot;:&quot;1040000000089699&quot;,&quot;name&quot;:&quot;ruby&quot;},{&quot;id&quot;:&quot;1040000000089686&quot;,&quot;name&quot;:&quot;bash&quot;},{&quot;id&quot;:&quot;1040000000091262&quot;,&quot;name&quot;:&quot;sass&quot;},{&quot;id&quot;:&quot;1040000000365394&quot;,&quot;name&quot;:&quot;typescript&quot;},{&quot;id&quot;:&quot;1040000000090433&quot;,&quot;name&quot;:&quot;asp.net&quot;},{&quot;id&quot;:&quot;1040000000090600&quot;,&quot;name&quot;:&quot;less&quot;},{&quot;id&quot;:&quot;1040000000090208&quot;,&quot;name&quot;:&quot;lua&quot;},{&quot;id&quot;:&quot;1040000000090228&quot;,&quot;name&quot;:&quot;scala&quot;},{&quot;id&quot;:&quot;1040000000161068&quot;,&quot;name&quot;:&quot;coffeescript&quot;},{&quot;id&quot;:&quot;1040000000090194&quot;,&quot;name&quot;:&quot;actionscript&quot;},{&quot;id&quot;:&quot;1040000000090201&quot;,&quot;name&quot;:&quot;erlang&quot;},{&quot;id&quot;:&quot;1040000000089698&quot;,&quot;name&quot;:&quot;perl&quot;},{&quot;id&quot;:&quot;1040000000311191&quot;,&quot;name&quot;:&quot;rust&quot;}],&quot;\u5e73\u53f0\u6846\u67b6&quot;:[{&quot;id&quot;:&quot;1040000000196640&quot;,&quot;name&quot;:&quot;laravel&quot;},{&quot;id&quot;:&quot;1040000000125263&quot;,&quot;name&quot;:&quot;flask&quot;},{&quot;id&quot;:&quot;1040000000090103&quot;,&quot;name&quot;:&quot;spring&quot;},{&quot;id&quot;:&quot;1040000000089564&quot;,&quot;name&quot;:&quot;django&quot;},{&quot;id&quot;:&quot;1040000000166256&quot;,&quot;name&quot;:&quot;express&quot;},{&quot;id&quot;:&quot;1040000000089646&quot;,&quot;name&quot;:&quot;ruby-on-rails&quot;},{&quot;id&quot;:&quot;1040000000090398&quot;,&quot;name&quot;:&quot;yii&quot;},{&quot;id&quot;:&quot;1040000000116331&quot;,&quot;name&quot;:&quot;tornado&quot;},{&quot;id&quot;:&quot;1040000000622042&quot;,&quot;name&quot;:&quot;koa&quot;},{&quot;id&quot;:&quot;1040000000089638&quot;,&quot;name&quot;:&quot;struts&quot;}],&quot;\u670d\u52a1\u5668&quot;:[{&quot;id&quot;:&quot;1040000000089392&quot;,&quot;name&quot;:&quot;linux&quot;},{&quot;id&quot;:&quot;1040000000090145&quot;,&quot;name&quot;:&quot;nginx&quot;},{&quot;id&quot;:&quot;1040000000089761&quot;,&quot;name&quot;:&quot;apache&quot;},{&quot;id&quot;:&quot;1040000000366352&quot;,&quot;name&quot;:&quot;docker&quot;},{&quot;id&quot;:&quot;1040000000090245&quot;,&quot;name&quot;:&quot;ubuntu&quot;},{&quot;id&quot;:&quot;1040000000090249&quot;,&quot;name&quot;:&quot;centos&quot;},{&quot;id&quot;:&quot;1040000000090401&quot;,&quot;name&quot;:&quot;\u7f13\u5b58&quot;},{&quot;id&quot;:&quot;1040000000090117&quot;,&quot;name&quot;:&quot;tomcat&quot;},{&quot;id&quot;:&quot;1040000000090107&quot;,&quot;name&quot;:&quot;\u8d1f\u8f7d\u5747\u8861&quot;},{&quot;id&quot;:&quot;1040000000090646&quot;,&quot;name&quot;:&quot;unix&quot;},{&quot;id&quot;:&quot;1040000000089648&quot;,&quot;name&quot;:&quot;hadoop&quot;},{&quot;id&quot;:&quot;1040000000090609&quot;,&quot;name&quot;:&quot;windows-server&quot;}],&quot;\u6570\u636e\u5e93\u548c\u7f13\u5b58&quot;:[{&quot;id&quot;:&quot;1040000000089439&quot;,&quot;name&quot;:&quot;mysql&quot;},{&quot;id&quot;:&quot;1040000000090049&quot;,&quot;name&quot;:&quot;sql&quot;},{&quot;id&quot;:&quot;1040000000089431&quot;,&quot;name&quot;:&quot;redis&quot;},{&quot;id&quot;:&quot;1040000000089488&quot;,&quot;name&quot;:&quot;mongodb&quot;},{&quot;id&quot;:&quot;1040000000090701&quot;,&quot;name&quot;:&quot;oracle&quot;},{&quot;id&quot;:&quot;1040000000089432&quot;,&quot;name&quot;:&quot;nosql&quot;},{&quot;id&quot;:&quot;1040000000089873&quot;,&quot;name&quot;:&quot;memcached&quot;},{&quot;id&quot;:&quot;1040000000090424&quot;,&quot;name&quot;:&quot;sqlserver&quot;},{&quot;id&quot;:&quot;1040000000090354&quot;,&quot;name&quot;:&quot;sqlite&quot;},{&quot;id&quot;:&quot;1040000000090861&quot;,&quot;name&quot;:&quot;postgresql&quot;}],&quot;\u5f00\u53d1\u5de5\u5177&quot;:[{&quot;id&quot;:&quot;1040000000089459&quot;,&quot;name&quot;:&quot;git&quot;},{&quot;id&quot;:&quot;1040000000091226&quot;,&quot;name&quot;:&quot;github&quot;},{&quot;id&quot;:&quot;1040000000089467&quot;,&quot;name&quot;:&quot;vim&quot;},{&quot;id&quot;:&quot;1040000000089579&quot;,&quot;name&quot;:&quot;xcode&quot;},{&quot;id&quot;:&quot;1040000000126097&quot;,&quot;name&quot;:&quot;sublime-text&quot;},{&quot;id&quot;:&quot;1040000000089509&quot;,&quot;name&quot;:&quot;eclipse&quot;},{&quot;id&quot;:&quot;1040000002720957&quot;,&quot;name&quot;:&quot;visual-studio-code&quot;},{&quot;id&quot;:&quot;1040000000090560&quot;,&quot;name&quot;:&quot;intellij-idea&quot;},{&quot;id&quot;:&quot;1040000000090186&quot;,&quot;name&quot;:&quot;maven&quot;},{&quot;id&quot;:&quot;1040000000089447&quot;,&quot;name&quot;:&quot;svn&quot;},{&quot;id&quot;:&quot;1040000000090473&quot;,&quot;name&quot;:&quot;ide&quot;},{&quot;id&quot;:&quot;1040000000090524&quot;,&quot;name&quot;:&quot;atom&quot;},{&quot;id&quot;:&quot;1040000000090231&quot;,&quot;name&quot;:&quot;visual-studio&quot;},{&quot;id&quot;:&quot;1040000000090216&quot;,&quot;name&quot;:&quot;emacs&quot;},{&quot;id&quot;:&quot;1040000000183694&quot;,&quot;name&quot;:&quot;hg&quot;},{&quot;id&quot;:&quot;1040000000089663&quot;,&quot;name&quot;:&quot;textmate&quot;}],&quot;\u7cfb\u7edf\u8bbe\u5907&quot;:[{&quot;id&quot;:&quot;1040000000089658&quot;,&quot;name&quot;:&quot;android&quot;},{&quot;id&quot;:&quot;1040000000089442&quot;,&quot;name&quot;:&quot;ios&quot;},{&quot;id&quot;:&quot;1040000000089407&quot;,&quot;name&quot;:&quot;chrome&quot;},{&quot;id&quot;:&quot;1040000000089709&quot;,&quot;name&quot;:&quot;windows&quot;},{&quot;id&quot;:&quot;1040000000089498&quot;,&quot;name&quot;:&quot;iphone&quot;},{&quot;id&quot;:&quot;1040000000090217&quot;,&quot;name&quot;:&quot;firefox&quot;},{&quot;id&quot;:&quot;1040000000125504&quot;,&quot;name&quot;:&quot;internet-explorer&quot;},{&quot;id&quot;:&quot;1040000000089499&quot;,&quot;name&quot;:&quot;safari&quot;},{&quot;id&quot;:&quot;1040000000090638&quot;,&quot;name&quot;:&quot;ipad&quot;},{&quot;id&quot;:&quot;1040000000090218&quot;,&quot;name&quot;:&quot;opera&quot;},{&quot;id&quot;:&quot;1040000002871462&quot;,&quot;name&quot;:&quot;apple-watch&quot;}],&quot;\u5176\u5b83&quot;:[{&quot;id&quot;:&quot;1040000000089409&quot;,&quot;name&quot;:&quot;html5&quot;},{&quot;id&quot;:&quot;1040000002893277&quot;,&quot;name&quot;:&quot;react.js&quot;},{&quot;id&quot;:&quot;1040000000090137&quot;,&quot;name&quot;:&quot;\u641c\u7d22\u5f15\u64ce&quot;},{&quot;id&quot;:&quot;1040000000123810&quot;,&quot;name&quot;:&quot;virtualenv&quot;},{&quot;id&quot;:&quot;1040000000090316&quot;,&quot;name&quot;:&quot;lucene&quot;}]}" style="display: none;">
+    <ul class="nav nav-tabs" role="tablist">
+                    <li role="presentation" class="active"><a href="https://segmentfault.com/a/1190000009730986#开发语言" aria-controls="type" role="tab" data-toggle="tab">开发语言</a>
+            </li>
+                    <li role="presentation" class=""><a href="https://segmentfault.com/a/1190000009730986#平台框架" aria-controls="type" role="tab" data-toggle="tab">平台框架</a>
+            </li>
+                    <li role="presentation" class=""><a href="https://segmentfault.com/a/1190000009730986#服务器" aria-controls="type" role="tab" data-toggle="tab">服务器</a>
+            </li>
+                    <li role="presentation" class=""><a href="https://segmentfault.com/a/1190000009730986#数据库和缓存" aria-controls="type" role="tab" data-toggle="tab">数据库和缓存</a>
+            </li>
+                    <li role="presentation" class=""><a href="https://segmentfault.com/a/1190000009730986#开发工具" aria-controls="type" role="tab" data-toggle="tab">开发工具</a>
+            </li>
+                    <li role="presentation" class=""><a href="https://segmentfault.com/a/1190000009730986#系统设备" aria-controls="type" role="tab" data-toggle="tab">系统设备</a>
+            </li>
+                    <li role="presentation" class=""><a href="https://segmentfault.com/a/1190000009730986#其它" aria-controls="type" role="tab" data-toggle="tab">其它</a>
+            </li>
+            </ul>
+    <div class="tab-content">
+                    <div role="tabpanel" class="tab-pane active" id="开发语言">
+                <ul class="taglist--inline">
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089436&quot;,&quot;name&quot;:&quot;javascript&quot;}" href="javascript: void(0);">javascript</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089387&quot;,&quot;name&quot;:&quot;php&quot;}" href="javascript: void(0);">php</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089434&quot;,&quot;name&quot;:&quot;css&quot;}" href="javascript: void(0);">css</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089571&quot;,&quot;name&quot;:&quot;html&quot;}" href="javascript: void(0);">html</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089449&quot;,&quot;name&quot;:&quot;java&quot;}" href="javascript: void(0);">java</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089534&quot;,&quot;name&quot;:&quot;python&quot;}" href="javascript: void(0);">python</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089409&quot;,&quot;name&quot;:&quot;html5&quot;}" href="javascript: void(0);">html5</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089918&quot;,&quot;name&quot;:&quot;node.js&quot;}" href="javascript: void(0);">node.js</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089741&quot;,&quot;name&quot;:&quot;c++&quot;}" href="javascript: void(0);">c++</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089457&quot;,&quot;name&quot;:&quot;c&quot;}" href="javascript: void(0);">c</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090209&quot;,&quot;name&quot;:&quot;objective-c&quot;}" href="javascript: void(0);">objective-c</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090203&quot;,&quot;name&quot;:&quot;golang&quot;}" href="javascript: void(0);">golang</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089669&quot;,&quot;name&quot;:&quot;shell&quot;}" href="javascript: void(0);">shell</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000531223&quot;,&quot;name&quot;:&quot;swift&quot;}" href="javascript: void(0);">swift</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089581&quot;,&quot;name&quot;:&quot;c#&quot;}" href="javascript: void(0);">c#</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089699&quot;,&quot;name&quot;:&quot;ruby&quot;}" href="javascript: void(0);">ruby</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089686&quot;,&quot;name&quot;:&quot;bash&quot;}" href="javascript: void(0);">bash</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000091262&quot;,&quot;name&quot;:&quot;sass&quot;}" href="javascript: void(0);">sass</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000365394&quot;,&quot;name&quot;:&quot;typescript&quot;}" href="javascript: void(0);">typescript</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090433&quot;,&quot;name&quot;:&quot;asp.net&quot;}" href="javascript: void(0);">asp.net</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090600&quot;,&quot;name&quot;:&quot;less&quot;}" href="javascript: void(0);">less</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090208&quot;,&quot;name&quot;:&quot;lua&quot;}" href="javascript: void(0);">lua</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090228&quot;,&quot;name&quot;:&quot;scala&quot;}" href="javascript: void(0);">scala</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000161068&quot;,&quot;name&quot;:&quot;coffeescript&quot;}" href="javascript: void(0);">coffeescript</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090194&quot;,&quot;name&quot;:&quot;actionscript&quot;}" href="javascript: void(0);">actionscript</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090201&quot;,&quot;name&quot;:&quot;erlang&quot;}" href="javascript: void(0);">erlang</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089698&quot;,&quot;name&quot;:&quot;perl&quot;}" href="javascript: void(0);">perl</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000311191&quot;,&quot;name&quot;:&quot;rust&quot;}" href="javascript: void(0);">rust</a>
+                        </li>
+                                    </ul>
+            </div>
+                    <div role="tabpanel" class="tab-pane " id="平台框架">
+                <ul class="taglist--inline">
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000196640&quot;,&quot;name&quot;:&quot;laravel&quot;}" href="javascript: void(0);">laravel</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000125263&quot;,&quot;name&quot;:&quot;flask&quot;}" href="javascript: void(0);">flask</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090103&quot;,&quot;name&quot;:&quot;spring&quot;}" href="javascript: void(0);">spring</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089564&quot;,&quot;name&quot;:&quot;django&quot;}" href="javascript: void(0);">django</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000166256&quot;,&quot;name&quot;:&quot;express&quot;}" href="javascript: void(0);">express</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089646&quot;,&quot;name&quot;:&quot;ruby-on-rails&quot;}" href="javascript: void(0);">ruby-on-rails</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090398&quot;,&quot;name&quot;:&quot;yii&quot;}" href="javascript: void(0);">yii</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000116331&quot;,&quot;name&quot;:&quot;tornado&quot;}" href="javascript: void(0);">tornado</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000622042&quot;,&quot;name&quot;:&quot;koa&quot;}" href="javascript: void(0);">koa</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089638&quot;,&quot;name&quot;:&quot;struts&quot;}" href="javascript: void(0);">struts</a>
+                        </li>
+                                    </ul>
+            </div>
+                    <div role="tabpanel" class="tab-pane " id="服务器">
+                <ul class="taglist--inline">
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089392&quot;,&quot;name&quot;:&quot;linux&quot;}" href="javascript: void(0);">linux</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090145&quot;,&quot;name&quot;:&quot;nginx&quot;}" href="javascript: void(0);">nginx</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089761&quot;,&quot;name&quot;:&quot;apache&quot;}" href="javascript: void(0);">apache</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000366352&quot;,&quot;name&quot;:&quot;docker&quot;}" href="javascript: void(0);">docker</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090245&quot;,&quot;name&quot;:&quot;ubuntu&quot;}" href="javascript: void(0);">ubuntu</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090249&quot;,&quot;name&quot;:&quot;centos&quot;}" href="javascript: void(0);">centos</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090401&quot;,&quot;name&quot;:&quot;\u7f13\u5b58&quot;}" href="javascript: void(0);">缓存</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090117&quot;,&quot;name&quot;:&quot;tomcat&quot;}" href="javascript: void(0);">tomcat</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090107&quot;,&quot;name&quot;:&quot;\u8d1f\u8f7d\u5747\u8861&quot;}" href="javascript: void(0);">负载均衡</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090646&quot;,&quot;name&quot;:&quot;unix&quot;}" href="javascript: void(0);">unix</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089648&quot;,&quot;name&quot;:&quot;hadoop&quot;}" href="javascript: void(0);">hadoop</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090609&quot;,&quot;name&quot;:&quot;windows-server&quot;}" href="javascript: void(0);">windows-server</a>
+                        </li>
+                                    </ul>
+            </div>
+                    <div role="tabpanel" class="tab-pane " id="数据库和缓存">
+                <ul class="taglist--inline">
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089439&quot;,&quot;name&quot;:&quot;mysql&quot;}" href="javascript: void(0);">mysql</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090049&quot;,&quot;name&quot;:&quot;sql&quot;}" href="javascript: void(0);">sql</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089431&quot;,&quot;name&quot;:&quot;redis&quot;}" href="javascript: void(0);">redis</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089488&quot;,&quot;name&quot;:&quot;mongodb&quot;}" href="javascript: void(0);">mongodb</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090701&quot;,&quot;name&quot;:&quot;oracle&quot;}" href="javascript: void(0);">oracle</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089432&quot;,&quot;name&quot;:&quot;nosql&quot;}" href="javascript: void(0);">nosql</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089873&quot;,&quot;name&quot;:&quot;memcached&quot;}" href="javascript: void(0);">memcached</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090424&quot;,&quot;name&quot;:&quot;sqlserver&quot;}" href="javascript: void(0);">sqlserver</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090354&quot;,&quot;name&quot;:&quot;sqlite&quot;}" href="javascript: void(0);">sqlite</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090861&quot;,&quot;name&quot;:&quot;postgresql&quot;}" href="javascript: void(0);">postgresql</a>
+                        </li>
+                                    </ul>
+            </div>
+                    <div role="tabpanel" class="tab-pane " id="开发工具">
+                <ul class="taglist--inline">
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089459&quot;,&quot;name&quot;:&quot;git&quot;}" href="javascript: void(0);">git</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000091226&quot;,&quot;name&quot;:&quot;github&quot;}" href="javascript: void(0);">github</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089467&quot;,&quot;name&quot;:&quot;vim&quot;}" href="javascript: void(0);">vim</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089579&quot;,&quot;name&quot;:&quot;xcode&quot;}" href="javascript: void(0);">xcode</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000126097&quot;,&quot;name&quot;:&quot;sublime-text&quot;}" href="javascript: void(0);">sublime-text</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089509&quot;,&quot;name&quot;:&quot;eclipse&quot;}" href="javascript: void(0);">eclipse</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000002720957&quot;,&quot;name&quot;:&quot;visual-studio-code&quot;}" href="javascript: void(0);">visual-studio-code</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090560&quot;,&quot;name&quot;:&quot;intellij-idea&quot;}" href="javascript: void(0);">intellij-idea</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090186&quot;,&quot;name&quot;:&quot;maven&quot;}" href="javascript: void(0);">maven</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089447&quot;,&quot;name&quot;:&quot;svn&quot;}" href="javascript: void(0);">svn</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090473&quot;,&quot;name&quot;:&quot;ide&quot;}" href="javascript: void(0);">ide</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090524&quot;,&quot;name&quot;:&quot;atom&quot;}" href="javascript: void(0);">atom</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090231&quot;,&quot;name&quot;:&quot;visual-studio&quot;}" href="javascript: void(0);">visual-studio</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090216&quot;,&quot;name&quot;:&quot;emacs&quot;}" href="javascript: void(0);">emacs</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000183694&quot;,&quot;name&quot;:&quot;hg&quot;}" href="javascript: void(0);">hg</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089663&quot;,&quot;name&quot;:&quot;textmate&quot;}" href="javascript: void(0);">textmate</a>
+                        </li>
+                                    </ul>
+            </div>
+                    <div role="tabpanel" class="tab-pane " id="系统设备">
+                <ul class="taglist--inline">
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089658&quot;,&quot;name&quot;:&quot;android&quot;}" href="javascript: void(0);">android</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089442&quot;,&quot;name&quot;:&quot;ios&quot;}" href="javascript: void(0);">ios</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089407&quot;,&quot;name&quot;:&quot;chrome&quot;}" href="javascript: void(0);">chrome</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089709&quot;,&quot;name&quot;:&quot;windows&quot;}" href="javascript: void(0);">windows</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089498&quot;,&quot;name&quot;:&quot;iphone&quot;}" href="javascript: void(0);">iphone</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090217&quot;,&quot;name&quot;:&quot;firefox&quot;}" href="javascript: void(0);">firefox</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000125504&quot;,&quot;name&quot;:&quot;internet-explorer&quot;}" href="javascript: void(0);">internet-explorer</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089499&quot;,&quot;name&quot;:&quot;safari&quot;}" href="javascript: void(0);">safari</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090638&quot;,&quot;name&quot;:&quot;ipad&quot;}" href="javascript: void(0);">ipad</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090218&quot;,&quot;name&quot;:&quot;opera&quot;}" href="javascript: void(0);">opera</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000002871462&quot;,&quot;name&quot;:&quot;apple-watch&quot;}" href="javascript: void(0);">apple-watch</a>
+                        </li>
+                                    </ul>
+            </div>
+                    <div role="tabpanel" class="tab-pane " id="其它">
+                <ul class="taglist--inline">
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000089409&quot;,&quot;name&quot;:&quot;html5&quot;}" href="javascript: void(0);">html5</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000002893277&quot;,&quot;name&quot;:&quot;react.js&quot;}" href="javascript: void(0);">react.js</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090137&quot;,&quot;name&quot;:&quot;\u641c\u7d22\u5f15\u64ce&quot;}" href="javascript: void(0);">搜索引擎</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000123810&quot;,&quot;name&quot;:&quot;virtualenv&quot;}" href="javascript: void(0);">virtualenv</a>
+                        </li>
+                                            <li class="mb5">
+                            <a class="tag" data-tag="{&quot;id&quot;:&quot;1040000000090316&quot;,&quot;name&quot;:&quot;lucene&quot;}" href="javascript: void(0);">lucene</a>
+                        </li>
+                                    </ul>
+            </div>
+            </div>
+</div>
+
+                                </div>
+                               
+                            </form>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-4 hidden-xs">
+                        <ul class="post-topheader__side list-unstyled">
+                            <li>
+                                <button type="button" class="btn btn-success btn-sm " data-id="1190000009730986" id="sideLike"><span id="sideLikeText">赞</span>&nbsp;&nbsp;<span class="seprator">|</span>&nbsp;&nbsp;
+                                            <span id="sideLikeNum">0</span></button><button type="button" id="sideBookmark" class="btn btn-default btn-sm " data-id="1190000009730986" data-type="article"><span id="sideBookmarkText">收藏</span>&nbsp;&nbsp;<span class="seprator">|</span>&nbsp;&nbsp;<span id="sideBookmarkNum">0</span></button>                            </li>
+                            <li>
+                                <strong class="no-stress">772</strong> 次浏览
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div><!-- end .post-topheader -->
+
+    <div class="container mt30">
+        <div class="row">
+            <div class="col-xs-12 col-md-9 main ">
+
+                
+                <div class="article fmt article__content" data-id="1190000009730986" data-license="">
+                    
+<p>docker里面可以通过<code>docker pull</code>、<code>docker build</code>、<code>docker commit</code>、<code>docker load</code>、<code>docker import</code>等方式得到一个image，得到image之后docker在本地是怎么存储的呢？本篇将以<code>git pull</code>为例，简述image的获取和存储方式。</p>
+<h2 id="articleHeader0">镜像相关的配置</h2>
+<p>docker里面和image有关的目录为/var/lib/docker，里面存放着image的所有信息，可以通过下面这个dockerd的启动参数来修改这个目录的路径。</p>
+<div class="widget-codetool" style="display:none;">
+      <div class="widget-codetool--inner">
+      <span class="selectCode code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="全选"></span>
+      <span type="button" class="copyCode code-tool" data-toggle="tooltip" data-placement="top" data-clipboard-text="--graph, -g /var/lib/docker Root of the Docker runtime" title="" data-original-title="复制"></span>
+      <span type="button" class="saveToNote code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="放进笔记"></span>
+      </div>
+      </div><pre class="hljs crystal"><code style="word-break: break-word; white-space: initial;">--graph, -g /var/<span class="hljs-class"><span class="hljs-keyword">lib</span>/<span class="hljs-title">docker</span> <span class="hljs-title">Root</span> <span class="hljs-title">of</span> <span class="hljs-title">the</span> <span class="hljs-title">Docker</span> <span class="hljs-title">runtime</span></span></code></pre>
+<h2 id="articleHeader1">镜像的引用方式</h2>
+<p>在需要引用image的时候，比如docker pull的时候，或者运行容器的时候，都需要指定一个image名称，引用一个镜像有多种方式，下面以ubuntu为例进行说明.</p>
+<blockquote><p>由于sha256码太长，所以用bcdef...来表示完整的sha256，节约空间</p></blockquote>
+<h4>docker hub上的官方镜像</h4>
+<ul>
+<li><p>ubuntu： 官方提供的最新ubuntu镜像，对应的完整名称为docker.io/library/ubuntu:latest</p></li>
+<li><p>ubuntu:16.04： 官方提供的ubuntu 16.04镜像，对应的完整名称为docker.io/library/ubuntu:16.04</p></li>
+<li><p>ubuntu:@sha256:abcdef...： 官方提供的digest码为sha256:abcdef...的ubuntu镜像，对应的完整名称为docker.io/library/ubuntu@sha256:abcdef...</p></li>
+</ul>
+<h4>docker hub上的非官方（个人）镜像</h4>
+<p>引用方式和官方镜像一样，唯一不同的是需要在镜像名称前面带上用户前缀，如：</p>
+<ul><li><p>user1/ubuntu： 由user1提供的最新ubuntu镜像， 对应的完整名称为docker.io/user1/ubuntu:latest</p></li></ul>
+<p>user1/ubuntu:16.04 和 user1/ubuntu:@sha256:abcdef...这两种方式也是和上面一样，等同于docker.io/user1/ubuntu:16.04和docker.io/user1/ubuntu:@sha256:abcdef...</p>
+<h4>自己搭建的registry里的镜像</h4>
+<p>引用方式和docker hub一样，唯一不同的是需要在镜像名称最前面带上地址，如：</p>
+<ul>
+<li><p>localhost:5000/ubuntu： 本地自己搭建的registry（localhost:5000）里面的官方ubuntu的最新镜像，对应的完整名称为localhost:5000/library/ubuntu:latest</p></li>
+<li><p>localhost:5000/user1/ubuntu@sha256:a123def...： 本地自己搭建的registry（localhost:5000）里面由用户user1提供的digest为sha256:a123def的ubuntu镜像</p></li>
+</ul>
+<p>其它的几种情况和上面的类似。</p>
+<h4>为什么需要镜像的digest？</h4>
+<p>对于某些image来说，可能在发布之后还会做一些更新，比如安全方面的，这时虽然镜像的内容变了，但镜像的名称和tag没有变，所以会造成前后两次通过同样的名称和tag从服务器得到不同的两个镜像的问题，于是docker引入了镜像的digest的概念，一个镜像的digest就是镜像的manifes文件的sha256码，当镜像的内容发生变化的时候，即镜像的layer发生变化，从而layer的sha256发生变化，而manifest里面包含了每一个layer的sha256，所以manifest的sha256也会发生变化，即镜像的digest发生变化，这样就保证了digest能唯一的对应一个镜像。</p>
+<h2 id="articleHeader2">docker pull的大概过程</h2>
+<p>如果对Image manifest，Image Config和Filesystem Layers等概念不是很了解，请先参考<a href="https://segmentfault.com/a/1190000009309347">image(镜像)是什么</a>。</p>
+<p>取image的大概过程如下：</p>
+<ul>
+<li><p>docker发送image的名称+tag（或者digest）给registry服务器，服务器根据收到的image的名称+tag（或者digest），找到相应image的manifest，然后将manifest返回给docker</p></li>
+<li><p>docker得到manifest后，读取里面image配置文件的digest(sha256)，这个sha256码就是image的ID</p></li>
+<li><p>根据ID在本地找有没有存在同样ID的image，有的话就不用继续下载了</p></li>
+<li><p>如果没有，那么会给registry服务器发请求（里面包含配置文件的sha256和media type），拿到image的配置文件（Image Config）</p></li>
+<li><p>根据配置文件中的diff_ids（每个diffid对应一个layer tar包的sha256，tar包相当于layer的原始格式），在本地找对应的layer是否存在</p></li>
+<li><p>如果layer不存在，则根据manifest里面layer的sha256和media type去服务器拿相应的layer（相当去拿压缩格式的包）。</p></li>
+<li><p>拿到后进行解压，并检查解压后tar包的sha256能否和配置文件（Image Config）中的diff_id对的上，对不上说明有问题，下载失败</p></li>
+<li><p>根据docker所用的后台文件系统类型，解压tar包并放到指定的目录</p></li>
+<li><p>等所有的layer都下载完成后，整个image下载完成，就可以使用了</p></li>
+</ul>
+<p><strong>注意</strong>： 对于layer来说，config文件中diffid是layer的tar包的sha256，而manifest文件中的digest依赖于media type，比如media type是tar+gzip，那digest就是layer的tar包经过gzip压缩后的内容的sha256，如果media type就是tar的话，diffid和digest就会一样。</p>
+<blockquote><p>dockerd和registry服务器之间的协议为<a href="https://docs.docker.com/registry/spec/api/" target="_blank">Registry HTTP API V2</a>。</p></blockquote>
+<h2 id="articleHeader3">image本地存放位置</h2>
+<p>这里以ubuntu的image为例，展示docker的image存储方式。</p>
+<p>先看看debian的image id和digest，然后再分析image数据都存在哪里</p>
+<div class="widget-codetool" style="display: none;">
+      <div class="widget-codetool--inner">
+      <span class="selectCode code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="全选"></span>
+      <span type="button" class="copyCode code-tool" data-toggle="tooltip" data-placement="top" data-clipboard-text="dev@debian:~$ docker images --digests
+REPOSITORY  TAG     DIGEST            MAGE ID       CREATED      SIZE
+ubuntu      latest  sha256:ea1d85...  7b9b13f7b9c0  4 weeks ago  118 MB
+......" title="" data-original-title="复制"></span>
+      <span type="button" class="saveToNote code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="放进笔记"></span>
+      </div>
+      </div><pre class="hljs clean"><code>dev@debian:~$ docker images --digests
+REPOSITORY  TAG     DIGEST            MAGE ID       CREATED      SIZE
+ubuntu      latest  sha256:ea1d85...  <span class="hljs-number">7</span>b9b13f7b9c0  <span class="hljs-number">4</span> weeks ago  <span class="hljs-number">118</span> MB
+......</code></pre>
+<blockquote><p>对于本地生成的镜像来说，由于没有上传到registry上去，所以没有digest，因为镜像的manifest由registry生成</p></blockquote>
+<h3 id="articleHeader4">repositories.json</h3>
+<p>repositories.json中记录了和本地image相关的repository信息，主要是name和image id的对应关系，当image从registry上被pull下来后，就会更新该文件：</p>
+<div class="widget-codetool" style="display: none;">
+      <div class="widget-codetool--inner">
+      <span class="selectCode code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="全选"></span>
+      <span type="button" class="copyCode code-tool" data-toggle="tooltip" data-placement="top" data-clipboard-text="#这里目录中的aufs为docker后台所采用的存储文件系统名称，
+#如果是其他的文件系统的话，名字会是其他的，比如btrfs、overlay2、devicemapper等。
+root@debian:~# cat /var/lib/docker/image/aufs/repositories.json|python -m json.tool
+{
+    &quot;Repositories&quot;: {
+        &quot;ubuntu&quot;: {
+            &quot;ubuntu:latest&quot;: &quot;sha256:7b9b13f7b9c086adfb6be4d2d264f90f16b4d1d5b3ab9f955caa728c3675c8a2&quot;,
+            &quot;ubuntu@sha256:ea1d854d38be82f54d39efe2c67000bed1b03348bcc2f3dc094f260855dff368&quot;: &quot;sha256:7b9b13f7b9c086adfb6be4d2d264f90f16b4d1d5b3ab9f955caa728c3675c8a2&quot;
+        }
+        ......
+    }
+}" title="" data-original-title="复制"></span>
+      <span type="button" class="saveToNote code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="放进笔记"></span>
+      </div>
+      </div><pre class="hljs clean"><code>#这里目录中的aufs为docker后台所采用的存储文件系统名称，
+#如果是其他的文件系统的话，名字会是其他的，比如btrfs、overlay2、devicemapper等。
+root@debian:~# cat /var/lib/docker/image/aufs/repositories.json|python -m json.tool
+{
+    <span class="hljs-string">"Repositories"</span>: {
+        <span class="hljs-string">"ubuntu"</span>: {
+            <span class="hljs-string">"ubuntu:latest"</span>: <span class="hljs-string">"sha256:7b9b13f7b9c086adfb6be4d2d264f90f16b4d1d5b3ab9f955caa728c3675c8a2"</span>,
+            <span class="hljs-string">"ubuntu@sha256:ea1d854d38be82f54d39efe2c67000bed1b03348bcc2f3dc094f260855dff368"</span>: <span class="hljs-string">"sha256:7b9b13f7b9c086adfb6be4d2d264f90f16b4d1d5b3ab9f955caa728c3675c8a2"</span>
+        }
+        ......
+    }
+}</code></pre>
+<ul>
+<li><p>ubuntu： repository的名称，前面没有服务器信息的表示这是官方registry(docker hub)里面的repository，里面包含的都是image标识和image ID的对应关系</p></li>
+<li><p>ubuntu:latest和debian@sha256:ea1d85...： 他们都指向同一个image（sha256:7b9b13...）</p></li>
+</ul>
+<h3 id="articleHeader5">配置文件（image config）</h3>
+<p>docker根据第一步得到的manifest，从registry拿到config文件，然后保存在image/aufs/imagedb/content/sha256/目录下，文件名称就是文件内容的sha256码，即image id：</p>
+<div class="widget-codetool" style="display: none;">
+      <div class="widget-codetool--inner">
+      <span class="selectCode code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="全选"></span>
+      <span type="button" class="copyCode code-tool" data-toggle="tooltip" data-placement="top" data-clipboard-text="root@debian:~# sha256sum /var/lib/docker/image/aufs/imagedb/content/sha256/7b9b13f7b9c086adfb6be4d2d264f90f16b4d1d5b3ab9f955caa728c3675c8a2
+7b9b13f7b9c086adfb6be4d2d264f90f16b4d1d5b3ab9f955caa728c3675c8a2  /var/lib/docker/image/aufs/imagedb/content/sha256/7b9b13f7b9c086adfb6be4d2d264f90f16b4d1d5b3ab9f955caa728c3675c8a2
+
+#这里我们只关注这个image的rootfs，
+#从diff_ids里可以看出ubuntu:latest这个image包含了5个layer，
+#从上到下依次是从底层到顶层，6a8bf8...是最底层，d8b353...是最顶层
+root@debian:~# cat /var/lib/docker/image/aufs/imagedb/content/sha256/7b9b13f7b9c086adfb6be4d2d264f90f16b4d1d5b3ab9f955caa728c3675c8a2|python -m json.tool
+......
+    &quot;rootfs&quot;: {
+        &quot;diff_ids&quot;: [
+            &quot;sha256:6a8bf8c8edbd705f67cdc062eee3911470a38a763258c81c05da1f28d6eec896&quot;,
+            &quot;sha256:fe9a3f9c4559684b75bba751883fa084d34e418c018d687ddc25c3f23f13f657&quot;,
+            &quot;sha256:fc9e1e5e38f700997585295bd65a47e58f3da7b2f0e6a971e14a6104f199de1f&quot;,
+            &quot;sha256:f2e85bc0b7b17ab33f9060d2f24824defe600e189b05a895d60b2e8a6a7bd0d7&quot;,
+            &quot;sha256:d8b353eb3025c49e029567b2a01e517f7f7d32537ee47e64a7eac19fa68a33f3&quot;
+        ],
+        &quot;type&quot;: &quot;layers&quot;
+    }
+
+......" title="" data-original-title="复制"></span>
+      <span type="button" class="saveToNote code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="放进笔记"></span>
+      </div>
+      </div><pre class="hljs llvm"><code>root<span class="hljs-title">@debian</span>:~# sha<span class="hljs-number">256</span>sum /var/lib/docker/image/aufs/imagedb/content/sha<span class="hljs-number">256</span>/<span class="hljs-number">7</span>b<span class="hljs-number">9</span>b<span class="hljs-number">13</span>f<span class="hljs-number">7</span>b<span class="hljs-number">9</span><span class="hljs-keyword">c</span><span class="hljs-number">086</span>adfb<span class="hljs-number">6</span>be<span class="hljs-number">4</span>d<span class="hljs-number">2</span>d<span class="hljs-number">264</span>f<span class="hljs-number">90</span>f<span class="hljs-number">16</span>b<span class="hljs-number">4</span>d<span class="hljs-number">1</span>d<span class="hljs-number">5</span>b<span class="hljs-number">3</span>ab<span class="hljs-number">9</span>f<span class="hljs-number">955</span>caa<span class="hljs-number">728</span><span class="hljs-keyword">c</span><span class="hljs-number">3675</span><span class="hljs-keyword">c</span><span class="hljs-number">8</span>a<span class="hljs-number">2</span>
+<span class="hljs-number">7</span>b<span class="hljs-number">9</span>b<span class="hljs-number">13</span>f<span class="hljs-number">7</span>b<span class="hljs-number">9</span><span class="hljs-keyword">c</span><span class="hljs-number">086</span>adfb<span class="hljs-number">6</span>be<span class="hljs-number">4</span>d<span class="hljs-number">2</span>d<span class="hljs-number">264</span>f<span class="hljs-number">90</span>f<span class="hljs-number">16</span>b<span class="hljs-number">4</span>d<span class="hljs-number">1</span>d<span class="hljs-number">5</span>b<span class="hljs-number">3</span>ab<span class="hljs-number">9</span>f<span class="hljs-number">955</span>caa<span class="hljs-number">728</span><span class="hljs-keyword">c</span><span class="hljs-number">3675</span><span class="hljs-keyword">c</span><span class="hljs-number">8</span>a<span class="hljs-number">2</span>  /var/lib/docker/image/aufs/imagedb/content/sha<span class="hljs-number">256</span>/<span class="hljs-number">7</span>b<span class="hljs-number">9</span>b<span class="hljs-number">13</span>f<span class="hljs-number">7</span>b<span class="hljs-number">9</span><span class="hljs-keyword">c</span><span class="hljs-number">086</span>adfb<span class="hljs-number">6</span>be<span class="hljs-number">4</span>d<span class="hljs-number">2</span>d<span class="hljs-number">264</span>f<span class="hljs-number">90</span>f<span class="hljs-number">16</span>b<span class="hljs-number">4</span>d<span class="hljs-number">1</span>d<span class="hljs-number">5</span>b<span class="hljs-number">3</span>ab<span class="hljs-number">9</span>f<span class="hljs-number">955</span>caa<span class="hljs-number">728</span><span class="hljs-keyword">c</span><span class="hljs-number">3675</span><span class="hljs-keyword">c</span><span class="hljs-number">8</span>a<span class="hljs-number">2</span>
+
+#这里我们只关注这个image的rootfs，
+#从diff_ids里可以看出ubuntu:latest这个image包含了<span class="hljs-number">5</span>个layer，
+#从上到下依次是从底层到顶层，<span class="hljs-number">6</span>a<span class="hljs-number">8</span>bf<span class="hljs-number">8</span>...是最底层，d<span class="hljs-number">8</span>b<span class="hljs-number">353</span>...是最顶层
+root<span class="hljs-title">@debian</span>:~# cat /var/lib/docker/image/aufs/imagedb/content/sha<span class="hljs-number">256</span>/<span class="hljs-number">7</span>b<span class="hljs-number">9</span>b<span class="hljs-number">13</span>f<span class="hljs-number">7</span>b<span class="hljs-number">9</span><span class="hljs-keyword">c</span><span class="hljs-number">086</span>adfb<span class="hljs-number">6</span>be<span class="hljs-number">4</span>d<span class="hljs-number">2</span>d<span class="hljs-number">264</span>f<span class="hljs-number">90</span>f<span class="hljs-number">16</span>b<span class="hljs-number">4</span>d<span class="hljs-number">1</span>d<span class="hljs-number">5</span>b<span class="hljs-number">3</span>ab<span class="hljs-number">9</span>f<span class="hljs-number">955</span>caa<span class="hljs-number">728</span><span class="hljs-keyword">c</span><span class="hljs-number">3675</span><span class="hljs-keyword">c</span><span class="hljs-number">8</span>a<span class="hljs-number">2</span>|python -m json.tool
+......
+    <span class="hljs-string">"rootfs"</span>: {
+        <span class="hljs-string">"diff_ids"</span>: [
+            <span class="hljs-string">"sha256:6a8bf8c8edbd705f67cdc062eee3911470a38a763258c81c05da1f28d6eec896"</span>,
+            <span class="hljs-string">"sha256:fe9a3f9c4559684b75bba751883fa084d34e418c018d687ddc25c3f23f13f657"</span>,
+            <span class="hljs-string">"sha256:fc9e1e5e38f700997585295bd65a47e58f3da7b2f0e6a971e14a6104f199de1f"</span>,
+            <span class="hljs-string">"sha256:f2e85bc0b7b17ab33f9060d2f24824defe600e189b05a895d60b2e8a6a7bd0d7"</span>,
+            <span class="hljs-string">"sha256:d8b353eb3025c49e029567b2a01e517f7f7d32537ee47e64a7eac19fa68a33f3"</span>
+        ],
+        <span class="hljs-string">"type"</span>: <span class="hljs-string">"layers"</span>
+    }
+
+......</code></pre>
+<h3 id="articleHeader6">layer的diff_id和digest的对应关系</h3>
+<p>layer的diff_id存在image的配置文件中，而layer的digest存在image的manifest中，他们的对应关系被存储在了image/aufs/distribution目录下：</p>
+<div class="widget-codetool" style="display: none;">
+      <div class="widget-codetool--inner">
+      <span class="selectCode code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="全选"></span>
+      <span type="button" class="copyCode code-tool" data-toggle="tooltip" data-placement="top" data-clipboard-text="root@debian:~# tree -d /var/lib/docker/image/aufs/distribution/
+/var/lib/docker/image/aufs/distribution/
+├── diffid-by-digest
+│   └── sha256
+└── v2metadata-by-diffid
+    └── sha256" title="" data-original-title="复制"></span>
+      <span type="button" class="saveToNote code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="放进笔记"></span>
+      </div>
+      </div><pre class="hljs crystal"><code>root@<span class="hljs-symbol">debian:</span>~<span class="hljs-comment"># tree -d /var/lib/docker/image/aufs/distribution/</span>
+/var/<span class="hljs-class"><span class="hljs-keyword">lib</span>/<span class="hljs-title">docker</span>/<span class="hljs-title">image</span>/<span class="hljs-title">aufs</span>/<span class="hljs-title">distribution</span>/</span>
+├── diffid-by-digest
+│&nbsp;&nbsp; └── sha256
+└── v2metadata-by-diffid
+    └── sha256</code></pre>
+<ul>
+<li><p>diffid-by-digest： 存放digest到diffid的对应关系</p></li>
+<li><p>v2metadata-by-diffid： 存放diffid到digest的对应关系</p></li>
+</ul>
+<div class="widget-codetool" style="display: none;">
+      <div class="widget-codetool--inner">
+      <span class="selectCode code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="全选"></span>
+      <span type="button" class="copyCode code-tool" data-toggle="tooltip" data-placement="top" data-clipboard-text="#这里以最底层layer(6a8bf8...)为例，查看其digest信息
+root@debian:~# cat /var/lib/docker/image/aufs/distribution/v2metadata-by-diffid/sha256/6a8bf8c8edbd705f67cdc062eee3911470a38a763258c81c05da1f28d6eec896|python -m json.tool
+[
+    {
+        &quot;Digest&quot;: &quot;sha256:bd97b43c27e332fc4e00edf827bbc26369ad375187ce6eee91c616ad275884b1&quot;,
+        &quot;HMAC&quot;: &quot;&quot;,
+        &quot;SourceRepository&quot;: &quot;docker.io/library/ubuntu&quot;
+    }
+]
+
+#根据digest得到diffid
+root@debian:~# cat /var/lib/docker/image/aufs/distribution/diffid-by-digest/sha256/bd97b43c27e332fc4e00edf827bbc26369ad375187ce6eee91c616ad275884b1
+sha256:6a8bf8c8edbd705f67cdc062eee3911470a38a763258c81c05da1f28d6eec896
+" title="" data-original-title="复制"></span>
+      <span type="button" class="saveToNote code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="放进笔记"></span>
+      </div>
+      </div><pre class="hljs llvm"><code>#这里以最底层layer(<span class="hljs-number">6</span>a<span class="hljs-number">8</span>bf<span class="hljs-number">8</span>...)为例，查看其digest信息
+root<span class="hljs-title">@debian</span>:~# cat /var/lib/docker/image/aufs/distribution/v<span class="hljs-number">2</span>metadata-by-diffid/sha<span class="hljs-number">256</span>/<span class="hljs-number">6</span>a<span class="hljs-number">8</span>bf<span class="hljs-number">8</span><span class="hljs-keyword">c</span><span class="hljs-number">8</span>edbd<span class="hljs-number">705</span>f<span class="hljs-number">67</span>cdc<span class="hljs-number">062</span>eee<span class="hljs-number">3911470</span>a<span class="hljs-number">38</span>a<span class="hljs-number">763258</span><span class="hljs-keyword">c</span><span class="hljs-number">81</span><span class="hljs-keyword">c</span><span class="hljs-number">05</span>da<span class="hljs-number">1</span>f<span class="hljs-number">28</span>d<span class="hljs-number">6</span>eec<span class="hljs-number">896</span>|python -m json.tool
+[
+    {
+        <span class="hljs-string">"Digest"</span>: <span class="hljs-string">"sha256:bd97b43c27e332fc4e00edf827bbc26369ad375187ce6eee91c616ad275884b1"</span>,
+        <span class="hljs-string">"HMAC"</span>: <span class="hljs-string">""</span>,
+        <span class="hljs-string">"SourceRepository"</span>: <span class="hljs-string">"docker.io/library/ubuntu"</span>
+    }
+]
+
+#根据digest得到diffid
+root<span class="hljs-title">@debian</span>:~# cat /var/lib/docker/image/aufs/distribution/diffid-by-digest/sha<span class="hljs-number">256</span>/bd<span class="hljs-number">97</span>b<span class="hljs-number">43</span><span class="hljs-keyword">c</span><span class="hljs-number">27e332</span>fc<span class="hljs-number">4e00</span>edf<span class="hljs-number">827</span>bbc<span class="hljs-number">26369</span>ad<span class="hljs-number">375187</span>ce<span class="hljs-number">6</span>eee<span class="hljs-number">91</span><span class="hljs-keyword">c</span><span class="hljs-number">616</span>ad<span class="hljs-number">275884</span>b<span class="hljs-number">1</span>
+sha<span class="hljs-number">256</span>:<span class="hljs-number">6</span>a<span class="hljs-number">8</span>bf<span class="hljs-number">8</span><span class="hljs-keyword">c</span><span class="hljs-number">8</span>edbd<span class="hljs-number">705</span>f<span class="hljs-number">67</span>cdc<span class="hljs-number">062</span>eee<span class="hljs-number">3911470</span>a<span class="hljs-number">38</span>a<span class="hljs-number">763258</span><span class="hljs-keyword">c</span><span class="hljs-number">81</span><span class="hljs-keyword">c</span><span class="hljs-number">05</span>da<span class="hljs-number">1</span>f<span class="hljs-number">28</span>d<span class="hljs-number">6</span>eec<span class="hljs-number">896</span>
+</code></pre>
+<h3 id="articleHeader7">layer的元数据</h3>
+<p>layer的属性信息都放在了image/aufs/layerdb目录下，目录名称是layer的chainid，由于最底层的layer的chainid和diffid相同，所以这里我们用第二层（fe9a3f...）作为示例：</p>
+<blockquote><p>计算chainid时，用到了所有祖先layer的信息，从而能保证根据chainid得到的rootfs是唯一的。比如我在debian和ubuntu的image基础上都添加了一个同样的文件，那么commit之后新增加的这两个layer具有相同的内容，相同的diffid，但由于他们的父layer不一样，所以他们的chainid会不一样，从而根据chainid能找到唯一的rootfs。计算chainid的方法请参考<a href="https://github.com/opencontainers/image-spec/blob/master/config.md" target="_blank">image spec</a></p></blockquote>
+<div class="widget-codetool" style="display:none;">
+      <div class="widget-codetool--inner">
+      <span class="selectCode code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="全选"></span>
+      <span type="button" class="copyCode code-tool" data-toggle="tooltip" data-placement="top" data-clipboard-text="#计算chainid
+#这里fe9a3f...是第二层的diffid，而6a8bf8...是fe9a3f...父层的chainid，
+#由于6a8bf8...是最底层，它没有父层，所以6a8bf8...的chainid就是6a8bf8...
+dev@debian:~$ echo -n &quot;sha256:6a8bf8c8edbd705f67cdc062eee3911470a38a763258c81c05da1f28d6eec896 sha256:fe9a3f9c4559684b75bba751883fa084d34e418c018d687ddc25c3f23f13f657&quot;|sha256sum -
+67b5e1df1b671d4751794767b20f6973d77e91528ab475ee1118ce8dab796193  -
+
+#根据chainid来看看相应目录的内容
+root@debian:/var/lib/docker/image/aufs/layerdb/sha256/67b5e1df1b671d4751794767b20f6973d77e91528ab475ee1118ce8dab796193# ls
+cache-id  diff  parent  size  tar-split.json.gz
+#每个layer都有这样一个对应的文件夹
+
+#cache-id是docker下载layer的时候在本地生成的一个随机uuid，
+#指向真正存放layer文件的地方
+root@debian:/var/lib/docker/image/aufs/layerdb/sha256/67b5e1df1b671d4751794767b20f6973d77e91528ab475ee1118ce8dab796193# cat cache-id
+b656bf5f0688069cd90ab230c029fdfeb852afcfd0d1733d087474c86a117da3
+
+#diff文件存放layer的diffid
+root@debian:/var/lib/docker/image/aufs/layerdb/sha256/67b5e1df1b671d4751794767b20f6973d77e91528ab475ee1118ce8dab796193# cat diff
+sha256:fe9a3f9c4559684b75bba751883fa084d34e418c018d687ddc25c3f23f13f657
+
+#parent文件存放当前layer的父layer的diffid，
+#注意：对于最底层的layer来说，由于没有父layer，所以没有这个文件
+root@debian:/var/lib/docker/image/aufs/layerdb/sha256/67b5e1df1b671d4751794767b20f6973d77e91528ab475ee1118ce8dab796193# cat parent
+sha256:6a8bf8c8edbd705f67cdc062eee3911470a38a763258c81c05da1f28d6eec896
+
+#当前layer的大小，单位是字节
+root@debian:/var/lib/docker/image/aufs/layerdb/sha256/67b5e1df1b671d4751794767b20f6973d77e91528ab475ee1118ce8dab796193# cat size
+745
+
+#tar-split.json.gz，layer压缩包的split文件，通过这个文件可以还原layer的tar包，
+#在docker save导出image的时候会用到
+#详情可参考https://github.com/vbatts/tar-split
+root@debian:/var/lib/docker/image/aufs/layerdb/sha256/67b5e1df1b671d4751794767b20f6973d77e91528ab475ee1118ce8dab796193# ls -l tar-split.json.gz
+-rw-r--r-- 1 root root 1429 May 28 22:57 tar-split.json.gz" title="" data-original-title="复制"></span>
+      <span type="button" class="saveToNote code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="放进笔记"></span>
+      </div>
+      </div><pre class="hljs elixir"><code><span class="hljs-comment">#计算chainid</span>
+<span class="hljs-comment">#这里fe9a3f...是第二层的diffid，而6a8bf8...是fe9a3f...父层的chainid，</span>
+<span class="hljs-comment">#由于6a8bf8...是最底层，它没有父层，所以6a8bf8...的chainid就是6a8bf8...</span>
+dev<span class="hljs-variable">@debian</span><span class="hljs-symbol">:~</span><span class="hljs-variable">$ </span>echo -n <span class="hljs-string">"sha256:6a8bf8c8edbd705f67cdc062eee3911470a38a763258c81c05da1f28d6eec896 sha256:fe9a3f9c4559684b75bba751883fa084d34e418c018d687ddc25c3f23f13f657"</span>|sha256sum -
+<span class="hljs-number">67</span>b5e1df1b671d4751794767b20f6973d77e91528ab475ee1118ce8dab796193  -
+
+<span class="hljs-comment">#根据chainid来看看相应目录的内容</span>
+root<span class="hljs-variable">@debian</span><span class="hljs-symbol">:/var/lib/docker/image/aufs/layerdb/sha256/</span><span class="hljs-number">67</span>b5e1df1b671d4751794767b20f6973d77e91528ab475ee1118ce8dab796193<span class="hljs-comment"># ls</span>
+cache-id  diff  parent  size  tar-split.json.gz
+<span class="hljs-comment">#每个layer都有这样一个对应的文件夹</span>
+
+<span class="hljs-comment">#cache-id是docker下载layer的时候在本地生成的一个随机uuid，</span>
+<span class="hljs-comment">#指向真正存放layer文件的地方</span>
+root<span class="hljs-variable">@debian</span><span class="hljs-symbol">:/var/lib/docker/image/aufs/layerdb/sha256/</span><span class="hljs-number">67</span>b5e1df1b671d4751794767b20f6973d77e91528ab475ee1118ce8dab796193<span class="hljs-comment"># cat cache-id</span>
+b656bf5f0688069cd90ab230c029fdfeb852afcfd0d1733d087474c86a117da3
+
+<span class="hljs-comment">#diff文件存放layer的diffid</span>
+root<span class="hljs-variable">@debian</span><span class="hljs-symbol">:/var/lib/docker/image/aufs/layerdb/sha256/</span><span class="hljs-number">67</span>b5e1df1b671d4751794767b20f6973d77e91528ab475ee1118ce8dab796193<span class="hljs-comment"># cat diff</span>
+<span class="hljs-symbol">sha256:</span>fe9a3f9c4559684b75bba751883fa084d34e418c018d687ddc25c3f23f13f657
+
+<span class="hljs-comment">#parent文件存放当前layer的父layer的diffid，</span>
+<span class="hljs-comment">#注意：对于最底层的layer来说，由于没有父layer，所以没有这个文件</span>
+root<span class="hljs-variable">@debian</span><span class="hljs-symbol">:/var/lib/docker/image/aufs/layerdb/sha256/</span><span class="hljs-number">67</span>b5e1df1b671d4751794767b20f6973d77e91528ab475ee1118ce8dab796193<span class="hljs-comment"># cat parent</span>
+<span class="hljs-symbol">sha256:</span><span class="hljs-number">6</span>a8bf8c8edbd705f67cdc062eee3911470a38a763258c81c05da1f28d6eec896
+
+<span class="hljs-comment">#当前layer的大小，单位是字节</span>
+root<span class="hljs-variable">@debian</span><span class="hljs-symbol">:/var/lib/docker/image/aufs/layerdb/sha256/</span><span class="hljs-number">67</span>b5e1df1b671d4751794767b20f6973d77e91528ab475ee1118ce8dab796193<span class="hljs-comment"># cat size</span>
+<span class="hljs-number">745</span>
+
+<span class="hljs-comment">#tar-split.json.gz，layer压缩包的split文件，通过这个文件可以还原layer的tar包，</span>
+<span class="hljs-comment">#在docker save导出image的时候会用到</span>
+<span class="hljs-comment">#详情可参考https://github.com/vbatts/tar-split</span>
+root<span class="hljs-variable">@debian</span><span class="hljs-symbol">:/var/lib/docker/image/aufs/layerdb/sha256/</span><span class="hljs-number">67</span>b5e1df1b671d4751794767b20f6973d77e91528ab475ee1118ce8dab796193<span class="hljs-comment"># ls -l tar-split.json.gz</span>
+-rw-r--r-- <span class="hljs-number">1</span> root root <span class="hljs-number">1429</span> May <span class="hljs-number">28</span> <span class="hljs-number">22</span><span class="hljs-symbol">:</span><span class="hljs-number">57</span> tar-split.json.gz</code></pre>
+<h2 id="articleHeader8">layer数据</h2>
+<p>docker根据后台所采用的文件系统不同，在/var/lib/docker目录下创建了不同的子目录，对于debian来说，默认文件系统是aufs，所以所有layer的文件都放在了/var/lib/docker/aufs目录下。</p>
+<div class="widget-codetool" style="display:none;">
+      <div class="widget-codetool--inner">
+      <span class="selectCode code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="全选"></span>
+      <span type="button" class="copyCode code-tool" data-toggle="tooltip" data-placement="top" data-clipboard-text="root@dev:~# tree -d -L 1 /var/lib/docker/aufs
+/var/lib/docker/aufs
+├── diff
+├── layers
+└── mnt" title="" data-original-title="复制"></span>
+      <span type="button" class="saveToNote code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="放进笔记"></span>
+      </div>
+      </div><pre class="hljs crystal"><code>root@<span class="hljs-symbol">dev:</span>~<span class="hljs-comment"># tree -d -L 1 /var/lib/docker/aufs</span>
+/var/<span class="hljs-class"><span class="hljs-keyword">lib</span>/<span class="hljs-title">docker</span>/<span class="hljs-title">aufs</span></span>
+├── diff
+├── layers
+└── mnt</code></pre>
+<p>该目录下有三个子目录，layers里面存放的layer的父子关系，diff目录存放的是每个layer的原始数据，mnt存储的是layer和祖先layer叠加起来的数据。</p>
+<blockquote><p>注意：由于docker所采用的文件系统不同，<code>/var/lib/docker/&lt;storage-driver&gt;</code>目录下的目录结构及组织方式也会不一样，要具体文件系统具体分析，本文只介绍aufs这种情况。<br>关于aufs和btrfs的相关特性可以参考<a href="https://segmentfault.com/a/1190000008489207">Linux文件系统之aufs</a>和<a href="https://segmentfault.com/a/1190000008605135" target="_blank">Btrfs文件系统之subvolume与snapshot</a></p></blockquote>
+<p>还是以刚才的第二层layer（fe9a3f...）为例，看看实际的数据：</p>
+<div class="widget-codetool" style="display:none;">
+      <div class="widget-codetool--inner">
+      <span class="selectCode code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="全选"></span>
+      <span type="button" class="copyCode code-tool" data-toggle="tooltip" data-placement="top" data-clipboard-text="#从上面layerdb中，我们已经找到了第二层layer对应的cache id为b656bf...
+#先看看layers目录下的这个文件,里面存放的是当前layer的祖先layer的cacheid
+root@dev:~# cat /var/lib/docker/aufs/layers/b656bf5f0688069cd90ab230c029fdfeb852afcfd0d1733d087474c86a117da3
+1e83d2ea184e08eed978127311cc96498e319426abe2fb5004d4b1454598bd76
+
+#再来看看diff目录下的内容，看这一层包含了哪些文件，从下面的输出可以看出，这一层包含的文件很少
+root@dev:~# tree /var/lib/docker/aufs/diff/b656bf5f0688069cd90ab230c029fdfeb852afcfd0d1733d087474c86a117da3/
+/var/lib/docker/aufs/diff/b656bf5f0688069cd90ab230c029fdfeb852afcfd0d1733d087474c86a117da3/
+├── etc
+│   ├── apt
+│   │   └── apt.conf.d
+│   │       ├── docker-autoremove-suggests
+│   │       ├── docker-clean
+│   │       ├── docker-gzip-indexes
+│   │       └── docker-no-languages
+│   └── dpkg
+│       └── dpkg.cfg.d
+│           └── docker-apt-speedup
+├── sbin
+│   └── initctl
+├── usr
+│   └── sbin
+│       └── policy-rc.d
+└── var
+    └── lib
+        └── dpkg
+            ├── diversions
+            └── diversions-old
+
+#再来看看这一层和上一层合并后的文件目录
+root@dev:~# tree /var/lib/docker/aufs/mnt/b656bf5f0688069cd90ab230c029fdfeb852afcfd0d1733d087474c86a117da3/
+/var/lib/docker/aufs/mnt/b656bf5f0688069cd90ab230c029fdfeb852afcfd0d1733d087474c86a117da3/
+
+0 directories, 0 files
+#为什么是空的呢？这和aufs文件系统有关，
+#它只有在运行容器的时候，才会将多层合并起来，提供一个统一的视图，
+#所以这里看不到这两层合并之后的效果。" title="" data-original-title="复制"></span>
+      <span type="button" class="saveToNote code-tool" data-toggle="tooltip" data-placement="top" title="" data-original-title="放进笔记"></span>
+      </div>
+      </div><pre class="hljs crystal"><code><span class="hljs-comment">#从上面layerdb中，我们已经找到了第二层layer对应的cache id为b656bf...</span>
+<span class="hljs-comment">#先看看layers目录下的这个文件,里面存放的是当前layer的祖先layer的cacheid</span>
+root@<span class="hljs-symbol">dev:</span>~<span class="hljs-comment"># cat /var/lib/docker/aufs/layers/b656bf5f0688069cd90ab230c029fdfeb852afcfd0d1733d087474c86a117da3</span>
+<span class="hljs-number">1e83</span>d2ea184e08eed978127311cc96498e319426abe2fb5004d4b1454598bd76
+
+<span class="hljs-comment">#再来看看diff目录下的内容，看这一层包含了哪些文件，从下面的输出可以看出，这一层包含的文件很少</span>
+root@<span class="hljs-symbol">dev:</span>~<span class="hljs-comment"># tree /var/lib/docker/aufs/diff/b656bf5f0688069cd90ab230c029fdfeb852afcfd0d1733d087474c86a117da3/</span>
+/var/<span class="hljs-class"><span class="hljs-keyword">lib</span>/<span class="hljs-title">docker</span>/<span class="hljs-title">aufs</span>/<span class="hljs-title">diff</span>/<span class="hljs-title">b656bf5f0688069cd90ab230c029fdfeb852afcfd0d1733d087474c86a117da3</span>/</span>
+├── etc
+│&nbsp;&nbsp; ├── apt
+│&nbsp;&nbsp; │&nbsp;&nbsp; └── apt.conf.d
+│&nbsp;&nbsp; │&nbsp;&nbsp;     ├── docker-autoremove-suggests
+│&nbsp;&nbsp; │&nbsp;&nbsp;     ├── docker-clean
+│&nbsp;&nbsp; │&nbsp;&nbsp;     ├── docker-gzip-indexes
+│&nbsp;&nbsp; │&nbsp;&nbsp;     └── docker-no-languages
+│&nbsp;&nbsp; └── dpkg
+│&nbsp;&nbsp;     └── dpkg.cfg.d
+│&nbsp;&nbsp;         └── docker-apt-speedup
+├── sbin
+│&nbsp;&nbsp; └── initctl
+├── usr
+│&nbsp;&nbsp; └── sbin
+│&nbsp;&nbsp;     └── policy-rc.d
+└── var
+    └── <span class="hljs-class"><span class="hljs-keyword">lib</span></span>
+        └── dpkg
+            ├── diversions
+            └── diversions-old
+
+<span class="hljs-comment">#再来看看这一层和上一层合并后的文件目录</span>
+root@<span class="hljs-symbol">dev:</span>~<span class="hljs-comment"># tree /var/lib/docker/aufs/mnt/b656bf5f0688069cd90ab230c029fdfeb852afcfd0d1733d087474c86a117da3/</span>
+/var/<span class="hljs-class"><span class="hljs-keyword">lib</span>/<span class="hljs-title">docker</span>/<span class="hljs-title">aufs</span>/<span class="hljs-title">mnt</span>/<span class="hljs-title">b656bf5f0688069cd90ab230c029fdfeb852afcfd0d1733d087474c86a117da3</span>/</span>
+
+<span class="hljs-number">0</span> directories, <span class="hljs-number">0</span> files
+<span class="hljs-comment">#为什么是空的呢？这和aufs文件系统有关，</span>
+<span class="hljs-comment">#它只有在运行容器的时候，才会将多层合并起来，提供一个统一的视图，</span>
+<span class="hljs-comment">#所以这里看不到这两层合并之后的效果。</span></code></pre>
+<h2 id="articleHeader9">manifest文件去哪了？</h2>
+<p>从前面介绍docker pull的过程中得知，docker是先得到manifest，然后根据manifest得到config文件和layer。</p>
+<p>前面已经介绍了config文件和layer的存储位置，但唯独不见manifest，去哪了呢？</p>
+<p>manifest里面包含的内容就是对config和layer的sha256 + media type描述，目的就是为了下载config和layer，等image下载完成后，manifest的使命就完成了，里面的信息对于image的本地管理来说没什么用，所以docker在本地没有单独的存储一份manifest文件与之对应。</p>
+<h2 id="articleHeader10">结束语</h2>
+<p>本篇介绍了image在本地的存储方式，包括了<code>/var/lib/docker/image</code>和<code>/var/lib/docker/aufs</code>这两个目录，但/var/lib/docker/image下面有两个目录没有涉及：</p>
+<ul>
+<li><p>/var/lib/docker/image/aufs/imagedb/metadata：里面存放的是本地image的一些信息，从服务器上pull下来的image不会存数据到这个目录，下次有机会再补充这部分内容。</p></li>
+<li><p>/var/lib/docker/image/aufs/layerdb/mounts: 创建container时，docker会为每个container在image的基础上创建一层新的layer，里面主要包含/etc/hosts、/etc/hostname、/etc/resolv.conf等文件，创建的这一层layer信息就放在这里，后续在介绍容器的时候，会专门介绍这个目录的内容。</p></li>
+</ul>
+<h2 id="articleHeader11">参考</h2>
+<ul><li><p><a href="https://github.com/moby/moby" target="_blank">docker源代码</a></p></li></ul>
+
+                </div>
+                                                
+                <div class="clearfix mt10">
+                    <ul class="article-operation list-inline pull-left"><li><a href="https://segmentfault.com/a/1190000009730986">6月10日发布</a></li><li class="dropdown js__content-ops" data-module="article" data-id="1190000009730986" data-typetext="文章"><a href="javascript:void(0);" class="dropdown-toggle text-muted" data-toggle="dropdown"><i class="fa fa-ellipsis-h" aria-hidden="true"></i></a><ul class="dropdown-menu dropdown-menu-left"><li><a href="https://segmentfault.com/a/1190000009730986#911" data-toggle="modal" data-target="#911" data-action="report">举报</a></li></ul></li></ul>
+                    <div class="pull-right">
+                        <div class="widget-share__full" data-text="走进docker(05)：docker在本地如何管理image（镜像）?" data-url="https://segmentfault.com/a/1190000009730986" data-shorturl="http://sfau.lt/b5OZDy"><div class="widget-share-network sharer-0" style="display: block;"><ul class="sn-inline"><li data-network="weibo"><a href="javascript:void(0);" class="entypo-weibo icon-sn-weibo share-1" data-toggle="tooltip" data-placement="top" title="" data-original-title="分享至新浪微博">新浪微博</a></li><li data-network="wechart"><a href="javascript:void(0);" class="entypo-wechart icon-sn-weixin share-2" data-toggle="tooltip" data-placement="top" title="" data-original-title="分享至微信">微信</a></li><li data-network="twitter"><a href="javascript:void(0);" class="entypo-twitter icon-sn-twitter share-3" data-toggle="tooltip" data-placement="top" title="" data-original-title="分享至 Twitter">Twitter</a></li><li data-network="facebook"><a href="javascript:void(0);" class="entypo-facebook icon-sn-facebook share-4" data-toggle="tooltip" data-placement="top" title="" data-original-title="分享至 Facebook">Facebook</a></li></ul></div><a type="button" class="btn btn-sm shareMore btn-sn-more" data-toggle="popover" data-placement="top" data-url="https://segmentfault.com/a/1190000009730986" data-shorturl="http://sfau.lt/b5OZDy"><span class="icon-sn-dotted" data-original-title="" title=""></span><strong class="visible-xs-inline">•••</strong></a></div>
+
+
+                    </div>
+                </div>
+                <div class="mt10 text-center"><button type="button" id="mainLike" data-id="1190000009730986" class="btn btn-success btn-lg mr15 "><span id="mainLikeText">赞</span>&nbsp;&nbsp;<span class="seprator">|</span>&nbsp;&nbsp;
+                                <span id="mainLikeNum">0 </span></button><button type="button" id="mainBookmark" data-type="article" data-id="1190000009730986" class="btn btn-default btn-lg "><span id="mainBookmarkText">收藏</span>&nbsp;&nbsp;<span class="seprator">|</span>&nbsp;&nbsp;<span id="mainBookmarkNum">0</span></button></div>
+                                    <div class="recommend-post pt30 mt40 mb30 border-top">
+                        <div class="row">
+                            <div class="col-md-8">
+                                                                    <h4 class="mt0">你可能感兴趣的文章</h4>
+                                    <ul class="widget-links list-unstyled">
+                                                                                    <li class="widget-links__item">
+                                                <a href="https://segmentfault.com/a/1190000004491286" title="Docker 技巧：删除 Docker 容器和镜像">Docker 技巧：删除 Docker 容器和镜像</a>
+                                                <small class="text-muted">
+                                                    39 收藏，12.7k
+                                                    浏览
+                                                </small>
+                                            </li>
+                                                                                    <li class="widget-links__item">
+                                                <a href="https://segmentfault.com/a/1190000003090111" title="Docker开发-制作基础镜像">Docker开发-制作基础镜像</a>
+                                                <small class="text-muted">
+                                                    14 收藏，3k
+                                                    浏览
+                                                </small>
+                                            </li>
+                                                                                    <li class="widget-links__item">
+                                                <a href="https://segmentfault.com/a/1190000008535236" title="Docker 命令速查表">Docker 命令速查表</a>
+                                                <small class="text-muted">
+                                                    26 收藏，955
+                                                    浏览
+                                                </small>
+                                            </li>
+                                                                            </ul>
+                                                            </div>
+                            <div class="col-md-4">
+                                                                    <div class="article-license">
+                                                                                                                                                                    <img class="mb5" src="./走进docker(05)：docker在本地如何管理image（镜像）_ - 个人文章 - SegmentFault_files/creativecommons-cc.svg" height="24"><br>
+                                            <div class="license-item text-muted">
+                                            本作品采用<a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" class="alert-link">署名-非商业性使用-禁止演绎 4.0 国际许可协议</a> 进行许可
+                                            。
+                                        </div>
+                                        
+                                    </div>
+                                                            </div>
+                        </div>
+
+                    </div>
+                                <!-- <ul class="list-unstyled text-muted mt30">
+                                        <li>上一篇：<a href="/a/1190000009728969">co源码解读</a></li>
+                                                            <li class="mt5">下一篇：<a href="/a/1190000009732564">撰写 Viewer 扩展（Extension）</a></li>
+                                    </ul> -->
+
+                <h2 class="h4 post-comment-title"></h2>
+                
+        <div class="comments--news comments--default comments--article 
+    " data-id="1190000009730986" data-user-id="" data-author-id="1030000006806480 " data-is-admin="null">
+                    <div class="mb10 clearfix">
+                <strong class="comments-stat pull-left mr10">评论</strong>
+
+                                                    <div class="btn-group btn-group-xs pull-right comments-sort btn-group-menu" role="menu">
+                        <a href="javascript:;" class="btn btn-default active" data-sort="default">默认排序</a>
+                        <a href="javascript:;" class="btn btn-default" data-sort="desc">时间排序</a>
+                    </div>
+                            </div>
+                <div class="comments-container">
+                                <div class="comments-list">
+            </div>
+    <div class="comments-loading hide">载入中...</div>
+        <div class="comments-more hide"><a href="javascript:;">显示更多评论</a></div>
+    
+
+                                    <div class="comments-box">
+                <div class="pull-left">
+                    <img class="avatar-32 " src="./走进docker(05)：docker在本地如何管理image（镜像）_ - 个人文章 - SegmentFault_files/user-128.png" alt="">
+                </div>
+                <div class="comments-box-content">
+                    <form action="https://segmentfault.com/api/article/1190000009730986/comments/add">
+                        <div class="form-group mb0">
+                            <textarea name="text" rows="3" class="form-control" placeholder="文明社会，理性评论"></textarea>
+                            <div class="mt15 text-right">
+                                <button type="button" class="hide"></button>
+                                <button class=" btn btn-primary" type="button">发布评论</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+                                                        </div>
+    </div>
+
+
+                                    
+                
+            </div><!-- /.main -->
+
+
+            <div class="col-xs-12 col-md-3 side">
+                
+                <div class="widget-box widget_lives pt0" style="border-top: none" id="live-recommend-wrapper">
+                    <h2 class="widget-box__title">
+                        讲堂推荐
+                        <i class="fa fa-youtube-play fa-sm" aria-hidden="true"></i>
+                        <a href="https://segmentfault.com/lives" class="pull-right more">更多</a>
+                    </h2>
+                    <div id="live-recommend" class="mb20">
+                <a href="https://segmentfault.com/l/1500000010412101?utm_source=ad_ad">
+                    <img class="live-recommend-img" src="./走进docker(05)：docker在本地如何管理image（镜像）_ - 个人文章 - SegmentFault_files/3066473104-59b787c524286" width="255" height="80">
+                </a>
+            </div>
+                </div>
+                
+                                <div id="mm_124884735_33830642_120592878" class="mb25"><div id="ac_wrap_mm_124884735_33830642_120592878" style="width:255px"><script async=""></script>
+<!-- 文章页右侧边栏方块 -->
+<ins class="adsbygoogle" style="display:inline-block;width:255px;height:213px" data-ad-client="ca-pub-6330872677300335" data-ad-slot="6800875204" data-adsbygoogle-status="done"><ins id="aswift_0_expand" style="display:inline-table;border:none;height:213px;margin:0;padding:0;position:relative;visibility:visible;width:255px;background-color:transparent;"><ins id="aswift_0_anchor" style="display:block;border:none;height:213px;margin:0;padding:0;position:relative;visibility:visible;width:255px;background-color:transparent;"><iframe width="255" height="213" frameborder="0" marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allowfullscreen="true" onload="var i=this.id,s=window.google_iframe_oncopy,H=s&amp;&amp;s.handlers,h=H&amp;&amp;H[i],w=this.contentWindow,d;try{d=w.document}catch(e){}if(h&amp;&amp;d&amp;&amp;(!d.body||!d.body.firstChild)){if(h.call){setTimeout(h,0)}else if(h.match){try{h=s.upd(h,i)}catch(e){}w.location.replace(h)}}" id="aswift_0" name="aswift_0" style="left:0;position:absolute;top:0;width:255px;height:213px;" src="./走进docker(05)：docker在本地如何管理image（镜像）_ - 个人文章 - SegmentFault_files/saved_resource.html"></iframe></ins></ins></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script><script type="text/javascript"></script><script type="text/javascript"></script><script type="text/javascript"></script><script type="text/javascript"></script><script type="text/javascript"></script></div></div>
+                                <div id="mm_124884735_33830642_121788665" class="mb25"></div>
+                
+                <div class="widget-box widget-box--blog-info">
+                    <div class="blog__sidebar-author blog__sidebar-author--noblog">
+                                                    <button type="button" class="btn btn-sm btn-success follow-user ml10 pull-right" data-do="follow" data-type="user" data-id="1030000006806480">关注作者
+                            </button>
+                        
+                        <div class="article__widget--author">
+                            <a href="https://segmentfault.com/u/wuyangchun">
+                                <img class="avatar-40" src="./走进docker(05)：docker在本地如何管理image（镜像）_ - 个人文章 - SegmentFault_files/user-64.png" alt="wuyangchun">
+                            </a>
+                            <a class="article__widget-author-name" href="https://segmentfault.com/u/wuyangchun">
+                                <strong>wuyangchun</strong>
+                            </a>
+                            <p class="article__widget-author-text-muted mb0">
+                                <span>524 声望</span>
+
+                            </p>
+
+
+                        </div>
+
+
+                    </div>
+                    
+
+                </div>
+                
+                                
+                 
+                <div class="post-nav hidden-xs side-outline hidden-sm fixed" style="display: block; width: 255px; top: 0px;">
+                    <div class="panel panel-default widget-outline">
+                        <div class="panel-heading">目录</div>
+                        <div class="panel-body">
+                            <div class="nav-body" style="top: 0px;">
+                                <div class="highlight-title" style="display: block; top: 135px; height: 27px;"></div>
+                                <ul class="articleIndex"><li class=""><a href="https://segmentfault.com/a/1190000009730986#articleHeader0">镜像相关的配置</a></li><li class=""><a href="https://segmentfault.com/a/1190000009730986#articleHeader1">镜像的引用方式</a></li><li class=""><a href="https://segmentfault.com/a/1190000009730986#articleHeader2">docker pull的大概过程</a></li><li class=""><a href="https://segmentfault.com/a/1190000009730986#articleHeader3">image本地存放位置</a></li><li style="list-style:none;"><ul><li class=""><a href="https://segmentfault.com/a/1190000009730986#articleHeader4">repositories.json</a></li><li class="active"><a href="https://segmentfault.com/a/1190000009730986#articleHeader5">配置文件（image config）</a></li><li><a href="https://segmentfault.com/a/1190000009730986#articleHeader6">layer的diff_id和digest的对应关系</a></li><li><a href="https://segmentfault.com/a/1190000009730986#articleHeader7">layer的元数据</a></li></ul></li><li><a href="https://segmentfault.com/a/1190000009730986#articleHeader8">layer数据</a></li><li><a href="https://segmentfault.com/a/1190000009730986#articleHeader9">manifest文件去哪了？</a></li><li><a href="https://segmentfault.com/a/1190000009730986#articleHeader10">结束语</a></li><li><a href="https://segmentfault.com/a/1190000009730986#articleHeader11">参考</a></li></ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div><!-- /.side -->
+        </div>
+    </div>
+</div>
+
+<div id="shareToWeiboModal" class="modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">
+                    <span aria-hidden="true">×</span><span class="sr-only">Close</span>
+                </button>
+                <h4 class="modal-title">分享</h4>
+            </div>
+            <div class="modal-body">
+                <p class="sfModal-content">
+                    分享到微博？
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default dont-likeweibo" data-dismiss="modal">取消</button>
+                <a href="https://segmentfault.com/a/1190000009730986" id="shareLink" class="btn btn-primary done-btn" target="_blank" onclick="$(&#39;#shareToWeiboModal&#39;).modal(&#39;hide&#39;)">分享</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal widget-911" id="911" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button class="close" data-dismiss="modal" type="button">
+          <span aria-hidden="true">×</span>
+          <span class="sr-only">Close</span>
+        </button>
+        <h4 class="modal-title"><span data-model="action"></span><span data-model="type"></span></h4>
+      </div>
+      <div class="modal-body">
+        <form id="reportForm">
+          <!-- 后台返回信息 -->
+          <p class="alert alert-warning" data-model="returnMsg"></p>
+          <div data-role="base">
+            <p>
+              <strong class="required">我要<span data-model="action"></span>该<span data-model="type"></span>，理由是：</strong>
+            </p>
+            <ul class="list-unstyled" data-model="list"></ul>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-default pull-left" type="button" data-role="back" style="display:none">返回重选</button>
+                <button class="btn btn-default" data-dismiss="modal" type="button">取消</button>
+        <button class="btn btn-primary" data-role="submit" type="button">提交</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+
+
+
+<div class="container hidden-xs">
+    <div class="row">
+        <div class="col-md-9">
+            <div id="mm_124884735_33830642_143436142" style="padding:0 calc(50% - 364px)" class="mb20"><div id="ac_wrap_mm_124884735_33830642_143436142" style="width:728px"><script async=""></script>
+<!-- 底部广告位 -->
+<ins class="adsbygoogle" style="display:inline-block;width:728px;height:90px" data-ad-client="ca-pub-6330872677300335" data-ad-slot="5598290435" data-adsbygoogle-status="done"><ins id="aswift_1_expand" style="display:inline-table;border:none;height:90px;margin:0;padding:0;position:relative;visibility:visible;width:728px;background-color:transparent;"><ins id="aswift_1_anchor" style="display:block;border:none;height:90px;margin:0;padding:0;position:relative;visibility:visible;width:728px;background-color:transparent;"><iframe width="728" height="90" frameborder="0" marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allowfullscreen="true" onload="var i=this.id,s=window.google_iframe_oncopy,H=s&amp;&amp;s.handlers,h=H&amp;&amp;H[i],w=this.contentWindow,d;try{d=w.document}catch(e){}if(h&amp;&amp;d&amp;&amp;(!d.body||!d.body.firstChild)){if(h.call){setTimeout(h,0)}else if(h.match){try{h=s.upd(h,i)}catch(e){}w.location.replace(h)}}" id="aswift_1" name="aswift_1" style="left:0;position:absolute;top:0;width:728px;height:90px;" src="./走进docker(05)：docker在本地如何管理image（镜像）_ - 个人文章 - SegmentFault_files/saved_resource(1).html"></iframe></ins></ins></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script><script type="text/javascript"></script><script type="text/javascript"></script><script type="text/javascript"></script><script type="text/javascript"></script><script type="text/javascript"></script></div></div>
+        
+    </div>
+</div>
+
+
+
+<footer id="footer">
+    <div class="container">
+        <div class="row hidden-xs">
+            <dl class="col-sm-2 site-link">
+                <dt>网站相关</dt>
+                <dd><a href="https://segmentfault.com/about">关于我们</a></dd>
+                <dd><a href="https://segmentfault.com/tos">服务条款</a></dd>
+                <dd><a href="https://segmentfault.com/faq">帮助中心</a></dd>
+                <dd><a href="https://segmentfault.com/repu">声望与权限</a></dd>
+                <dd><a href="https://segmentfault.com/markdown">编辑器语法</a></dd>
+                <dd><a href="https://segmentfault.com/weekly">每周精选</a></dd>
+                                <dd><a href="https://segmentfault.com/community">社区服务中心</a></dd>
+            </dl>
+            <dl class="col-sm-2 site-link">
+                <dt>联系合作</dt>
+                <dd><a href="https://segmentfault.com/contact">联系我们</a></dd>
+                <dd><a href="https://segmentfault.com/hiring">加入我们</a></dd>
+                <dd><a href="https://segmentfault.com/link">合作伙伴</a></dd>
+                <dd><a href="https://segmentfault.com/press">媒体报道</a></dd>
+                <dd><a href="https://segmentfault.com/g/1570000009280187">建议反馈</a></dd>
+                                            </dl>
+            <dl class="col-sm-2 site-link">
+                <dt>常用链接</dt>
+                                                <dd><a href="https://chrome.google.com/webstore/detail/segmentfault-%E7%AC%94%E8%AE%B0/pjklfdmleagfaekibdccmhlhellefcfo" target="_blank">笔记插件: Chrome</a></dd>
+                                                                <dd><a href="https://addons.mozilla.org/zh-CN/firefox/addon/sf-note-ext/" target="_blank">笔记插件: Firefox</a></dd>
+                                                                <dd>订阅：<a href="https://segmentfault.com/feeds">问答</a> / <a href="https://segmentfault.com/feeds/blogs">文章</a></dd>
+                                                                <dd><a href="https://mirrors.segmentfault.com/" target="_blank">文档镜像</a></dd>
+                                                                <dd><a href="https://segmentfault.com/d-day" target="_blank">D-DAY 技术沙龙</a></dd>
+                                                                <dd><a href="https://segmentfault.com/hackathon" target="_blank">黑客马拉松 Hackathon</a></dd>
+                                                                <dd><a href="https://namebeta.com/" target="_blank">域名搜索注册</a></dd>
+                                                                <dd><a href="https://shop165859711.taobao.com/" target="_blank">周边店铺</a></dd>
+                                            </dl>
+            <dl class="col-sm-2 site-link">
+                <dt>社区日志</dt>
+                                <dd><a href="https://segmentfault.com/blog/segmentfault" target="_blank">产品技术日志</a></dd>
+                                <dd><a href="https://segmentfault.com/blog/community_admin" target="_blank">社区运营日志</a></dd>
+                                <dd><a href="https://segmentfault.com/blog/segmentfault_news" target="_blank">市场运营日志</a></dd>
+                                <dd><a href="https://segmentfault.com/blog/segmentfault_team" target="_blank">团队日志</a></dd>
+                                <dd><a href="https://segmentfault.com/blog/interview" target="_blank">社区访谈</a></dd>
+                                <dd>
+                    <ul class="sn-inline">
+                        <li>
+                            <a class="entypo-wechart icon-sn-weixin weixin-popover-qrcode" data-toggle="popover" data-placement="top" data-content="" data-original-title="" title="">微信</a>
+                        </li>
+                        <li>
+                            <a href="http://weibo.com/segmentfault" target="_blank" class="entypo-weibo icon-sn-weibo">新浪微博</a>
+                        </li>
+                        <li>
+                            <a href="https://github.com/SegmentFault" target="_blank" class="entypo-facebook icon-sn-github">Github</a>
+                        </li>
+                        <li>
+                            <a href="https://twitter.com/segment_fault" target="_blank" class="entypo-twitter icon-sn-twitter">Twitter</a>
+                        </li>
+                    </ul>
+                </dd>
+            </dl>
+            <dl class="col-sm-4 site-link" id="license">
+                <dt>内容许可</dt>
+                <dd>除特别说明外，用户内容均采用 <a rel="license" target="_blank" href="https://creativecommons.org/licenses/by-nc-nd/4.0/">知识共享署名-非商业性使用-禁止演绎 4.0 国际许可协议</a> 进行许可
+                </dd>
+                <dd>本站由 <a target="_blank" href="https://www.upyun.com/?utm_source=segmentfault&amp;utm_medium=link&amp;utm_campaign=upyun&amp;md=segmentfault">又拍云</a> 提供 CDN 存储服务
+                </dd>
+                <dd>
+                    <a href="https://segmentfault.com/app"><img src="./走进docker(05)：docker在本地如何管理image（镜像）_ - 个人文章 - SegmentFault_files/appQrcode.png" class="app-qrcode"></a>
+                    <div class="app-download-desc">
+                        <p>手机扫一扫</p>
+                        <p>下载官方 App</p>
+                    </div>
+                    
+                </dd>
+            </dl>
+            <div>
+            </div>
+        </div>
+        <div class="copyright">
+            Copyright © 2011-2017 SegmentFault. 当前呈现版本 17.06.16<br>
+            <a href="http://www.miibeian.gov.cn/" rel="nofollow">浙ICP备 15005796号-2</a> &nbsp;
+            <a target="_blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=33010602002000" rel="nofollow">浙公网安备 33010602002000号</a>
+            <span class="ml5">杭州堆栈科技有限公司版权所有</span>
+        </div>
+        <p class="text-center">
+            <a class="js__view--selector hidden-sm hidden-md hidden-lg" data-action="mobile" href="javascript:;">移动版</a>
+            <a class="js__view--selector hidden-sm hidden-md hidden-lg" data-action="desktop" href="javascript:;">桌面版</a>
+        </p>
+    </div>
+</footer>
+
+<div id="fixedTools" class="hidden-xs hidden-sm">
+    <a id="backtop" class="border-bottom" href="https://segmentfault.com/a/1190000009730986#">回顶部</a>
+</div>
+
+<script src="./走进docker(05)：docker在本地如何管理image（镜像）_ - 个人文章 - SegmentFault_files/hm.js.下载"></script><script async="" src="./走进docker(05)：docker在本地如何管理image（镜像）_ - 个人文章 - SegmentFault_files/analytics.js.下载"></script><script id="loginModal" type="text/template">
+    <div class="row bg-white login-modal">
+        <div class="col-md-4 col-sm-12 col-md-push-7 login-wrap">
+            <h1 class="h4 text-muted login-title">用户登录</h1>
+            <form action="/api/user/login" method="POST" role="form" class="mt30">
+                <div class="form-group">
+                    <label for="username" class="control-label">手机号 或 Email</label>
+                    <input type="text" class="form-control" name="username" required placeholder="11 位手机号 或 Email"
+                           autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label class="control-label">密码</label><span class="pull-right"><a
+                                href="/user/forgot">忘记密码</a></span>
+                    <input type="password" class="form-control" name="password" required placeholder="密码">
+                </div>
+                <div class="form-group clearfix">
+                    <div class="checkbox pull-left">
+                        <label><input name="remember" type="checkbox" value="1" checked> 记住登录状态</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary pull-right pl20 pr20"
+                            onclick='ga("send", "event", "email login button", "clicked", "login modal");'>登录
+                    </button>
+                </div>
+            </form>
+            <p class="h4 text-muted visible-xs-block h4">快速登录</p>
+            <div class="widget-login mt30">
+                <p class="text-muted mt5 mr10 pull-left hidden-xs">快速登录</p>
+                <a href="/user/oauth/google" class=""
+                   onclick='ga("send", "event", "3rd login button", "clicked", "login modal", {media: "google"});'><span
+                            class="icon-sn-google"></span> <strong class="visible-xs-inline">Google 账号</strong></a>
+                <a href="/user/oauth/github" class=""
+                   onclick='ga("send", "event", "3rd login button", "clicked", "login modal", {media: "github"});");'><span
+                            class="icon-sn-github"></span> <strong class="visible-xs-inline">Github 账号</strong></a>
+                <a href="/user/oauth/weibo" class=""
+                   onclick='ga("send", "event", "3rd login button", "clicked", "login modal", {media: "weibo"});'><span
+                            class="icon-sn-weibo"></span> <strong class="visible-xs-inline">新浪微博账号</strong></a>
+                <a href="/user/oauth/qq" class=""
+                   onclick='ga("send", "event", "3rd login button", "clicked", "login modal", {media: "qq"});'><span
+                            class="icon-sn-qq"></span> <strong class="visible-xs-inline">QQ 账号</strong></a>
+                <a href="/user/oauth/weixin" class=""
+                   onclick='ga("send", "event", "3rd login button", "clicked", "login modal", {media: "qq"});'><span
+                            class="icon-sn-weixin"></span> <strong class="visible-xs-inline">微信账号</strong></a>
+                <a href="/user/oauth/linkedin" class=""
+                   onclick='ga("send", "event", "3rd login button", "clicked", "login modal", {media: "linkedin"});'><span
+                            class="icon-sn-linkedin"></span> <strong class="visible-xs-inline">LinkedIn 账号</strong></a>
+                <span id="loginShowMore" style="cursor: pointer" class="mb5"><span class="icon-sn-dotted"></span><strong
+                            class="visible-xs-inline">•••</strong></span>
+                <a href="/user/oauth/twitter" class=" hidden"
+                   onclick='ga("send", "event", "3rd login button", "clicked", "login modal", {media: "twitter"});'><span
+                            class="icon-sn-twitter"></span> <strong class="visible-xs-inline">Twitter 账号</strong></a>
+                <a href="/user/oauth/facebook" class=" hidden"
+                   onclick='ga("send", "event", "3rd login button", "clicked", "login modal", {media: "facebook"});'><span
+                            class="icon-sn-facebook"></span> <strong class="visible-xs-inline">Facebook 账号</strong></a>
+                <a href="/user/oauth/douban" class=" hidden"
+                   onclick='ga("send", "event", "3rd login button", "clicked", "login modal", {media: "douban"});'><span
+                            class="icon-sn-douban"></span> <strong class="visible-xs-inline">豆瓣账号</strong></a>
+            </div>
+        </div>
+        <div class="login-vline hidden-xs hidden-sm"></div>
+        <div class="col-md-4 col-md-pull-3 col-sm-12 login-wrap">
+            <h1 class="h4 text-muted login-title">注册新账号</h1>
+            <form action="/api/user/phone/register" method="POST" role="form" class="mt30">
+                <div class="form-group">
+                    <label for="name" class="control-label">名字</label>
+                    <input type="text" class="form-control" name="name" required placeholder="真实姓名或常用昵称">
+                </div>
+
+
+                <div class="form-group js-register-switch-box">
+                    <div class="mb10">
+                        <label class="radio-inline">
+                            <input type="radio" name="register_type" value="phone" checked> 用手机号注册
+                        </label>
+                        <label class="radio-inline">
+                            <input type="radio" name="register_type" value="mail"> 用 Email 注册
+                        </label>
+                    </div>
+                    <div class="js-register-switch-content">
+                        <input type="phone" class="form-control mb15" name="phone" required placeholder="仅支持大陆手机号"
+                               autocomplete="off">
+                        <div class="captchaInput mb10">
+                            <label class="required control-label mt5">验证码</label>
+                            <input type="text" class="form-control" name="captch" placeholder="请输入下方的验证码后，再点击获取验证码">
+                            <div class="mt10 ">
+                                <a id="loginReloadCaptcha" href="javascript:void(0)">
+                                <img src="/user/captcha?w=240&h=50" class="captcha" width="240" height="50"/></a>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <input name="code" type="text" class="form-control js-user-login__phone-code-value" placeholder="短信验证码">
+                            <span class="input-group-btn">
+                                <button class="btn btn-default js-user-login__phone-vaild-btn" style="width:96px;" type="button">
+                                获取验证码</button>
+                            </span>
+                        </div>
+                        
+                    </div>
+                </div>
+
+
+                <div class="form-group">
+                    <label for="password" class="control-label">密码</label>
+                    <input type="password" class="form-control" name="password" required placeholder="不少于 6 位">
+                </div>
+                <div class="form-group" style="display:none;">
+                    <label class="required control-label">验证码</label>
+                    <input type="text" class="form-control" id="captcha" name="captcha" placeholder="请输入下方的验证码">
+                    <div class="mt10"><a id="loginReloadCaptcha" href="javascript:void(0)"><img
+                                    src="/user/captcha?w=240&h=50" class="captcha" width="240" height="50"/></a>
+                    </div>
+                </div>
+                <div class="form-group clearfix">
+                    <div class="checkbox pull-left">
+                        同意并接受<a href="/tos" target="_blank">《服务条款》</a>
+                    </div>
+                    <button type="submit" class="btn btn-primary pl20 pr20 pull-right"
+                            onclick='ga("send", "event", "email register button", "clicked", "login modal");'>注册
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="text-center text-muted mt30">
+    </div>
+</script>
+<script id="bindPhoneModal" type="text/template">
+    <div class="bg-white bindphone-model">
+        <div class="alert alert-warning" role="alert">
+            为了保证账号安全，请先绑定手机
+        </div>
+        <div>
+            <form class="form-horizontal form__bindphone-apply" style="background-color:#fff;padding:0;">
+                <div class="form-group ">
+                    <label for="phoneNumber" class="col-sm-3 control-label required" >手机号码</label>
+                    <div class="col-sm-6">
+                        <input type="text" class="form-control bindphone--phone" id="phoneNumber" name="phone" placeholder="仅只支持大陆手机号">
+                    </div>
+                    <div class="col-sm-3"></div>
+                </div>
+                <div class="form-group">
+                    <label for="authCode" class="col-sm-3 control-label required">验证码</label>
+                    <div class="col-sm-6">
+                        <div class="input-group">
+                            <input type="text" class="form-control bindphone--code" name="code" placeholder="短信验证码">
+                            <span class="input-group-btn">
+                                <button class="btn btn-default user-bind__phone-vaild-btn" type="button">获取验证码</button>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-sm-3"></div>
+                </div>
+            </form>
+        </div>
+
+    </div>
+</script>
+
+
+
+<script>
+    (function (w) {
+        w.SF = {
+            staticUrl: "https://static.segmentfault.com/v-59f19486"
+        };
+        w.SF.token = (function () {
+    var _BUD = //'a3W'
+'b'+//'q'
+'bb0'+''///*'US'*/'US'
++'5ac'//'C'
++'841'//'SWe'
++/* 'f'//'f' */''+'3'//'zdS'
++//'S'
+'4f8'+'9'//'y'
++'08'//'xLh'
++//'n'
+'79'+//'R2F'
+'R2F'+//'ER'
+'306'+'ad'//'c'
++'vW'//'vW'
++//'2'
+'2'+//'ME'
+'8a8'+//'zd'
+'3'+'1e5'//'O'
++//'aJ'
+'aJ'+'4eX'//'4eX'
++//'x'
+'x'+''///*'I'*/'I'
++//'BjQ'
+'c', _1RcrK88 = [[19,22],[24,26],[24,25],[31,33],[31,34],[31,32]];
+
+    for (var i = 0; i < _1RcrK88.length; i ++) {
+        _BUD = _BUD.substring(0, _1RcrK88[i][0]) + _BUD.substring(_1RcrK88[i][1]);
+    }
+
+    return _BUD;
+})();;
+    })(window);
+
+                var lock = {
+        type: "",
+        text: '',
+        table: {"ban_post":[1,"\u4f60\u5df2\u7ecf\u88ab\u7981\u8a00, \u65e0\u6cd5\u8fdb\u884c\u6b64\u64cd\u4f5c, \u5982\u6709\u7591\u4e49\u8bf7\u63d0\u4ea4\u7533\u8bc9, \u6216\u8005\u53d1\u90ae\u4ef6\u5230pr@segmentfault.com"]}
+    };
+</script>
+
+     <script crossorigin="" src="./走进docker(05)：docker在本地如何管理image（镜像）_ - 个人文章 - SegmentFault_files/assets.js.下载"></script>
+         
+    <script crossorigin="" src="./走进docker(05)：docker在本地如何管理image（镜像）_ - 个人文章 - SegmentFault_files/post.min.js.下载"></script>
+    
+
+<script>
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-918487-8']);
+    _gaq.push(['_trackPageview']);
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+                    (i[r].q = i[r].q || []).push(arguments)
+                }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+                m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+
+                
+        
+
+            
+
+    ga('create', 'UA-918487-8', 'auto', {
+        'userID'
+    : 0,
+        'createdTime'
+    : 0,
+        'now'
+    : 1509006419,
+        'allowLinker'
+    : true });
+    ga('require', 'linker');
+    ga('linker:autoLink', ['docs.segmentfault.com'] );
+    ga('set', 'dimension1', 'guest');
+    ga('send', 'pageview');
+
+</script>
+
+<script>
+    var _hmt = _hmt || [];
+    (function () {
+        var hm = document.createElement("script");
+        hm.src = "//hm.baidu.com/hm.js?e23800c454aa573c0ccb16b52665ac26";
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(hm, s);
+    })();
+</script>
+
+
+        <script type="text/javascript" src="./走进docker(05)：docker在本地如何管理image（镜像）_ - 个人文章 - SegmentFault_files/k.js.下载"></script>
+            <ins id="ac_js86_mm_124884735_33830642_120592878" style="display: none;"></ins><script>
+                    ac_keywords_targeting = "docker";
+                _acM({
+            aid: "mm_124884735_33830642_120592878",
+            format: 1,
+            mode: 1,
+            gid: 1,
+            destid: "mm_124884735_33830642_120592878",
+            sendkeywords: 1,
+            serverbaseurl: "afpeng.alimama.com/"
+        });
+        </script><script></script><script type="text/javascript" src="./走进docker(05)：docker在本地如何管理image（镜像）_ - 个人文章 - SegmentFault_files/ex" id="ac_js86_$4743003406"></script>
+            <ins id="ac_js86_mm_124884735_33830642_121788665" style="display: none;"></ins><script>
+                _acM({
+            aid: "mm_124884735_33830642_121788665",
+            format: 1,
+            mode: 1,
+            gid: 1,
+            destid: "mm_124884735_33830642_121788665",
+            sendkeywords: 0,
+            serverbaseurl: "afpeng.alimama.com/"
+        });
+        </script><script type="text/javascript" src="./走进docker(05)：docker在本地如何管理image（镜像）_ - 个人文章 - SegmentFault_files/ex(1)" id="ac_js86_$7377282853"></script>
+     
+
+        <script type="text/javascript" src="./走进docker(05)：docker在本地如何管理image（镜像）_ - 个人文章 - SegmentFault_files/k.js.下载"></script>
+            <ins id="ac_js86_mm_124884735_33830642_143436142" style="display: none;"></ins><script>
+                _acM({
+            aid: "mm_124884735_33830642_143436142",
+            format: 1,
+            mode: 1,
+            gid: 1,
+            destid: "mm_124884735_33830642_143436142",
+            sendkeywords: 0,
+            serverbaseurl: "afpeng.alimama.com/"
+        });
+        </script><script></script><script type="text/javascript" src="./走进docker(05)：docker在本地如何管理image（镜像）_ - 个人文章 - SegmentFault_files/ex(2)" id="ac_js86_$2118120068"></script>
+     
+
+
+
+</div><div id="noteWidget" class="noteWidget hidden hidden-xs">
+    <div class="noteWidget-header clearfix">
+        <h2 class="h4 pull-left">记笔记</h2>
+        <ul class="list-inline pull-right mb0">
+            <li id="noteWidgetMinimize"><span class="icon-minimize"></span></li><li id="noteWidgetZoom"><span class="icon-zoom"></span></li><li id="noteWidgetClose"><span class="icon-close"></span></li>
+        </ul>
+    </div>
+    <form method="POST" action="https://segmentfault.com/api/notes/add" role="form">
+        <div class="form-group">
+            <label for="title" class="sr-only">标题</label>
+            <input type="hidden" value="" id="draftId">
+            <input type="text" name="title" data-error="" autocomplete="off" class="form-control" placeholder="笔记描述" value="">
+        </div>
+        <div class="editor-config clearfix">
+            <select name="lang" class="form-control pull-left input-sm">
+                <optgroup label="文本语法">
+                    <option value="text" data-mode="text">纯文本</option>
+                    <option value="markdown" data-mode="markdown">Markdown</option>
+                    <option value="javascript" data-mode="javascript">Javascript</option>
+                    <option value="css" data-mode="css">CSS</option>
+                    <option value="html5" data-mode="htmlmixed">HTML</option>
+                    <option value="php" data-mode="php">PHP</option>
+                    <option value="python" data-mode="python">Python</option>
+                    <option value="ruby" data-mode="ruby">Ruby</option>
+                    <option value="go" data-mode="go">Go</option>
+                    <option value="c" data-mode="clike">C/C++</option>
+                    <option value="java" data-mode="java">Java</option>
+                    <option value="bash" data-mode="shell">Shell/Bash</option>
+                </optgroup>
+            </select>
+            <div class="pull-right hidden-xs">
+                <select name="indentWithTabs" class="form-control inline-block input-sm">
+                    <optgroup label="缩进模式">
+                        <option value="false">空格缩进</option>
+                        <option value="true">Tabs 缩进</option>
+                    </optgroup>
+                </select>
+                <select name="tabSize" class="form-control inline-block input-sm">
+                    <optgroup label="缩进大小">
+                        <option value="2">2</option>
+                        <option value="4" selected="">4</option>
+                    </optgroup>
+                </select>
+                <select name="lineWrap" class="form-control inline-block input-sm">
+                    <optgroup label="换行方式">
+                        <option value="true">自动换行</option>
+                        <option value="false">不换行</option>
+                    </optgroup>
+                </select>
+            </div>
+        </div>
+        <textarea id="codeMirror" class="form-control" style="display: none;"></textarea><div class="CodeMirror cm-s-default CodeMirror-wrap"><div style="overflow: hidden; position: relative; width: 3px; height: 0px;"><textarea autocorrect="off" autocapitalize="off" spellcheck="false" style="position: absolute; padding: 0px; width: 1000px; height: 1em; outline: none;" tabindex="0"></textarea></div><div class="CodeMirror-hscrollbar" style="left: 0px;"><div style="height: 100%; min-height: 1px;"></div></div><div class="CodeMirror-vscrollbar"><div style="min-width: 1px;"></div></div><div class="CodeMirror-scrollbar-filler"></div><div class="CodeMirror-gutter-filler"></div><div class="CodeMirror-scroll" tabindex="-1"><div class="CodeMirror-sizer" style="margin-left: 0px;"><div style="position: relative;"><div class="CodeMirror-lines"><div style="position: relative; outline: none;"><div class="CodeMirror-measure"><pre><span>xxxxxxxxxx</span></pre></div><div class="CodeMirror-measure"></div><div style="position: relative; z-index: 1;"></div><div class="CodeMirror-cursors"></div><div class="CodeMirror-code"></div></div></div></div></div><div style="position: absolute; height: 30px; width: 1px;"></div><div class="CodeMirror-gutters"><div class="CodeMirror-gutter CodeMirror-linenumbers" style="width: 1px;"></div></div></div></div>
+        <div class="mt20 clearfix">
+            <div class="pull-right">
+                <span class="text-muted hidden" id="editorStatus">已保存</span>
+                <a id="dropIt" href="javascript:void(0);" class="mr10 hidden">[舍弃]</a>
+                <button data-type="note" id="publishIt2" class="btn btn-default ml10" data-id="" data-do="add" data-url="" data-text="保存私密笔记" data-name="">保存私密笔记</button>
+                <button data-type="note" id="publishIt" class="btn btn-primary ml10" data-id="" data-do="add" data-url="" data-text="保存公开笔记" data-name="">保存公开笔记</button>
+                </div>
+            </div>
+        </form></div>
+    
+<div id="atwho-container"><div id="atwho-ground-d02b3f2b1509006424110"><div class="atwho-view" id="at-view-64"><ul class="atwho-view-ul"></ul></div></div></div><iframe id="p_analyse_iframe" src="./走进docker(05)：docker在本地如何管理image（镜像）_ - 个人文章 - SegmentFault_files/saved_resource(2).html" style="display: none;"></iframe></body></html>

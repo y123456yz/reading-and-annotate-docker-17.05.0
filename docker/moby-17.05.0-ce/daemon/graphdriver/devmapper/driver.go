@@ -127,7 +127,8 @@ func (d *Driver) Cleanup() error {
 }
 
 // CreateReadWrite creates a layer that is writable for use as a container
-// file system.
+// file system.   (ls *layerStore) initMount()中调用执行  id为容器的ID，parent为依赖的镜像相关
+// 创建一个可读写层  (ls *layerStore) initMount 中执行
 func (d *Driver) CreateReadWrite(id, parent string, opts *graphdriver.CreateOpts) error {
 	return d.Create(id, parent, opts)
 }
@@ -187,6 +188,12 @@ func (d *Driver) Get(id, mountLabel string) (string, error) {
 	}
 
 	// Create the target directories if they don't exist
+	/*
+	mnt目录
+	里面存放的是经过devicemapper文件系统mount之后的layer数据，即当前layer和所有的下层layer合并之后的数据，对于devicemapper文件系统来说，
+	只有在运行容器的时候才会被docker所mount，所以容器没启动的时候，这里看不到任何文件。
+	/var/lib/docker/devicemapper/mnt/xxxx
+	*/
 	if err := idtools.MkdirAllAs(path.Join(d.home, "mnt"), 0755, uid, gid); err != nil && !os.IsExist(err) {
 		d.ctr.Decrement(mp)
 		return "", err
