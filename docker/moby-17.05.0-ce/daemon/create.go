@@ -85,9 +85,9 @@ func (daemon *Daemon) create(params types.ContainerCreateConfig, managed bool) (
 		err       error
 	)
 
-	//获取镜像ID全名
+	//获取镜像信息
 	if params.Config.Image != "" { //获取请求中的imageid   启动容器的时候都需要制定安装那个image镜像启动
-		img, err = daemon.GetImage(params.Config.Image)
+		img, err = daemon.GetImage(params.Config.Image) //获取
 		if err != nil {
 			return nil, err
 		}
@@ -230,6 +230,7 @@ func (daemon *Daemon) generateSecurityOpt(hostConfig *containertypes.HostConfig)
 }
 
 //创建读写层  create.go中的create函数调用
+//获取镜像层最顶层chainID,然后创建/var/lib/docker/image/overlay/layerdb/mounts/$mountID 目录及其下面的文件，同时创建存储该容器层的device
 func (daemon *Daemon) setRWLayer(container *container.Container) error {
 	var layerID layer.ChainID
 	/*
@@ -241,7 +242,7 @@ func (daemon *Daemon) setRWLayer(container *container.Container) error {
 		if err != nil {
 			return err
 		}
-		layerID = img.RootFS.ChainID()
+		layerID = img.RootFS.ChainID() //实际上是镜像层最上层的镜像对应的ChainID
 	}
 
 	rwLayerOpts := &layer.CreateRWLayerOpts {
@@ -250,11 +251,13 @@ func (daemon *Daemon) setRWLayer(container *container.Container) error {
 		StorageOpt: container.HostConfig.StorageOpt,
 	}
 
+	//创建/var/lib/docker/image/overlay/layerdb/mounts/$mountID 目录及其下面的文件，同时创建存储该容器层的device
+
 	rwLayer, err := daemon.layerStore.CreateRWLayer(container.ID, layerID, rwLayerOpts) //setRWLayer->CreateRWLayer
 	if err != nil {
 		return err
 	}
-	container.RWLayer = rwLayer
+	container.RWLayer = rwLayer //实际上对应的是referencedRWLayer 类型
 
 	return nil
 }

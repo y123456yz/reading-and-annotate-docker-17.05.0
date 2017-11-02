@@ -62,7 +62,7 @@ type ProtoDriver interface {  //包含在 NaiveDiffDriver 结构中       type D
 	// to be used as the storage for a container. Additional options can
 	// be passed in opts. parent may be "" and opts may be nil.
 
-	//创建一个可读写层  (ls *layerStore) initMount 中执行
+	//创建一个可读写层  (ls *layerStore) initMount 中执行   其实只是设置好对应层的device
 	CreateReadWrite(id, parent string, opts *CreateOpts) error
 	// Create creates a new, empty, filesystem layer with the
 	// specified id and parent and options passed in opts. Parent

@@ -1026,7 +1026,7 @@ func prepareTempDir(rootDir string, rootUID, rootGID int) (string, error) {
 	return tmpDir, idtools.MkdirAllAs(tmpDir, 0700, rootUID, rootGID)
 }
 
-//setupInitLayer(initPath)；创建初始化层，就是创建一个容器需要的基本目录和文
+//setupInitLayer(initPath)；创建初始化层，就是创建一个容器需要的基本目录和文件，在 initMount 中执行
 func (daemon *Daemon) setupInitLayer(initPath string) error {
 	rootUID, rootGID := daemon.GetRemappedUIDGID()
 	return initlayer.Setup(initPath, rootUID, rootGID)

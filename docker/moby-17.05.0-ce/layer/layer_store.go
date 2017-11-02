@@ -46,7 +46,7 @@ type layerStore struct {  //NewStoreFromGraphDriver 中初始化会使用该结�
 	layerdb下面有三个目录，mounts、sha256和tmp，tmp目录主要存放临时性数据
 	*/
 	store  MetadataStore	  //store对应 fileMetadataStore  用于读取/var/lib/docker/image/devicemapper/layerdb/mounts/目录中的相关文件内容使用的函数接口
-	driver graphdriver.Driver // driver:例如devicemapper，这里的driver对应 graphdriver\driver.go中的 Driver结构
+	driver graphdriver.Driver // driver:例如devicemapper，这里的driver对应 graphdriver\driver.go中的 Driver 结构
 
 	//即map的键为ChainID（字母串），值为roLayer, store本质上是磁盘上保存了各个layer的元数据信息，当docker初始化时，它会利用
 	//这些元数据文件在内存中构造各个layer，每个Layer都用一个roLayer结构体表示，即只读(ro)的layer
@@ -56,7 +56,7 @@ type layerStore struct {  //NewStoreFromGraphDriver 中初始化会使用该结�
 	layerMap map[ChainID]*roLayer //镜像层 roLayer 中各层ID和roLayer对应关系存到这里面，赋值见 loadLayer，
 	layerL   sync.Mutex
 
-	//roLayer 存储镜像层信息，见loadLayer  mountedLayer 存储只读层(容器层)信息，见loadMount
+	//roLayer 存储镜像层信息，见loadLayer  mountedLayer 存储只读层(容器层)信息，见loadMount   mounts层创建见saveMount
 	mounts map[string]*mountedLayer
 	mountL sync.Mutex
 
@@ -507,8 +507,9 @@ func (ls *layerStore) Release(l Layer) ([]Metadata, error) {
 }
 
 //create.go中的setRWLayer函数调用  //setRWLayer->CreateRWLayer
-//如果是最底层parent为""，如果不是底层，则parent指向父id   name容器名   parent为镜像层ID   opts为创建容器时指定的部分参数
-func (ls *layerStore) CreateRWLayer(name string, parent ChainID, opts *CreateRWLayerOpts) (RWLayer, error) {
+// //name容器id   parent为镜像层最顶层 chainID   opts为创建容器时指定的部分参数
+//创建/var/lib/docker/image/overlay/layerdb/mounts/$mountID 目录及其下面的文件，同时创建存储该容器层的device     //setRWLayer->CreateRWLayer
+func (ls *layerStore) CreateRWLayer(name string, parent ChainID, opts *CreateRWLayerOpts) (RWLayer, error) { //RWLayer实际上对应的是referencedRWLayer 类型
 	var (
 		storageOpt map[string]string
 		initFunc   MountInit   //daemon.getLayerInit(),
@@ -528,7 +529,7 @@ func (ls *layerStore) CreateRWLayer(name string, parent ChainID, opts *CreateRWL
 
 	ls.mountL.Lock()
 	defer ls.mountL.Unlock()
-	m, ok := ls.mounts[name]
+	m, ok := ls.mounts[name] //该容器已经存在了，直接返回报错
 	if ok {
 		return nil, ErrMountNameConflict
 	}
@@ -536,12 +537,12 @@ func (ls *layerStore) CreateRWLayer(name string, parent ChainID, opts *CreateRWL
 	var err error
 	var pid string
 	var p *roLayer
-	if string(parent) != "" { //每一层都包括指向父层的指针。如果没有这个指针，说明处于最底层。
+	if string(parent) != "" {
 		p = ls.get(parent) //根据parent获取该parent对应的镜像层 roLayer 信息
 		if p == nil {
 			return nil, ErrLayerDoesNotExist
 		}
-		pid = p.cacheID
+		pid = p.cacheID //该parent镜像层对应的cacheID,cacheID中的metaID是该镜像层中真正存储数据的元信息地址，指向/var/lib/docker/devicemapper/metadata/$metaID
 
 		// Release parent chain if error
 		defer func() {
@@ -553,10 +554,10 @@ func (ls *layerStore) CreateRWLayer(name string, parent ChainID, opts *CreateRWL
 		}()
 	}
 
-	m = &mountedLayer {
-		name:       name, //容器名
-		parent:     p,
-		mountID:    ls.mountID(name),  //创建容器的时候根据容器名生成容器随机ID
+	m = &mountedLayer { // /var/lib/docker/image/devicemapper/layerdb/mounts/$mountID
+		name:       name, //容器ID
+		parent:     p,  //镜像层chainID
+		mountID:    ls.mountID(name),  //创建容器的时候根据容器ID随机生成容器mountID
 		layerStore: ls,
 		references: map[RWLayer]*referencedRWLayer{},
 	}
@@ -573,17 +574,17 @@ func (ls *layerStore) CreateRWLayer(name string, parent ChainID, opts *CreateRWL
 		StorageOpt: storageOpt,
 	}
 
-	///var/lib/docker/overlay/xxxx，xxx-INIT在上面的initMount函数中创建 相关目录中相关文件夹创建
+	// /var/lib/docker/image/devicemapper/layerdb/mounts/$containerID/mount-id内容中的mount-id，也就是创建存储容器层文件系统的deviceID
 	if err = ls.driver.CreateReadWrite(m.mountID, pid, createOpts); err != nil {
 		return nil, err
 	}
 
-	//向/var/lib/docker/image/overlay/layerdb/mounts/中的指定文件中写入对应的内容 例如，该目录下的以下文件内容init-id  mount-id  parent
+	//向/var/lib/docker/image/devicemapper/layerdb/mounts/中的指定文件中写入对应的内容 例如，该目录下的以下文件内容init-id  mount-id  parent
 	if err = ls.saveMount(m); err != nil {
 		return nil, err
 	}
 
-	return m.getReference(), nil
+	return m.getReference(), nil   //
 }
 
 func (ls *layerStore) GetRWLayer(id string) (RWLayer, error) {
@@ -656,7 +657,7 @@ func (ls *layerStore) ReleaseRWLayer(l RWLayer) ([]Metadata, error) {
 	return []Metadata{}, nil
 }
 
-//向/var/lib/docker/image/overlay/layerdb/mounts/中的指定文件中写入对应的内容 例如，该目录下的以下文件内容init-id  mount-id  parent
+//向/var/lib/docker/image/devicemapper/layerdb/mounts/中的指定文件中写入对应的内容 例如，该目录下的以下文件内容init-id  mount-id  parent
 func (ls *layerStore) saveMount(mount *mountedLayer) error {
 	if err := ls.store.SetMountID(mount.name, mount.mountID); err != nil {
 		return err
@@ -679,20 +680,24 @@ func (ls *layerStore) saveMount(mount *mountedLayer) error {
 	return nil
 }
 
-//graphID为容器层ID， parent为创建容器时候需要的镜像层ID目录中的cache-id中的内容(也就是roLayer.cacheID) initFunc为daemon.getLayerInit(),
+
+//graphID为容器层中的mountID
+// parent为镜像层总最顶层的chinaID
+// initFunc为daemon.getLayerInit(),
+// setRWLayer->CreateRWLayer->initMount
 func (ls *layerStore) initMount(graphID, parent, mountLabel string, initFunc MountInit, storageOpt map[string]string) (string, error) {
 	// Use "<graph-id>-init" to maintain compatibility with graph drivers
 	// which are expecting this layer with this special name. If all
 	// graph drivers can be updated to not rely on knowing about this layer
 	// then the initID should be randomly generated.
-	initID := fmt.Sprintf("%s-init", graphID) //容器ID+ "-init"
+	initID := fmt.Sprintf("%s-init", graphID) //容器对应的mountID+ "-init"
 
 	createOpts := &graphdriver.CreateOpts {
 		MountLabel: mountLabel,
 		StorageOpt: storageOpt,
 	}
 
-	///var/lib/docker/overlay/xxxx-init 相关目录中相关文件夹创建
+	///var/lib/docker/image/devicemapper/layerdb/mounts/$containerID/中的init-id文件中的内容 对应的device
 	if err := ls.driver.CreateReadWrite(initID, parent, createOpts); err != nil {
 		return "", err
 	}
@@ -701,7 +706,7 @@ func (ls *layerStore) initMount(graphID, parent, mountLabel string, initFunc Mou
 		return "", err
 	}
 
-	if err := initFunc(p); err != nil {
+	if err := initFunc(p); err != nil {  //创建INIT层  //setupInitLayer(initPath)
 		ls.driver.Put(initID)
 		return "", err
 	}

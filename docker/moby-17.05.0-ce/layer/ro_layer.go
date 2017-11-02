@@ -97,7 +97,7 @@ chainID计算过程：假设某个镜像diff_ids如下  cat /var/lib/docker/imag
 	parent     *roLayer  //每一层都包括指向父层的指针。如果没有这个指针，说明处于最底层。
 	//在docker宿主机上随机生成的uuid,在当前宿主机上与该镜像层一一对应，用于标识和索引graphdriver中的镜像层文件
 	//cache-id是docker下载layer的时候在本地生成的一个随机uuid，指向真正存放layer文件的地方
-	cacheID    string //知名layer数据存放位置，/var/lib/docker/devicemapper/metadata/cache-id
+	cacheID    string //指明layer数据存放位置，/var/lib/docker/devicemapper/metadata/cache-id，也就是指向/var/lib/docker/devicemapper/metadata/$metaID
 
 	size       int64 //diffID和size可以通过一个该镜像层包计算出来
 	layerStore *layerStore

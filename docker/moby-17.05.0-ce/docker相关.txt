@@ -1,1 +1,4 @@
 yum安装:yum --enablerepo=docker_main install docker-engine-1.13.1 docker-engine-selinux-1.13.1 -y
+
+
+docker run --rm -it --privileged -e BUILDFLAGS -e DOCKER_CLIENTONLY -e DOCKER_EXECDRIVER -e DOCKER_EXPERIMENTAL  -e DOCKER_GRAPHDRIVER -e DOCKER_STORAGE_OPTS -e DOCKER_USERLANDPROXY  -e TESTDIRS -e TESTFLAGS -e TIMEOUT -v /root/yyz/docker/bundles/:/go/src/github.com/docker/docker/bundles -v /root/yyz/docker/src:/tmp 69f833c62773 bash

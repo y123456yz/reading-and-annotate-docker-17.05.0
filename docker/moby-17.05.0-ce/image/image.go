@@ -60,6 +60,7 @@ type V1Image struct {
 
 // Image stores the image configuration  赋值见 (is *store) Get(id ID)
 //这里面的内容从 /var/lib/docker/image/devicemapper/imagedb/content/sha256/$id中获取解析json得到， 解析函数见 (is *store) Get(id ID)
+//创建容器的时候，根据指定的镜像ID获取Image信息在 (daemon *Daemon) containerCreate->create->GetImage 中实现
 type Image struct { //创建容器的时候，会根据docker run制定的镜像来创建container实例，可以参考 (daemon *Daemon) create (daemon\create.go)
 	V1Image
 	Parent     ID        `json:"parent,omitempty"`

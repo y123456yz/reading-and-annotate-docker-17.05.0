@@ -69,8 +69,8 @@ type CommonContainer struct { //主要结构赋值见 newContainer   初始化�
 	Root            string         `json:"-"` // Path to the "home" of the container, including metadata.
 	BaseFS          string         `json:"-"` // Path to the graphdriver mountpoint
 	//赋值见 create.go中的create函数调用 setRWLayer，使用见docker start的时候执行到的 daemon/daemon.go中的 Mount
-	RWLayer         layer.RWLayer  `json:"-"`
-	ID              string
+	RWLayer         layer.RWLayer  `json:"-"`  //实际上对应的是referencedRWLayer 类型,赋值见setRWLayer
+	ID              string  //容器ID，赋值见newContainer  和下面的name对应
 	Created         time.Time
 	Managed         bool
 	Path            string
@@ -79,7 +79,7 @@ type CommonContainer struct { //主要结构赋值见 newContainer   初始化�
 	ImageID         image.ID `json:"Image"`
 	NetworkSettings *network.Settings
 	LogPath         string
-	Name            string
+	Name            string  //容器名  和ID对应
 	Driver          string
 	// MountLabel contains the options for the 'mount' command
 	//daemon/start.go中的 containerStart->saveApparmorConfig->parseSecurityOpt中执行

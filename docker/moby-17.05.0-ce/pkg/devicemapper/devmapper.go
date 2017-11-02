@@ -91,7 +91,7 @@ type (
 		Device []uint64
 	}
 	// Info represents information about a device.
-	Info struct {
+	Info struct { //takeSnapshot 中使用
 		Exists         int
 		Suspended      int
 		LiveTable      int
@@ -711,7 +711,7 @@ func ResumeDevice(name string) error {
 /*
 在pool中创建一个Thin Provisioning 的 thinly-provisioned device., deviceID为改volume  device的ID号，可以参考http://blog.csdn.net/leo_is_ant/article/details/52935304?locationNum=6&fps=1
 */
-//createRegisterDevice中会调用该函数
+//createRegisterDevice 中会调用该函数
 func CreateDevice(poolName string, deviceID int) error {
 	logrus.Debugf("devicemapper: CreateDevice(poolName=%v, deviceID=%v)", poolName, deviceID)
 	task, err := TaskCreateNamed(deviceTargetMsg, poolName)
@@ -814,8 +814,10 @@ func activateDevice(poolName string, name string, deviceID int, size uint64, ext
 }
 
 // CreateSnapDeviceRaw creates a snapshot device. Caller needs to suspend and resume the origin device if it is active.
+//创建设备的镜像
 func CreateSnapDeviceRaw(poolName string, deviceID int, baseDeviceID int) error {
-	task, err := TaskCreateNamed(deviceTargetMsg, poolName)
+	//创建task，libdevmapper通过msg传递命令
+	task, err := TaskCreateNamed(deviceTargetMsg, poolName)  //创建task，libdevmapper通过msg传递命令
 	if task == nil {
 		return err
 	}
@@ -841,11 +843,16 @@ func CreateSnapDeviceRaw(poolName string, deviceID int, baseDeviceID int) error 
 }
 
 // CreateSnapDevice creates a snapshot based on the device identified by the baseName and baseDeviceId,
+//createRegisterSnapDevice 中调用执行
+//  创建镜像文件的快照
+//      libdevmapper通过发送msg发送命令
+//  调用路径：AddDevice->createSnapDevice
 func CreateSnapDevice(poolName string, deviceID int, baseName string, baseDeviceID int) error {
 	devinfo, _ := GetInfo(baseName)
 	doSuspend := devinfo != nil && devinfo.Exists != 0
 
 	if doSuspend {
+		//设备存在，则在快照前要先挂起父设备
 		if err := SuspendDevice(baseName); err != nil {
 			return err
 		}
@@ -860,7 +867,7 @@ func CreateSnapDevice(poolName string, deviceID int, baseName string, baseDevice
 		return err
 	}
 
-	if doSuspend {
+	if doSuspend {  //创建成功，恢复父设备
 		if err := ResumeDevice(baseName); err != nil {
 			return err
 		}

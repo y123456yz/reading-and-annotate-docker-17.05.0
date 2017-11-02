@@ -68,12 +68,14 @@ func (daemon *Daemon) GetImageID(refOrID string) (image.ID, error) {
 }
 
 // GetImage returns an image corresponding to the image referred to by refOrID.
-//客户端docker run  ... image，run的时候指定的img可能是不全的，这里需要把imageid补全
+//客户端docker run  ... image，run的时候指定的img可能是不全的，这里需要把image信息
 func (daemon *Daemon) GetImage(refOrID string) (*image.Image, error) {
 	imgID, err := daemon.GetImageID(refOrID)
 	if err != nil {
 		return nil, err
 	}
+
+	//获取/var/lib/docker/image/devicemapper/imagedb/content/sha256目录下面的ID对应的文件内容配置信息
 	return daemon.imageStore.Get(imgID)
 }
 

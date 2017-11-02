@@ -23,19 +23,20 @@ mounts本质上是一个map，类型为map[string]*mountedLayer。前面提到�
 //roLayer 是只读的layer原信息，mounts是运行容器的时候可写layer
 //roLayer 存储只读镜像层信息，见loadLayer  mountedLayer 存储只读层(容器层)信息，见loadMount
 //初始化实例见CreateRWLayer  layerStore 包含该成员类型， loadMount 中初始化赋值该类，   //setRWLayer->CreateRWLayer创建容器的时候，也会构建新的mountedLayer
+//mounts层机器init-id   mount-id  parent 创建见saveMount
 type mountedLayer struct { //参考loadMount 读取/var/lib/docker/image/devicemapper/layerdb/mounts/containerId目录下面的文件内容存入 mountedLayer
 //mountedLayer 存储的内容主要是索引某个容器的可读写层(也叫容器层)的ID(也对应容器的ID)
 //只读层元数据的持久化位于 /var/lib/docker/image/[graphdriver]/imagedb/metadata/sha256/[chainID]/文件夹下
 // 可读写层(也叫容器层)存储在 /var/lib/docker/image/[graph_driver]/layerdb/mounts/[chain_id]/路径下
 	name       string  // /var/lib/docker/image/devicemapper/layerdb/mounts/containerId 中的containerId
 	//initID和mountID表示了这个layer数据存放的位置，和 roLayer.CacheId一样。
-	mountID    string  //读写层ID  根据创建容器时指定的容器名，来生成一容器ID随机随机数，赋值见CreateRWLayer
+	mountID    string  //读写层ID  根据容器ID，来生成该容器对应的mountID，赋值见CreateRWLayer    mount-id 文件中的内容
 	initID     string  //容器init层的ID
 	parent     *roLayer //父镜像ID，也就是只读层  该容器层对应的镜像层ID，也就是创建容器的时候需要指定的镜像ID
 	path       string
 	layerStore *layerStore
 
-	references map[RWLayer]*referencedRWLayer
+	references map[RWLayer]*referencedRWLayer  //赋值见getReference
 }
 
 func (ml *mountedLayer) cacheParent() string {
@@ -105,6 +106,7 @@ func (ml *mountedLayer) retakeReference(r RWLayer) {
 	}
 }
 
+//getReference 中使用
 type referencedRWLayer struct {
 	*mountedLayer
 }

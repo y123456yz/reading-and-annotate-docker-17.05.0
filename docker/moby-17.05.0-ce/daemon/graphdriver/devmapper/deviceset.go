@@ -80,7 +80,9 @@ root@fd-xxx-slave38.gz01:/var/lib/docker/devicemapper/metadata$ cat 73566c5a5e7f
 root@fd-mesos-slave38.gz01:/var/lib/docker/devicemapper/metadata$
 */
 //  /var/lib/docker/devicemapper/metadata 文件夹中的json文件内容反序列号后存入devInfo结构的各个变量中，赋值初始化见 loadMetadata
-type devInfo struct {  //registerDevice 中初始化使用该结构
+// DeviceSet:thin pool数据结构    DevInfo:thin device数据结构
+// thin device取名规则docker-$major:$minor-$inode-$imageid/$containerid thin poll取名为docker-$major:$minor-$inode-pool
+type devInfo struct {  //registerDevice 中初始化使用该结构    metaData 结构中会用该devInfo结构
 	Hash          string `json:"-"`   //文件名
 
 	//下面的这些成员值来源是metadata下面的json文件内容，通过/devicemapper/metadata/base 文件反序列化得到
@@ -107,16 +109,19 @@ type devInfo struct {  //registerDevice 中初始化使用该结构
 
 // /var/lib/docker/devicemapper/metadata 目录下的 文件存入下面map中的string中，对应一个devInfo，见 lookupDevice  registerDevice
 //metadata文件夹下面的所有文件对应同一个DeviceSet
-type metaData struct {  //lookupDevice  函数中赋值
+type metaData struct {  //AddDevice->lookupDevice  函数中赋值
 	Devices map[string]*devInfo `json:"Devices"`    // 遍历可以参考 constructDeviceIDMap
 }
 
 // DeviceSet holds information about list of devices
+// DeviceSet:thin pool数据结构    DevInfo:thin device数据结构
+// thin device取名规则docker-$major:$minor-$inode-$imageid/$containerid thin poll取名为docker-$major:$minor-$inode-pool
 type DeviceSet struct {  //初始化及赋值见 NewDeviceSet ，部分成员赋值见 loadDeviceSetMetaData
 	metaData      `json:"-"`
 	sync.Mutex    `json:"-"` // Protects all fields of DeviceSet and serializes calls into libdevmapper
 	root          string   //初始化及赋值见 NewDeviceSet   默认/var/lib/docker/devicemapper
-	devicePrefix  string  //赋值为 docker-%d:%d-%d   根据stat /var/lib/docker/devicemapper 获取到，见initDevmapper ，
+	//创建thin device名字使用的前缀，`docker-${major}:${minor}-${inode}`
+	devicePrefix  string  //赋值为 docker-%d:%d-%d   根据stat /var/lib/docker/devicemapper 获取到，见initDevmapper ， (info *devInfo) Name()
 
 	//下面的这两个ID影响 transaction 中的 OpenTransactionID 和 DeviceID   内核生效见updatePoolTransactionID
 	TransactionID uint64 `json:"-"`   //赋值见 initMetaData     devicemapper  poll TransactionID
@@ -128,13 +133,15 @@ type DeviceSet struct {  //初始化及赋值见 NewDeviceSet ，部分成员赋
 	//Docker loop volume VS direct LVM 选型和分析    http://blog.csdn.net/gushenbusi/article/details/49494629
 	dataLoopbackSize      int64   //默认值defaultDataLoopbackSize
 	metaDataLoopbackSize  int64
+	//base image之上格式化的文件系统大小
 	baseFsSize            uint64   //默认为 defaultBaseFsSize，见NewDeviceSet
+	//base image之上格式化的文件系统类型
 	filesystem            string   //可以通过 dm.fs 配置，如果不配置 createFilesystem->determineDefaultFS 中会进行默认设置
 	mountOptions          string
-	mkfsArgs              []string
-	dataDevice            string // block or loop dev   dm.datadev配置项配置
+	mkfsArgs              []string  //格式化base image文件系统时的选项
+	dataDevice            string // block or loop dev   dm.datadev配置项配置   //指定使用哪个设备作为data device，eg，/dev/sda
 	dataLoopFile          string // loopback file, if used
-	metadataDevice        string // block or loop dev
+	metadataDevice        string // block or loop dev   //指定使用哪个设备作为metadata device，eg，/dev/sda
 	metadataLoopFile      string // loopback file, if used
 	//释放见 deleteDevice->issueDiscard->BlockDeviceDiscard
 	doBlkDiscard          bool  // docker还提供这个参数，默认值为true，即删除image后，会调用DISCARD，真正释放HOST上空间。
@@ -227,11 +234,12 @@ type DevStatus struct {
 	HighestMappedSector uint64
 }
 
-func getDevName(name string) string {
+func getDevName(name string) string { //(devices *DeviceSet) MountDevice 中做mount
 	return "/dev/mapper/" + name
 }
 
-
+//例如/dev/mapper/docker-中的docker-8:4-959071-4618a52b194ef63a24149769f71b97940047e6398e904df9d4a66bf88b20ae13
+// 4618a52b194ef63a24149769f71b97940047e6398e904df9d4a66bf88b20ae13 是mountid，不是容器id
 func (info *devInfo) Name() string {
 	hash := info.Hash
 	if hash == "" {
@@ -240,6 +248,7 @@ func (info *devInfo) Name() string {
 	return fmt.Sprintf("%s-%s", info.devices.devicePrefix, hash)
 }
 
+//(devices *DeviceSet) MountDevice 中做mount
 func (info *devInfo) DevName() string {
 	return getDevName(info.Name())
 }
@@ -556,6 +565,7 @@ func (devices *DeviceSet) unregisterDevice(hash string) error {
 // Should be called with devices.Lock() held.
 //createRegisterDevice 中调用,
 //把 id size  transactionID信息序列化存入 devicemapper/metadata/$Hash
+//创建thin device的DevInfo，并保存信息到/var/lib/docker/devicemapper/metadata/$id文件中
 func (devices *DeviceSet) registerDevice(id int, hash string, size uint64, transactionID uint64) (*devInfo, error) {
 	logrus.Debugf("devmapper: registerDevice(%v, %v)", id, hash)
 	info := &devInfo{
@@ -874,7 +884,7 @@ func (devices *DeviceSet) createRegisterDevice(hash string) (*devInfo, error) {
 
 	for {
 		// 在Pool中创建一个Thin Provisioning 的 thinly-provisioned device, ID号为deviceID   createRegisterDevice->devicemapper.CreateDevice
-		if err := devicemapper.CreateDevice(devices.getPoolDevName(), deviceID); err != nil {
+		if err := devicemapper.CreateDevice(devices.getPoolDevName(), deviceID); err != nil {  //创建base device
 			if devicemapper.DeviceIDExists(err) { //deviceID已经存在了，不能在pool中创建该device
 				// Device ID already exists. This should not
 				// happen. Now we have a mechanism to find
@@ -902,7 +912,7 @@ func (devices *DeviceSet) createRegisterDevice(hash string) (*devInfo, error) {
 		hash, devices.OpenTransactionID)
 
 	//根据上面CreateDevice判断获取到新的deviceID后，重新更新devicemapper/metadata/$Hash文件，如果hash为""，则直接写base文件
-	info, err := devices.registerDevice(deviceID, hash, devices.baseFsSize, devices.OpenTransactionID)
+	info, err := devices.registerDevice(deviceID, hash, devices.baseFsSize, devices.OpenTransactionID) //向thin pool注册base device
 	if err != nil {
 		_ = devicemapper.DeleteDevice(devices.getPoolDevName(), deviceID)
 		devices.markDeviceIDFree(deviceID)
@@ -924,7 +934,7 @@ func (devices *DeviceSet) takeSnapshot(hash string, baseInfo *devInfo, size uint
 		err     error
 	)
 
-	if err = devices.poolHasFreeSpace(); err != nil {
+	if err = devices.poolHasFreeSpace(); err != nil { //检查devicemapper pool 是否有空间
 		return err
 	}
 
@@ -1129,25 +1139,28 @@ func (devices *DeviceSet) saveBaseDeviceUUID(baseInfo *devInfo) error {
 	return devices.saveDeviceSetMetaData()
 }
 
+// 创建祖先镜像
 func (devices *DeviceSet) createBaseImage() error {
 	logrus.Debugf("devmapper: Initializing base device-mapper thin volume")
 
 	// Create initial device  主要是调用libdm库通过create_thin消息来创建 thinly-provisioned device.
-	info, err := devices.createRegisterDevice("")
+	info, err := devices.createRegisterDevice("") //  // //创建base device，并向thin pool注册base device
 	if err != nil {
 		return err
 	}
 
 	logrus.Debugf("devmapper: Creating filesystem on base device-mapper thin volume")
-
+	//激活base device
 	if err := devices.activateDeviceIfNeeded(info, false); err != nil {
 		return err
 	}
 
+	//在base device之上格式化新文件系统
 	if err := devices.createFilesystem(info); err != nil {
 		return err
 	}
 
+	//完成初始化，保存metadata到/var/lib/docker/devicemapper/metadata/base中
 	info.Initialized = true
 	if err := devices.saveMetadata(info); err != nil {
 		info.Initialized = false
@@ -1799,6 +1812,8 @@ func (devices *DeviceSet) enableDeferredRemovalDeletion() error {
 	return nil
 }
 
+//  初始化thin pool
+//  调用路径：NewDeviceSet->initDevmapper
 func (devices *DeviceSet) initDevmapper(doInit bool) error {
 	// give ourselves to libdm as a log handler
 	devicemapper.LogInit(devices)
@@ -1849,7 +1864,7 @@ func (devices *DeviceSet) initDevmapper(doInit bool) error {
 	}
 
 	// Set the device prefix from the device id and inode of the docker root dir
-
+	//获取/var/lib/docker目录所在设备的 inode
 	st, err := os.Stat(devices.root)
 	if err != nil {
 		return fmt.Errorf("devmapper: Error looking up dir %s: %s", devices.root, err)
@@ -1873,6 +1888,9 @@ func (devices *DeviceSet) initDevmapper(doInit bool) error {
 	Change: 2017-09-09 20:26:25.989772228 +0800
 	 Birth: -
 	*/
+
+	//thin device取名规则docker-$major:$minor-$inode-$imageid/$containerid
+	//thin poll取名为docker-$major:$minor-$inode-pool
 	devices.devicePrefix = fmt.Sprintf("docker-%d:%d-%d", major(sysSt.Dev), minor(sysSt.Dev), sysSt.Ino)
 	//DEBU[0001] devmapper: Generated prefix: docker-8:4-1184401
 	logrus.Debugf("devmapper: Generated prefix: %s", devices.devicePrefix)
@@ -1880,7 +1898,7 @@ func (devices *DeviceSet) initDevmapper(doInit bool) error {
 	// Check for the existence of the thin-pool device
 
 	//GetInfo中检查 thinpool 是否存在
-	poolExists, err := devices.thinPoolExists(devices.getPoolName()) //pool释放存在
+	poolExists, err := devices.thinPoolExists(devices.getPoolName()) //pool是否存在
 	if err != nil {
 		return err
 	}
@@ -1942,7 +1960,7 @@ func (devices *DeviceSet) initDevmapper(doInit bool) error {
 			}
 			devices.dataLoopFile = data
 			devices.dataDevice = dataFile.Name()
-		} else {
+		} else { //如果指定了data device，则打开
 			dataFile, err = os.OpenFile(devices.dataDevice, os.O_RDWR, 0600)
 			if err != nil {
 				return err
@@ -2001,6 +2019,8 @@ func (devices *DeviceSet) initDevmapper(doInit bool) error {
 
 	// If we didn't just create the data or metadata image, we need to
 	// load the transaction id and migrate old metadata
+	//没有创建新loopback device，则从目录/var/lib/docker/devicemapper/metadata/$ids
+	//加载旧的metadata
 	if !createdLoopback { //配置了thinpooldevice则进入该流程
 		if err := devices.initMetaData(); err != nil { //  获取/var/lib/docker/devicemapper/metadata/目录下面的文件及其相关内容存入相关结构
 			return err
@@ -2022,6 +2042,7 @@ func (devices *DeviceSet) initDevmapper(doInit bool) error {
 	}
 
 	// Setup the base image
+	//初始化一个新的空镜像文件，作为所有镜像的祖先镜像
 	if doInit {
 		if err := devices.setupBaseImage(); err != nil {
 			logrus.Debugf("devmapper: Error device setupBaseImage: %s", err)
@@ -2034,11 +2055,17 @@ func (devices *DeviceSet) initDevmapper(doInit bool) error {
 
 // AddDevice adds a device and registers in the hash.
 //(d *Driver) Create 中执行
-func (devices *DeviceSet) AddDevice(hash, baseHash string, storageOpt map[string]string) error {
+
+//例如hash为容器层-INIT层， baseHash为镜像层最顶层chainID对应的cacheID，也就是容器init层依赖镜像层最顶层。
+
+//  在thin pool中创建一个新thin device
+//  调用路径：driver.Create()
+func (devices *DeviceSet) AddDevice(hash, baseHash string, storageOpt map[string]string) error { //为hash设置相应的存储device等
 	logrus.Debugf("devmapper: AddDevice START(hash=%s basehash=%s)", hash, baseHash)
 	defer logrus.Debugf("devmapper: AddDevice END(hash=%s basehash=%s)", hash, baseHash)
 
 	// If a deleted device exists, return error.
+	//查找父device
 	baseInfo, err := devices.lookupDeviceWithLock(baseHash)
 	if err != nil {
 		return err
@@ -2056,7 +2083,9 @@ func (devices *DeviceSet) AddDevice(hash, baseHash string, storageOpt map[string
 
 	// Also include deleted devices in case hash of new device is
 	// same as one of the deleted devices.
-	if info, _ := devices.lookupDevice(hash); info != nil {
+	//检查imageid/containerid对应的image是否存在
+	if info, _ := devices.lookupDevice(hash); info != nil { //hash还没有创建起来，如果已经存在，说明有问题。例如创建容器的时候，INIT层在这时候是还没有的
+		//容器层中的/var/lib/docker/image/devicemapper/layerdb/mounts/$containerID/
 		return fmt.Errorf("devmapper: device %s already exists. Deleted=%v", hash, info.Deleted)
 	}
 
@@ -2073,6 +2102,7 @@ func (devices *DeviceSet) AddDevice(hash, baseHash string, storageOpt map[string
 		return fmt.Errorf("devmapper: Container size cannot be smaller than %s", units.HumanSize(float64(baseInfo.Size)))
 	}
 
+	//创建父设备的镜像
 	if err := devices.takeSnapshot(hash, baseInfo, size); err != nil {
 		return err
 	}
@@ -2480,6 +2510,11 @@ func (devices *DeviceSet) xfsSetNospaceRetries(info *devInfo) error {
 }
 
 // MountDevice mounts the device if not already mounted.
+//  挂载设备到指定路径
+//      hash指定要挂载的mountID
+//      path指定要挂载到的路径
+//  一个thin device可以被多次挂载到同一个路径
+//  调用路径：driver.Get()   //挂载thin device到/var/lib/docker/devicemapper/mnt/$id
 func (devices *DeviceSet) MountDevice(hash, path, mountLabel string) error {
 	info, err := devices.lookupDeviceWithLock(hash)
 	if err != nil {
@@ -2518,7 +2553,7 @@ func (devices *DeviceSet) MountDevice(hash, path, mountLabel string) error {
 	if err := mount.Mount(info.DevName(), path, fstype, options); err != nil {
 		return fmt.Errorf("devmapper: Error mounting '%s' on '%s': %s", info.DevName(), path, err)
 	}
-
+	logrus.Debugf("devmapper: mounting '%s' on '%s'", info.DevName(), path)
 	if fstype == "xfs" && devices.xfsNospaceRetries != "" {
 		if err := devices.xfsSetNospaceRetries(info); err != nil {
 			syscall.Unmount(path, syscall.MNT_DETACH)
@@ -2531,6 +2566,7 @@ func (devices *DeviceSet) MountDevice(hash, path, mountLabel string) error {
 }
 
 // UnmountDevice unmounts the device and removes it from hash.
+//  从mountPath下解挂设备
 func (devices *DeviceSet) UnmountDevice(hash, mountPath string) error {
 	logrus.Debugf("devmapper: UnmountDevice START(hash=%s)", hash)
 	defer logrus.Debugf("devmapper: UnmountDevice END(hash=%s)", hash)
@@ -2556,6 +2592,7 @@ func (devices *DeviceSet) UnmountDevice(hash, mountPath string) error {
 }
 
 // HasDevice returns true if the device metadata exists.
+//  判断$id所对应的设备是否存在
 func (devices *DeviceSet) HasDevice(hash string) bool {
 	info, _ := devices.lookupDeviceWithLock(hash)
 	return info != nil
@@ -2736,11 +2773,15 @@ func (devices *DeviceSet) exportDeviceMetadata(hash string) (*deviceMetadata, er
 }
 
 // NewDeviceSet creates the device set based on the options provided.
+//初始化deviceset
+//device set root=/var/lib/docker/devicemapper
+//调用路径：Init->NewDeviceSet
 func NewDeviceSet(root string, doInit bool, options []string, uidMaps, gidMaps []idtools.IDMap) (*DeviceSet, error) {
 	devicemapper.SetDevDir("/dev")  //设置   libdm库的 _dm_dir 为/dev/mapper，参考libdm代码 https://github.com/steven676/lvm2
 
 	devices := &DeviceSet{   //devicemapper存储驱动相关的默认配置信息，可以在NewDeviceSet 中通过解析命令行配置来修改
 		root:                  root,
+		//metaData通过deviceID存放thin device的配置信息
 		metaData:              metaData{Devices: make(map[string]*devInfo)},
 		dataLoopbackSize:      defaultDataLoopbackSize,
 		metaDataLoopbackSize:  defaultMetaDataLoopbackSize,
@@ -2756,6 +2797,7 @@ func NewDeviceSet(root string, doInit bool, options []string, uidMaps, gidMaps [
 	}
 
 	foundBlkDiscard := false
+	//初始化deviceset选项参数
 	for _, option := range options { //如果命令行中携带了相关配置信息，则使用命令行真的配置信息
 		key, val, err := parsers.ParseKeyValueOpt(option)
 		if err != nil {
