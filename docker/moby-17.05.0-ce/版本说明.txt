@@ -14,6 +14,8 @@ docker镜像理解:
 走进docker(02)：image(镜像)是什么？  https://segmentfault.com/a/1190000009309347
 走进docker(05)：docker在本地如何管理image（镜像）?   https://segmentfault.com/a/1190000009730986
 走进docker(03)：如何绕过docker运行hello-world？  https://segmentfault.com/a/1190000009309378
+走进docker(06)：docker create命令背后发生了什么？
+走进docker(07)：docker start命令背后发生了什么？
 
 image存储过程参考:https://segmentfault.com/a/1190000009730986  这个比较好
 
@@ -39,3 +41,7 @@ docker得到 manifest 后，读取里面image配置文件的digest(sha256)，这
 等所有的layer都下载完成后，整个image下载完成，就可以使用了
 注意： 对于layer来说，config文件中diffid是layer的tar包的sha256，而manifest文件中的digest依赖于media type，比如media type是tar+gzip，
 那digest就是layer的tar包经过gzip压缩后的内容的sha256，如果media type就是tar的话，diffid和digest就会一样。
+
+
+/var/lib/docker/image/devicemapper/layerdb/mounts/$mountID/ -----------CreateRWLayer
+/var/lib/docker/devicemapper/mnt/$mountID-INIT-------------------------CreateRWLayer

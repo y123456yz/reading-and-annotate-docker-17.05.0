@@ -17,7 +17,10 @@ import (
 	"golang.org/x/net/context"
 )
 
+// 创建/run/docker/libcontainerd/libcontainerd目录
 func (clnt *client) prepareBundleDir(uid, gid int) (string, error) {
+
+	// /run/docker/libcontainerd/
 	root, err := filepath.Abs(clnt.remote.stateDir)
 	if err != nil {
 		return "", err
@@ -44,6 +47,8 @@ func (clnt *client) prepareBundleDir(uid, gid int) (string, error) {
 
 //libcontainerd\client_unix.go中的Create函数
 //start.go中的函数 containerStart 执行
+// spec在(daemon *Daemon) createSpec获取值
+// StdioCallback为container.InitializeStdio
 func (clnt *client) Create(containerID string, checkpoint string, checkpointDir string, spec specs.Spec, attachStdio StdioCallback, options ...CreateOption) (err error) {
 	clnt.lock(containerID)
 	defer clnt.unlock(containerID)
@@ -57,6 +62,8 @@ func (clnt *client) Create(containerID string, checkpoint string, checkpointDir 
 	if err != nil {
 		return err
 	}
+
+	// 创建/run/docker/libcontainerd/libcontainerd目录
 	dir, err := clnt.prepareBundleDir(uid, gid)
 	if err != nil {
 		return err
@@ -75,22 +82,24 @@ func (clnt *client) Create(containerID string, checkpoint string, checkpointDir 
 		}
 	}()
 
+	///run/docker/libcontainerd/$containerID 目录创建
 	if err := idtools.MkdirAllAs(container.dir, 0700, uid, gid); err != nil && !os.IsExist(err) {
 		return err
 	}
 
-	//在/var/lib/docker/container/containerID创建config.json文件
+	///run/docker/libcontainerd/$containerID 目录创建创建config.json文件
 	f, err := os.Create(filepath.Join(container.dir, configFilename))
 	if err != nil {
 		return err
 	}
 	defer f.Close()
-	//把spec配置序列化写入config.json文件
+	//把spec配置序列化写入config.json文件   f在(daemon *Daemon) createSpec 获取
 	if err := json.NewEncoder(f).Encode(spec); err != nil {
 		return err
 	}
 
 	//启动container   libcontainerd\container_unix.go中的start函数
+	// attachStdio 为 container.InitializeStdio
 	return container.start(checkpoint, checkpointDir, attachStdio)
 }
 

@@ -11,7 +11,7 @@ import (
 
 // DecodeHostConfig creates a HostConfig based on the specified Reader.
 // It assumes the content of the reader will be JSON, and decodes it.
-// 解析客户端的docker start中的包体内容反序列号，然后存到该结构中，见 //postContainersStart->DecodeHostConfig
+// 解析客户端的docker start中的包体内容反序列号，然后存到该结构ContainerConfigWrapper中，并返回其中的 HostConfig 参数项，见 //postContainersStart->DecodeHostConfig
 func DecodeHostConfig(src io.Reader) (*container.HostConfig, error) {
 	decoder := json.NewDecoder(src)
 

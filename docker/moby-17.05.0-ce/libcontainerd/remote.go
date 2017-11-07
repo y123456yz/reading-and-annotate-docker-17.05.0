@@ -3,7 +3,7 @@ package libcontainerd
 // Remote on Linux defines the accesspoint to the containerd grpc API.
 // Remote on Windows is largely an unimplemented interface as there is
 // no remote containerd.
-type Remote interface {
+type Remote interface { ////libcontainerd->remote_unix.go中的type remote struct 类型实现以下函数方法
 	// Client returns a new Client instance connected with given Backend.
 	Client(Backend) (Client, error) //  创建和daemon相关的容器客户端 libcontainerd
 	// Cleanup stops containerd if it was started by libcontainerd.

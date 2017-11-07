@@ -508,7 +508,12 @@ func (ls *layerStore) Release(l Layer) ([]Metadata, error) {
 
 //create.go中的setRWLayer函数调用  //setRWLayer->CreateRWLayer
 // //name容器id   parent为镜像层最顶层 chainID   opts为创建容器时指定的部分参数
-//创建/var/lib/docker/image/overlay/layerdb/mounts/$mountID 目录及其下面的文件，同时创建存储该容器层的device     //setRWLayer->CreateRWLayer
+//创建/var/lib/docker/image/overlay/layerdb/mounts/$mountID 目录及其下面的文件，同时创建存储该容器层的device
+
+//1. 创建容器层device
+//1. 向/var/lib/docker/image/devicemapper/layerdb/mounts/中的指定文件中写入对应的内容 例如，该目录下的以下文件内容init-id  mount-id  parent
+//2. 创建/var/lib/docker/devicemapper/mnt/$mountID-INIT init层对应的device，然后在device中把INIT层的相关/etc/hostname /etc/resolve.conf等文件创建在该device空间
+// setRWLayer->CreateRWLayer
 func (ls *layerStore) CreateRWLayer(name string, parent ChainID, opts *CreateRWLayerOpts) (RWLayer, error) { //RWLayer实际上对应的是referencedRWLayer 类型
 	var (
 		storageOpt map[string]string
@@ -562,7 +567,8 @@ func (ls *layerStore) CreateRWLayer(name string, parent ChainID, opts *CreateRWL
 		references: map[RWLayer]*referencedRWLayer{},
 	}
 
-	if initFunc != nil { //daemon.getLayerInit(),
+	if initFunc != nil { //daemon.getLayerInit(),     准备INIT层
+		// 创建/var/lib/docker/devicemapper/mnt/$mountID-INIT init层对应的device，然后在device中把INIT层的相关/etc/hostname /etc/resolve.conf等文件创建在该device空间
 		pid, err = ls.initMount(m.mountID, pid, mountLabel, initFunc, storageOpt)
 		if err != nil {
 			return nil, err
@@ -574,10 +580,13 @@ func (ls *layerStore) CreateRWLayer(name string, parent ChainID, opts *CreateRWL
 		StorageOpt: storageOpt,
 	}
 
+	//准备容器层
 	// /var/lib/docker/image/devicemapper/layerdb/mounts/$containerID/mount-id内容中的mount-id，也就是创建存储容器层文件系统的deviceID
-	if err = ls.driver.CreateReadWrite(m.mountID, pid, createOpts); err != nil {
+	if err = ls.driver.CreateReadWrite(m.mountID, pid, createOpts); err != nil { //注意容器层的deviceid在该函数中没有mount,在docker start的时候才会mount
 		return nil, err
 	}
+
+	//注意容器层的device mount挂载在外层函数 createContainerPlatformSpecificSettings 中实现，而INIT层的挂载在上面的initMount会做
 
 	//向/var/lib/docker/image/devicemapper/layerdb/mounts/中的指定文件中写入对应的内容 例如，该目录下的以下文件内容init-id  mount-id  parent
 	if err = ls.saveMount(m); err != nil {
@@ -681,10 +690,14 @@ func (ls *layerStore) saveMount(mount *mountedLayer) error {
 }
 
 
+//容器层挂载在 containerStart->conditionalMountOnStart->(daemon *Daemon) Mount
+//INIT层挂载在 initMount
+
 //graphID为容器层中的mountID
 // parent为镜像层总最顶层的chinaID
 // initFunc为daemon.getLayerInit(),
 // setRWLayer->CreateRWLayer->initMount
+// 创建/var/lib/docker/devicemapper/mnt/$mountID-INIT init层对应的device，然后在device中把INIT层的相关/etc/hostname /etc/resolve.conf等文件创建在该device空间
 func (ls *layerStore) initMount(graphID, parent, mountLabel string, initFunc MountInit, storageOpt map[string]string) (string, error) {
 	// Use "<graph-id>-init" to maintain compatibility with graph drivers
 	// which are expecting this layer with this special name. If all
@@ -698,19 +711,23 @@ func (ls *layerStore) initMount(graphID, parent, mountLabel string, initFunc Mou
 	}
 
 	///var/lib/docker/image/devicemapper/layerdb/mounts/$containerID/中的init-id文件中的内容 对应的device
-	if err := ls.driver.CreateReadWrite(initID, parent, createOpts); err != nil {
+	if err := ls.driver.CreateReadWrite(initID, parent, createOpts); err != nil { //创建存储INIT层的 device
 		return "", err
 	}
+
+	//挂载INIT等对应的device到/var/lib/docker/devicemapper/mnt/$mountID-INIT 目录下, 同时返回该目录赋值给p
 	p, err := ls.driver.Get(initID, "")
 	if err != nil {
 		return "", err
 	}
 
-	if err := initFunc(p); err != nil {  //创建INIT层  //setupInitLayer(initPath)
+	//这样前面的device上面就会有init层相关的文件了
+	if err := initFunc(p); err != nil {  //创建INIT层相关的文件，如"/etc/hosts" "/etc/resolve.conf"等  //setupInitLayer(initPath)
 		ls.driver.Put(initID)
 		return "", err
 	}
 
+	//  从/var/lib/docker/devicemapper/mnt/$mountID-INIT 下解挂设备
 	if err := ls.driver.Put(initID); err != nil {
 		return "", err
 	}

@@ -9,7 +9,7 @@ import (
 
 // ContainerConfigWrapper is a Config wrapper that holds the container Config (portable)
 // and the corresponding HostConfig (non-portable).
-type ContainerConfigWrapper struct {
+type ContainerConfigWrapper struct { //客户端docker start时候，http中携带的参数，反序列化后存入该结构，见DecodeHostConfig
 	*container.Config
 	InnerHostConfig       *container.HostConfig          `json:"HostConfig,omitempty"`
 	Cpuset                string                         `json:",omitempty"` // Deprecated. Exported for backwards compatibility.

@@ -8,10 +8,11 @@ import (
 )
 
 // clientCommon contains the platform agnostic fields used in the client structure
+//type client struct中包含该成员，见client_linux.go
 type clientCommon struct {
 	backend    Backend
 	//启动起来的容器，起ID和对应的容器信息存在该map中，参考getContainer
-	containers map[string]*container
+	containers map[string]*container //启动起来的容器存在这里面  appendContainer 中赋值
 	locker     *locker.Locker
 	mapMutex   sync.RWMutex // protects read/write operations from containers map
 }
@@ -24,7 +25,7 @@ func (clnt *client) unlock(containerID string) {
 	clnt.locker.Unlock(containerID)
 }
 
-// must hold a lock for cont.containerID
+// must hold a lock for cont.containerID    (ctr *container) start 中调用
 func (clnt *client) appendContainer(cont *container) {
 	clnt.mapMutex.Lock()
 	clnt.containers[cont.containerID] = cont

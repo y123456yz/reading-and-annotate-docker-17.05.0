@@ -373,6 +373,7 @@ type HostConfig struct {//生效使用见 postContainersStart->ContainerStart   
 	PublishAllPorts bool              // Should docker publish all exposed port for the container
 	ReadonlyRootfs  bool              // Is the container root filesystem in read-only
 	SecurityOpt     []string          // List of string values to customize labels for MLS systems, such as SELinux.
+	//(daemon *Daemon) create 中赋值
 	StorageOpt      map[string]string `json:",omitempty"` // Storage driver options per container.
 	Tmpfs           map[string]string `json:",omitempty"` // List of tmpfs (mounts) used for the container
 	UTSMode         UTSMode           // UTS namespace to use for the container

@@ -43,16 +43,20 @@ const (
 	eventTimestampFilename       = "event.ts"
 )
 
-type remote struct {
+//dockerd和docker-containerd之间的rpc通信用
+type remote struct { //func New （libcontainerd\remote_unix.go中的 New中构造该结构）
 	sync.RWMutex
+	//dockerd和docker-containerd之间的rpc client结构
 	apiClient            containerd.APIClient
 	//赋值见//赋值见runContainerdDaemon
-	daemonPid            int
+	daemonPid            int  //"docker-containerd"进程的进程号
+	//getLibcontainerdRoot   /run/docker/libcontainerd/
 	stateDir             string
-	rpcAddr              string
+	rpcAddr              string //域套接字docker-containerd.sock
 	startDaemon          bool
 	closeManually        bool
 	debugLog             bool
+	//dockerd和docker-containerd之间的rpc链接
 	rpcConn              *grpc.ClientConn
 	clients              []*client
 	eventTsPath          string
@@ -67,8 +71,8 @@ type remote struct {
 
 // New creates a fresh instance of libcontainerd remote.
 //  /var/run/docker路径 ，创建 containerd Remote，container相关处理启动grpc的client api，事件监控等
-//runContainerdDaemon在该函数中运行
-//func (cli *DaemonCli) start(opts daemonOptions) (err error) 中执行该函数
+//runContainerdDaemon 在该函数中运行
+//func (cli *DaemonCli) start(opts daemonOptions) (err error) 中调用libcontainerd.New()执行该函数
 func New(stateDir string, options ...RemoteOption) (_ Remote, err error) {
 	defer func() {
 		if err != nil {
@@ -76,7 +80,7 @@ func New(stateDir string, options ...RemoteOption) (_ Remote, err error) {
 		}
 	}()
 	r := &remote{
-		stateDir:    stateDir,
+		stateDir:    stateDir,  //getLibcontainerdRoot  // /run/docker/libcontainerd/libcontainerd
 		daemonPid:   -1,
 		eventTsPath: filepath.Join(stateDir, eventTimestampFilename),
 	}
@@ -108,7 +112,7 @@ func New(stateDir string, options ...RemoteOption) (_ Remote, err error) {
 			return net.DialTimeout("unix", addr, timeout)
 		}),
 	)
-	conn, err := grpc.Dial(r.rpcAddr, dialOpts...)
+	conn, err := grpc.Dial(r.rpcAddr, dialOpts...) //域套接字链接
 	if err != nil {
 		return nil, fmt.Errorf("error connecting to containerd: %v", err)
 	}

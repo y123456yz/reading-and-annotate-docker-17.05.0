@@ -131,6 +131,13 @@ func (s *containerRouter) getContainersExport(ctx context.Context, w http.Respon
 }
 
 ////docker create(postContainersCreate)  docker start(postContainersStart)
+/*
+start的大概流程
+docker（client）发送启动容器命令给dockerd
+dockerd收到请求后，准备好rootfs，以及一些其它的配置文件，然后通过grpc的方式通知containerd启动容器
+containerd根据收到的请求以及配置文件位置，创建容器运行时需要的bundle，然后启动shim进程，让它来启动容器
+shim进程启动后，做一些准备工作，然后调用runc启动容器
+*/
 func (s *containerRouter) postContainersStart(ctx context.Context, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
 	// If contentLength is -1, we can assumed chunked encoding
 	// or more technically that the length is unknown
@@ -154,7 +161,7 @@ func (s *containerRouter) postContainersStart(ctx context.Context, w http.Respon
 		if err := httputils.CheckForJSON(r); err != nil {
 			return err
 		}
-		// 解析客户端的docker start中的包体内容反序列号，然后存到该结构中，见 //postContainersStart->DecodeHostConfig
+		// 解析客户端的docker start中的包体内容反序列号，然后然后获取其中的HostConfig配置信息返回，见 //postContainersStart->DecodeHostConfig
 		c, err := s.decoder.DecodeHostConfig(r.Body) //postContainersStart->DecodeHostConfig
 		if err != nil {
 			return err
@@ -371,6 +378,10 @@ func (s *containerRouter) postContainerUpdate(ctx context.Context, w http.Respon
 docker run命令直接创建并运行一个容器，它的背后其实包含独立的两步，一步是docker create创建容器，另一步是docker start启动容器
 docker create命令干的活比较少，主要是准备container的layer和配置文件，通过客户端提交信息构建一个
 container对象出来。        //docker create(postContainersCreate)  docker start(postContainersStart)
+
+dockerd在收到客户端的创建容器请求后，做了两件事情:
+一是准备容器需要的layer，
+二是检查客户端传过来的参数，并和image配置文件中的参数进行合并，然后存储成容器的配置文件。
 */
 func (s *containerRouter) postContainersCreate(ctx context.Context, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
 	if err := httputils.ParseForm(r); err != nil {

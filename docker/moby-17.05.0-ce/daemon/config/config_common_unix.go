@@ -11,6 +11,7 @@ import (
 // CommonUnixConfig defines configuration of a docker daemon that is
 // common across Unix platforms.
 type CommonUnixConfig struct {
+	//默认/run/docker/libcontainerd
 	ExecRoot          string                   `json:"exec-root,omitempty"`
 	ContainerdAddr    string                   `json:"containerd,omitempty"`
 	//runc成员赋值见 verifyDaemonSettings

@@ -18,8 +18,8 @@ import (
 	"golang.org/x/net/context"
 )
 
-type client struct {
-	clientCommon
+type client struct { //初始化结构实例见 (r *remote) Client(libcontainerd/remote_unix.go)
+	clientCommon  //启动起来的容器存在这里面
 
 	// Platform specific properties below here.
 	remote        *remote

@@ -16,7 +16,8 @@ import (
 //
 // This extra layer is used by all containers as the top-most ro layer. It protects
 // the container from unwanted side-effects on the rw layer.
-func Setup(initLayer string, rootUID, rootGID int) error {
+// initLayer对应/var/lib/docker/devicemapper/mnt/$mountID-INIT ，在$mountID-INIT中创建一下文件或者文件夹
+func Setup(initLayer string, rootUID, rootGID int) error { //setupInitLayer 中执行
 	for pth, typ := range map[string]string{
 		"/dev/pts":         "dir",
 		"/dev/shm":         "dir",
@@ -54,6 +55,8 @@ func Setup(initLayer string, rootUID, rootGID int) error {
 					f.Chown(rootUID, rootGID)
 					f.Close()
 				default:
+					//创建软连接
+					// 利用SymLink创建的符号连接，其newname只是一个指向oldname文件的符号连接，当oldname　file删除之后，则newname的文件也就不能够继续使用
 					if err := os.Symlink(typ, filepath.Join(initLayer, pth)); err != nil {
 						return err
 					}

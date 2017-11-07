@@ -455,6 +455,8 @@ func BlockDeviceDiscard(path string) error {
 
 // CreatePool is the programmatic example of "dmsetup create".
 // It creates a device with the specified poolName, data and metadata file and block size.
+//  创建thin pool
+//  调用路径：NewDeviceSet->initDevmapper->createPool
 func CreatePool(poolName string, dataFile, metadataFile *os.File, poolBlockSize uint32) error {
 	task, err := TaskCreateNamed(deviceCreate, poolName)
 	if task == nil {
@@ -825,7 +827,7 @@ func CreateSnapDeviceRaw(poolName string, deviceID int, baseDeviceID int) error 
 	if err := task.setSector(0); err != nil {
 		return fmt.Errorf("devicemapper: Can't set sector %s", err)
 	}
-
+	//发送创建命令
 	if err := task.setMessage(fmt.Sprintf("create_snap %d %d", deviceID, baseDeviceID)); err != nil {
 		return fmt.Errorf("devicemapper: Can't set message %s", err)
 	}

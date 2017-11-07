@@ -27,6 +27,7 @@ import (
 //  - A partial container ID prefix (e.g. short ID) of any length that is
 //    unique enough to only return a single container object
 //  If none of these searches succeed, an error is returned
+//通过containerID或者容器名或者容器ID的前12字节来查找是否在start之前有create容器
 func (daemon *Daemon) GetContainer(prefixOrName string) (*container.Container, error) {
 	if len(prefixOrName) == 0 {
 		return nil, errors.NewBadRequestError(fmt.Errorf("No container name or ID supplied"))
@@ -100,6 +101,7 @@ func (daemon *Daemon) load(id string) (*container.Container, error) {
 }
 
 // Register makes a container object usable by the daemon as <container.ID>
+//把新建的容器信息和ID分别加入到 daemon.containers 和 daemon.idIndex
 func (daemon *Daemon) Register(c *container.Container) {
 	// Attach to stdout and stderr
 	if c.Config.OpenStdin {

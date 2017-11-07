@@ -1178,6 +1178,10 @@ func (daemon *Daemon) registerLinks(container *container.Container, hostConfig *
 
 // conditionalMountOnStart is a platform specific helper function during the
 // container start to call mount.
+
+// containerStart->conditionalMountOnStart
+//  创建容器层/var/lib/docker/devicemapper/mnt/$mountID
+//  挂载容器曾thin device到/var/lib/docker/devicemapper/mnt/$mountID 目录下  init层的mount在 initmount 函数中实现
 func (daemon *Daemon) conditionalMountOnStart(container *container.Container) error {
 	return daemon.Mount(container)
 }

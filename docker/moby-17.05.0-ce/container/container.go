@@ -46,6 +46,7 @@ import (
 	"github.com/opencontainers/runc/libcontainer/label"
 )
 
+//(container *Container) ToDisk就是将container中的config和hostconfig结构体存储到磁盘上，存储的路径是/var/lib/docker/container/containerId/config.json
 const configFileName = "config.v2.json"
 
 const (
@@ -62,14 +63,16 @@ var (
 // applicable across all platforms supported by the daemon.
 //type Container struct包含该结构, 该结构是windows平台和unix平台公用的结构，见container_unix.go和container_windows.go中的type Container struct
 //对应/var/lib/docker/containers/$containerID/config.v2.json文件内容
-type CommonContainer struct { //主要结构赋值见 newContainer   初始化赋值见NewBaseContainer
+type CommonContainer struct { //主要结构赋值见 newContainer   初始化赋值见 NewBaseContainer    type Container struct (container_unix.go文件)结构中包含该成员
 	StreamConfig *stream.Config
 	// embed for Container to support states directly.
 	*State          `json:"State"` // Needed for Engine API version <= 1.11
+	// /var/lib/docker/container + id ，目录创建见 (daemon *Daemon) create
 	Root            string         `json:"-"` // Path to the "home" of the container, including metadata.
+	//(daemon *Daemon) Mount 中赋值  /var/lib/docker/devicemapper/mnt/$mountID/rootfs
 	BaseFS          string         `json:"-"` // Path to the graphdriver mountpoint
 	//赋值见 create.go中的create函数调用 setRWLayer，使用见docker start的时候执行到的 daemon/daemon.go中的 Mount
-	RWLayer         layer.RWLayer  `json:"-"`  //实际上对应的是referencedRWLayer 类型,赋值见setRWLayer
+	RWLayer         layer.RWLayer  `json:"-"`  //实际上对应的是 referencedRWLayer 类型,赋值见 setRWLayer
 	ID              string  //容器ID，赋值见newContainer  和下面的name对应
 	Created         time.Time
 	Managed         bool
@@ -143,11 +146,12 @@ func (container *Container) FromDisk() error {
 	return container.readHostConfig()
 }
 
-//这段代码就是将container中的config和hostconfig结构体存储到磁盘上，存储的路径是/var/lib/docker/container/containerId/config.json
+//这段代码 (container *Container) ToDisk就是将container中的config和hostconfig结构体存储到磁盘上，存储的路径是/var/lib/docker/container/containerId/config.json
 // 和 /var/lib/docker/container/containerId/hostConfig.json
-//将container持久化至disk
+//将container 结构序列化持久化至disk
 // ToDisk saves the container configuration on disk.
 func (container *Container) ToDisk() error {
+	// /var/lib/docker/container/containerId/config.v2.json
 	pth, err := container.ConfigPath()
 	if err != nil {
 		return err
@@ -224,19 +228,20 @@ func (container *Container) WriteHostConfig() error {
 }
 
 // SetupWorkingDirectory sets up the container's working directory as set in container.Config.WorkingDir
-//setupWorkingDirectory() 建立容器执行命令时的工作目录；
+//setupWorkingDirectory() 建立容器执行命令时的工作目录；  createContainerPlatformSpecificSettings 中执行
 func (container *Container) SetupWorkingDirectory(rootUID, rootGID int) error {
 	if container.Config.WorkingDir == "" {
 		return nil
 	}
 
+	// 清理路径中的多余字符
 	container.Config.WorkingDir = filepath.Clean(container.Config.WorkingDir)
 
 	pth, err := container.GetResourcePath(container.Config.WorkingDir)
 	if err != nil {
 		return err
 	}
-
+	logrus.Debug("SetupWorkingDirectory WorkingDir %s pth %s path %s %s\n", container.Config.WorkingDir, path)
 	if err := idtools.MkdirAllNewAs(pth, 0755, rootUID, rootGID); err != nil {
 		pthInfo, err2 := os.Stat(pth)
 		if err2 == nil && pthInfo != nil && !pthInfo.IsDir() {
@@ -314,6 +319,7 @@ func (container *Container) ConfigPath() (string, error) {
 }
 
 // CheckpointDir returns the directory checkpoints are stored in
+///var/lib/docker/containers/$containerID/checkpoints
 func (container *Container) CheckpointDir() string {
 	return filepath.Join(container.Root, "checkpoints")
 }

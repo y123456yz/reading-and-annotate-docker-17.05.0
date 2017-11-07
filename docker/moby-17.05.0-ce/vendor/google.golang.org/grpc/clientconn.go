@@ -375,6 +375,8 @@ func (s ConnectivityState) String() string {
 }
 
 // ClientConn represents a client connection to an RPC server.
+//rpc通信用的，例如dockerd进程和 docker-containerd
+// 该结构赋值给 type remote struct中的 rpcConn 成员
 type ClientConn struct {
 	ctx    context.Context
 	cancel context.CancelFunc

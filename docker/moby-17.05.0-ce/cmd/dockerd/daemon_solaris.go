@@ -66,7 +66,7 @@ func (cli *DaemonCli) getPlatformRemoteOptions() []libcontainerd.RemoteOption {
 
 // getLibcontainerdRoot gets the root directory for libcontainerd/containerd to
 // store their state.
-func (cli *DaemonCli) getLibcontainerdRoot() string {
+func (cli *DaemonCli) getLibcontainerdRoot() string { // /run/docker/libcontainerd/libcontainerd
 	return filepath.Join(cli.Config.ExecRoot, "libcontainerd")
 }
 

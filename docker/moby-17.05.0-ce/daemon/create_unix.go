@@ -17,6 +17,9 @@ import (
 
 // createContainerPlatformSpecificSettings performs platform specific container create functionality
 func (daemon *Daemon) createContainerPlatformSpecificSettings(container *container.Container, config *containertypes.Config, hostConfig *containertypes.HostConfig) error {
+
+	//  创建/var/lib/docker/devicemapper/mnt/$mountID
+	//  挂载thin device到/var/lib/docker/devicemapper/mnt/$mountID 目录下  init层的mount在 initmount 函数中实现
 	if err := daemon.Mount(container); err != nil {
 		return err
 	}

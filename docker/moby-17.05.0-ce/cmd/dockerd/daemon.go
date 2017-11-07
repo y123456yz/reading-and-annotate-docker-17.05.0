@@ -255,6 +255,7 @@ func (cli *DaemonCli) start(opts daemonOptions) (err error) {
 
 	//libcontainerd: new containerd process, pid:   启动libcontainerd   // libcontainerd/remote_unix.go
 	//  /var/run/docker路径 ，创建 containerd Remote，container相关处理启动grpc的client api，事件监控等
+	//libcontainerd->remote_unix.go中的type remote struct 类型
 	containerdRemote, err := libcontainerd.New(cli.getLibcontainerdRoot(), cli.getPlatformRemoteOptions()...)
 	if err != nil {
 		return err

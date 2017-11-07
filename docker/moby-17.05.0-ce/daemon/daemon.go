@@ -76,7 +76,8 @@ type Daemon struct { //赋值见NewDaemon 见 NewDaemon
 	//部署所有docker容器的路径，当dockerd重启的时候，会去查看在daemon.repository也就是在/var/lib/docker/container
 	//中的内容。若有已经存在的docker容器，则将相应的信息收集并进行维护，同时重启restart policy为always的容器
 	repository                string   //  /var/lib/docker/containers    赋值见NewDaemon
-	//用于存储具体docker容器信息的对象
+	//用于存储具体docker容器信息的对象  赋值为 memoryStore，见 NewDaemon
+	//用来存储所有容器信息的hash表，赋值add见 (daemon *Daemon) Register
 	containers                container.Store
 	//docker容器所执行的命令
 	execCommands              *exec.Store
@@ -88,7 +89,8 @@ type Daemon struct { //赋值见NewDaemon 见 NewDaemon
 	distributionMetadataStore dmetadata.Store
 	//可信任证书
 	trustKey                  libtrust.PrivateKey
-	//用于通过简短有效的字符串前缀定位唯一的镜像
+	//用于通过简短有效的字符串前缀定位唯一的镜像  赋值为 TruncIndex ，参考Newdaemon
+	//存储容器id的hash表，赋值add见 (daemon *Daemon) Register
 	idIndex                   *truncindex.TruncIndex
 	//docker所需要的配置信息
 	configStore               *config.Config
@@ -123,7 +125,8 @@ type Daemon struct { //赋值见NewDaemon 见 NewDaemon
 	nameIndex                 *registrar.Registrar
 	//容器的link目录，记录容器的link关系
 	linkIndex                 *linkIndex
-	containerd                libcontainerd.Client
+	//libcontainerd->client_unix.go中的(r *remote) Client 中构造该实例
+	containerd                libcontainerd.Client  //NewDaemon 中赋值
 	containerdRemote          libcontainerd.Remote
 	defaultIsolation          containertypes.Isolation // Default isolation mode on Windows
 	clusterProvider           cluster.Provider
@@ -925,8 +928,14 @@ func (daemon *Daemon) Shutdown() error {
 
 // Mount sets container.BaseFS
 // (is it not set coming in? why is it unset?)
+//容器层挂载在 containerStart->conditionalMountOnStart->(daemon *Daemon) Mount
+//INIT层挂载在 initMount
 func (daemon *Daemon) Mount(container *container.Container) error {
-	dir, err := container.RWLayer.Mount(container.GetMountLabel())
+//createContainerPlatformSpecificSettings(docker create) containerStart->conditionalMountOnStart(docker run) 会调用
+
+	//  创建/var/lib/docker/devicemapper/mnt/$mountID
+	//  挂载thin device到/var/lib/docker/devicemapper/mnt/$mountID 目录下  init层的mount在 initmount 函数中实现
+	dir, err := container.RWLayer.Mount(container.GetMountLabel()) //返回dir  /var/lib/docker/devicemapper/mnt/$mountID/rootfs
 	if err != nil {
 		return err
 	}

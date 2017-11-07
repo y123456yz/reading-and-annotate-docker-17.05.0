@@ -23,6 +23,7 @@ func (daemon *Daemon) ContainerStart(name string, hostConfig *containertypes.Hos
 		return apierrors.NewBadRequestError(fmt.Errorf("checkpoint is only supported in experimental mode"))
 	}
 	logrus.Debugf("yang add, ContainerStart name:%s, checkpoint:%s, checkpointDir:%s， OS:%s", name, checkpoint, checkpointDir, runtime.GOOS);
+	//查找是否在start之前有create容器实例
 	container, err := daemon.GetContainer(name)
 	if err != nil {
 		return err
@@ -135,7 +136,9 @@ func (daemon *Daemon) containerStart(container *container.Container, checkpoint 
 		}
 	}()
 
-	if err := daemon.conditionalMountOnStart(container); err != nil {
+	//  创建容器层/var/lib/docker/devicemapper/mnt/$mountID
+	//  挂载容器曾thin device到/var/lib/docker/devicemapper/mnt/$mountID 目录下  init层的mount在 initmount 函数中实现
+	if err := daemon.conditionalMountOnStart(container); err != nil { //containerStart->conditionalMountOnStart
 		return err
 	}
 
@@ -166,7 +169,7 @@ func (daemon *Daemon) containerStart(container *container.Container, checkpoint 
 		return err
 	}
 
-	////libcontainerd\client_unix.go中的Create函数
+	//libcontainerd\client_unix.go中的Create函数
 	if err := daemon.containerd.Create(container.ID, checkpoint, checkpointDir, *spec, container.InitializeStdio, createOptions...); err != nil {
 		errDesc := grpc.ErrorDesc(err)
 		contains := func(s1, s2 string) bool {

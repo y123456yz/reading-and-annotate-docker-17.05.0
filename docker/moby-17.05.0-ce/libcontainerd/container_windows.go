@@ -40,6 +40,8 @@ func (ctr *container) newProcess(friendlyName string) *process {
 
 // start starts a created container.
 // Caller needs to lock container ID before calling this method.
+
+//(clnt *client) Create 中调用执行  // attachStdio 为 container.InitializeStdio
 func (ctr *container) start(attachStdio StdioCallback) error {
 	var err error
 	isServicing := false

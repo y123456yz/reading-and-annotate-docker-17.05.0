@@ -110,6 +110,7 @@ type devInfo struct {  //registerDevice 中初始化使用该结构    metaData 
 // /var/lib/docker/devicemapper/metadata 目录下的 文件存入下面map中的string中，对应一个devInfo，见 lookupDevice  registerDevice
 //metadata文件夹下面的所有文件对应同一个DeviceSet
 type metaData struct {  //AddDevice->lookupDevice  函数中赋值
+	//registerDevice 中add赋值
 	Devices map[string]*devInfo `json:"Devices"`    // 遍历可以参考 constructDeviceIDMap
 }
 
@@ -455,7 +456,7 @@ func (devices *DeviceSet) lookupDevice(hash string) (*devInfo, error) {
 	return info, nil
 }
 
-//获取hash文件和内容，存入devices.Devices[hash] map中，
+//获取hash文件和内容，存入devices.Devices[hash] map中，  根据hash查找对应的device
 func (devices *DeviceSet) lookupDeviceWithLock(hash string) (*devInfo, error) {
 	devices.Lock()
 	defer devices.Unlock()
@@ -2232,6 +2233,12 @@ func (devices *DeviceSet) issueDiscard(info *devInfo) error {
 }
 
 // Should be called with devices.Lock() held.
+//  删除设备
+//      1.discard thin device的block
+//      2.传递device name删除设备名
+//      3.传递device id删除设备
+//      4.删除/var/lib/docker/devicemapper/metadata/$id文件
+//  调用路径：DeleteDevice->deleteDevice
 func (devices *DeviceSet) deleteDevice(info *devInfo, syncDelete bool) error {
 	if devices.doBlkDiscard {
 		devices.issueDiscard(info)
@@ -2254,9 +2261,12 @@ func (devices *DeviceSet) deleteDevice(info *devInfo, syncDelete bool) error {
 // removal. If one wants to override that and want DeleteDevice() to fail if
 // device was busy and could not be deleted, set syncDelete=true.
 //DeleteDevice->deleteDevice->issueDiscard->BlockDeviceDiscard
+//  删除设备
+//  调用路径：driver.Remove()
 func (devices *DeviceSet) DeleteDevice(hash string, syncDelete bool) error {
 	logrus.Debugf("devmapper: DeleteDevice START(hash=%v syncDelete=%v)", hash, syncDelete)
 	defer logrus.Debugf("devmapper: DeleteDevice END(hash=%v syncDelete=%v)", hash, syncDelete)
+	//检查设备是否存在
 	info, err := devices.lookupDeviceWithLock(hash)
 	if err != nil {
 		return err
@@ -2267,7 +2277,7 @@ func (devices *DeviceSet) DeleteDevice(hash string, syncDelete bool) error {
 
 	devices.Lock()
 	defer devices.Unlock()
-
+	//传递devinfo，删除设备
 	return devices.deleteDevice(info, syncDelete)
 }
 
@@ -2295,6 +2305,9 @@ func (devices *DeviceSet) deactivatePool() error {
 	return nil
 }
 
+//  停止thin device
+//  删除thin device名
+//  调用路径：UnmountDevice->deactivateDevice
 func (devices *DeviceSet) deactivateDevice(info *devInfo) error {
 	logrus.Debugf("devmapper: deactivateDevice START(%s)", info.Hash)
 	defer logrus.Debugf("devmapper: deactivateDevice END(%s)", info.Hash)
@@ -2516,7 +2529,7 @@ func (devices *DeviceSet) xfsSetNospaceRetries(info *devInfo) error {
 //  一个thin device可以被多次挂载到同一个路径
 //  调用路径：driver.Get()   //挂载thin device到/var/lib/docker/devicemapper/mnt/$id
 func (devices *DeviceSet) MountDevice(hash, path, mountLabel string) error {
-	info, err := devices.lookupDeviceWithLock(hash)
+	info, err := devices.lookupDeviceWithLock(hash) //根据hash查找对应的device
 	if err != nil {
 		return err
 	}
@@ -2531,10 +2544,13 @@ func (devices *DeviceSet) MountDevice(hash, path, mountLabel string) error {
 	devices.Lock()
 	defer devices.Unlock()
 
+	//激活设备
 	if err := devices.activateDeviceIfNeeded(info, false); err != nil {
 		return fmt.Errorf("devmapper: Error activating devmapper device for '%s': %s", hash, err)
 	}
 
+	//获取thin device上文件系统的类型
+	//info.DevName()传递
 	fstype, err := ProbeFsType(info.DevName())
 	if err != nil {
 		return err
@@ -2549,7 +2565,7 @@ func (devices *DeviceSet) MountDevice(hash, path, mountLabel string) error {
 
 	options = joinMountOptions(options, devices.mountOptions)
 	options = joinMountOptions(options, label.FormatMountLabel("", mountLabel))
-
+	//mount thin device到指定path
 	if err := mount.Mount(info.DevName(), path, fstype, options); err != nil {
 		return fmt.Errorf("devmapper: Error mounting '%s' on '%s': %s", info.DevName(), path, err)
 	}
@@ -2567,6 +2583,10 @@ func (devices *DeviceSet) MountDevice(hash, path, mountLabel string) error {
 
 // UnmountDevice unmounts the device and removes it from hash.
 //  从mountPath下解挂设备
+//  解挂thin device
+//      hash为imageid或containerid
+//  直到挂载计数=0时才真正解挂
+//  调用路径：driver.Put()
 func (devices *DeviceSet) UnmountDevice(hash, mountPath string) error {
 	logrus.Debugf("devmapper: UnmountDevice START(hash=%s)", hash)
 	defer logrus.Debugf("devmapper: UnmountDevice END(hash=%s)", hash)
@@ -2583,11 +2603,13 @@ func (devices *DeviceSet) UnmountDevice(hash, mountPath string) error {
 	defer devices.Unlock()
 
 	logrus.Debugf("devmapper: Unmount(%s)", mountPath)
+	//从指定路径解挂
 	if err := syscall.Unmount(mountPath, syscall.MNT_DETACH); err != nil {
 		return err
 	}
 	logrus.Debug("devmapper: Unmount done")
 
+	//停止设备
 	return devices.deactivateDevice(info)
 }
 

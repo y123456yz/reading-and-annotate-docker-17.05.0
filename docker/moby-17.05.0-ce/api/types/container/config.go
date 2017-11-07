@@ -57,6 +57,7 @@ type Config struct { //ContainerCreateConfig 中的 Config成员为该结构
 	ArgsEscaped     bool                `json:",omitempty"` // True if command is already escaped (Windows specific)
 	Image           string              // Name of the image as it was passed by the operator (e.g. could be symbolic)
 	Volumes         map[string]struct{} // List of volumes (mounts) used for the container
+	//SetupWorkingDirectory 中赋值
 	WorkingDir      string              // Current directory (PWD) in the command will be launched
 	Entrypoint      strslice.StrSlice   // Entrypoint to run when starting the container
 	NetworkDisabled bool                `json:",omitempty"` // Is network disabled

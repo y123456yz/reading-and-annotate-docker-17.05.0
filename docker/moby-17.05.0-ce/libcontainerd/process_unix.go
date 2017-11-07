@@ -27,7 +27,7 @@ type process struct {
 	processCommon
 
 	// Platform specific fields are below here.
-	dir string
+	dir string ///run/docker/libcontainerd/$containerID
 }
 
 func (p *process) openFifos(ctx context.Context, terminal bool) (pipe *IOPipe, err error) {

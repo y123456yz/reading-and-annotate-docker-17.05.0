@@ -29,6 +29,12 @@ func (daemon *Daemon) CreateManagedContainer(params types.ContainerCreateConfig)
 }
 
 // ContainerCreate creates a regular container
+/*
+dockerd在收到客户端的创建容器请求后，做了两件事情:
+一是准备容器需要的layer，
+二是检查客户端传过来的参数，并和image配置文件中的参数进行合并，然后存储成容器的配置文件。
+*/
+
 //客户端通过 docker create请求， createContainer 组api请求，服务端通过 postContainersCreate->ContainerCreate(daemon\create.go)处理
 func (daemon *Daemon) ContainerCreate(params types.ContainerCreateConfig) (containertypes.ContainerCreateCreatedBody, error) { //返回容器Id
 	return daemon.containerCreate(params, false)
@@ -126,6 +132,9 @@ func (daemon *Daemon) create(params types.ContainerCreateConfig, managed bool) (
 
 	// Set RWLayer for container after mount labels have been set
 	//创建读写层文件夹相关信息
+	//1. 创建容器层device
+	//1. 向/var/lib/docker/image/devicemapper/layerdb/mounts/中的指定文件中写入对应的内容 例如，该目录下的以下文件内容init-id  mount-id  parent
+	//2. 创建/var/lib/docker/devicemapper/mnt/$mountID-INIT init层对应的device，然后在device中把INIT层的相关/etc/hostname /etc/resolve.conf等文件创建在该device空间
 	if err := daemon.setRWLayer(container); err != nil {
 		return nil, err
 	}
@@ -138,6 +147,8 @@ func (daemon *Daemon) create(params types.ContainerCreateConfig, managed bool) (
 	if err := idtools.MkdirAs(container.Root, 0700, rootUID, rootGID); err != nil {
 		return nil, err
 	}
+
+	///var/lib/docker/containers/$containerID/checkpoints目录创建
 	if err := idtools.MkdirAs(container.CheckpointDir(), 0700, rootUID, rootGID); err != nil {
 		return nil, err
 	}
@@ -152,6 +163,9 @@ func (daemon *Daemon) create(params types.ContainerCreateConfig, managed bool) (
 		return nil, err
 	}
 
+	//  创建/var/lib/docker/devicemapper/mnt/$mountID
+	//  挂载thin device到/var/lib/docker/devicemapper/mnt/$mountID 目录下  init层的mount在 initmount 函数中实现
+	//  建立容器执行命令时的工作目录；
 	if err := daemon.createContainerPlatformSpecificSettings(container, params.Config, params.HostConfig); err != nil {
 		return nil, err
 	}
@@ -166,13 +180,17 @@ func (daemon *Daemon) create(params types.ContainerCreateConfig, managed bool) (
 
 	daemon.updateContainerNetworkSettings(container, endpointsConfigs)
 
-	//这段代码就是将container中的config和hostconfig结构体存储到磁盘上，存储的路径是/var/lib/docker/container/containerId/config.json
+	//这段代码就是将container中的config和hostconfig结构体存储到磁盘上，存储的路径是/var/lib/docker/container/containerId/config.v2.json
 	// 和 /var/lib/docker/container/containerId/hostConfig.json
 	if err := container.ToDisk(); err != nil {
 		logrus.Errorf("Error saving new container to disk: %v", err)
 		return nil, err
 	}
+
+	//把新建的容器信息和ID分别加入到 daemon.containers 和 daemon.idIndex
 	daemon.Register(container)
+
+
 	daemon.LogContainerEvent(container, "create")
 	return container, nil
 }
@@ -251,8 +269,9 @@ func (daemon *Daemon) setRWLayer(container *container.Container) error {
 		StorageOpt: container.HostConfig.StorageOpt,
 	}
 
-	//创建/var/lib/docker/image/overlay/layerdb/mounts/$mountID 目录及其下面的文件，同时创建存储该容器层的device
-
+	//1. 创建容器层device
+	//1. 向/var/lib/docker/image/devicemapper/layerdb/mounts/中的指定文件中写入对应的内容 例如，该目录下的以下文件内容init-id  mount-id  parent
+	//2. 创建/var/lib/docker/devicemapper/mnt/$mountID-INIT init层对应的device，然后在device中把INIT层的相关/etc/hostname /etc/resolve.conf等文件创建在该device空间
 	rwLayer, err := daemon.layerStore.CreateRWLayer(container.ID, layerID, rwLayerOpts) //setRWLayer->CreateRWLayer
 	if err != nil {
 		return err

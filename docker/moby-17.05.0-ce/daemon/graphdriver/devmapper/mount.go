@@ -38,6 +38,8 @@ type probeData struct {
 }
 
 // ProbeFsType returns the filesystem name for the given device id.
+/获取thin device上文件系统的类型
+//info.DevName()传递
 func ProbeFsType(device string) (string, error) {
 	probes := []probeData{
 		{"btrfs", "_BHRfS_M", 0x10040},

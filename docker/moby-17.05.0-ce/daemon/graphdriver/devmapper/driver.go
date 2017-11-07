@@ -180,7 +180,8 @@ func (d *Driver) Remove(id string) error { //  删除thin device
 	return nil
 }
 
-//initMount 中执行   id为mountID(/var/lib/docker/image/devicemapper/layerdb/mounts/$chainID/$mountID文件的内容对应的/var/lib/docker/devicemapper/mnt/$mountID)
+//INIT层挂载在 initMount 中执行   id为mountID(/var/lib/docker/image/devicemapper/layerdb/mounts/$chainID/$mountID文件的内容对应的/var/lib/docker/devicemapper/mnt/$mountID)
+//容器层挂载在 createContainerPlatformSpecificSettings->(daemon *Daemon) Mount 中执行
 // Get mounts a device with given id into the root filesystem
 
 //  创建/var/lib/docker/devicemapper/mnt/$mountID

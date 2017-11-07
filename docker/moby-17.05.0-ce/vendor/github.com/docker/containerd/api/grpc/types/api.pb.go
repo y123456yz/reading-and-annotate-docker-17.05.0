@@ -1966,10 +1966,12 @@ type APIClient interface {
 	Stats(ctx context.Context, in *StatsRequest, opts ...grpc.CallOption) (*StatsResponse, error)
 }
 
+//r.apiClient = containerd.NewAPIClient(conn)
 type aPIClient struct {
 	cc *grpc.ClientConn
 }
 
+//r.apiClient = containerd.NewAPIClient(conn)
 func NewAPIClient(cc *grpc.ClientConn) APIClient {
 	return &aPIClient{cc}
 }
@@ -1984,6 +1986,7 @@ func (c *aPIClient) GetServerVersion(ctx context.Context, in *GetServerVersionRe
 }
 
 //APIClient和该文件中的APIServer对应，client接口见(c *aPIClient) CreateContainer等，server对应接口见 ServiceDesc
+//dockerd接收到 docker start命令后，从(ctr *container) start 执行这里通过rpc发送请求给docker-containerd
 func (c *aPIClient) CreateContainer(ctx context.Context, in *CreateContainerRequest, opts ...grpc.CallOption) (*CreateContainerResponse, error) {
 	out := new(CreateContainerResponse)
 
@@ -2147,6 +2150,7 @@ func _API_GetServerVersion_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+//grpc.ServiceDesc 中的成员
 func _API_CreateContainer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateContainerRequest)
 	if err := dec(in); err != nil {

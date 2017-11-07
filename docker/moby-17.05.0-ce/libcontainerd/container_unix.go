@@ -20,6 +20,7 @@ import (
 	"golang.org/x/net/context"
 )
 
+// (clnt *client) newContainer中构造使用该结构
 type container struct {
 	containerCommon
 
@@ -78,6 +79,7 @@ func (ctr *container) cleanProcess(id string) {
 	delete(ctr.processes, id)
 }
 
+//获取/run/docker/libcontainerd/$containerID/config.json文件内容
 func (ctr *container) spec() (*specs.Spec, error) {
 	var spec specs.Spec
 	dt, err := ioutil.ReadFile(filepath.Join(ctr.dir, configFilename))
@@ -91,7 +93,9 @@ func (ctr *container) spec() (*specs.Spec, error) {
 }
 
 //client_unix.go中的Create函数调用
+//(clnt *client) Create 中调用执行  // attachStdio 为 container.InitializeStdio
 func (ctr *container) start(checkpoint string, checkpointDir string, attachStdio StdioCallback) (err error) {
+	//获取/run/docker/libcontainerd/$containerID/config.json文件内容
 	spec, err := ctr.spec()
 	if err != nil {
 		return nil
@@ -155,11 +159,13 @@ func (ctr *container) start(checkpoint string, checkpointDir string, attachStdio
 	}
 	ctr.client.appendContainer(ctr)
 
+	//container.InitializeStdio
 	if err := attachStdio(*iopipe); err != nil {
 		ctr.closeFifos(iopipe)
 		return err
 	}
 
+	//(c *aPIClient) CreateContainer
 	resp, err := ctr.client.remote.apiClient.CreateContainer(context.Background(), r)
 	if err != nil {
 		ctr.closeFifos(iopipe)
