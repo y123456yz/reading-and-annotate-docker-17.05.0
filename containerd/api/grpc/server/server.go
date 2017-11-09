@@ -26,6 +26,7 @@ type apiServer struct {
 }
 
 // NewServer returns grpc server instance
+//types.RegisterAPIServer(server, grpcserver.NewServer(sv))
 func NewServer(sv *supervisor.Supervisor) types.APIServer {
 	return &apiServer{
 		sv: sv,
@@ -41,6 +42,7 @@ func (s *apiServer) GetServerVersion(ctx context.Context, c *types.GetServerVers
 	}, nil
 }
 
+//创建容器对应的 containerd 回调
 func (s *apiServer) CreateContainer(ctx context.Context, c *types.CreateContainerRequest) (*types.CreateContainerResponse, error) {
 	if c.BundlePath == "" {
 		return nil, errors.New("empty bundle path")
@@ -64,6 +66,7 @@ func (s *apiServer) CreateContainer(ctx context.Context, c *types.CreateContaine
 		}
 	}
 	s.sv.SendTask(e)
+	//创建task对应的errorch
 	if err := <-e.ErrorCh(); err != nil {
 		return nil, err
 	}
@@ -148,6 +151,7 @@ func (s *apiServer) ListCheckpoint(ctx context.Context, r *types.ListCheckpointR
 	return &types.ListCheckpointResponse{Checkpoints: out}, nil
 }
 
+//dockerd发送signal到containerd，例如kill deockerd进程，就会有这个过程
 func (s *apiServer) Signal(ctx context.Context, r *types.SignalRequest) (*types.SignalResponse, error) {
 	e := &supervisor.SignalTask{}
 	e.ID = r.Id

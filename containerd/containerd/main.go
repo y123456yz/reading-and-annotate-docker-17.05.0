@@ -120,6 +120,8 @@ func setupDumpStacksTrap() {
 	}()
 }
 
+//dockerd调用执行containerd,通过
+// docker-containerd -l unix:///var/run/docker/libcontainerd/docker-containerd.sock --metrics-interval=0 --start-timeout 2m --state-dir /var/run/docker/libcontainerd/containerd --shim docker-containerd-shim --runtime docker-runc --debug
 func main() {
 	logrus.SetFormatter(&logrus.TextFormatter{TimestampFormat: time.RFC3339Nano})
 	app := cli.NewApp()
@@ -170,9 +172,11 @@ func main() {
 
 func daemon(context *cli.Context) error {
 	stateDir := context.String("state-dir")
+	//创建/var/run/docker/libcontainerd/containerd目录
 	if err := os.MkdirAll(stateDir, 0755); err != nil {
 		return err
 	}
+	//处理SIGTERM和SIGINT信号，SIGTERM信号是kill不带-9发出的，让程序终止。SIGINT信号是Ctrl+c发出的，让程序终止。
 	s := make(chan os.Signal, 2048)
 	signal.Notify(s, syscall.SIGTERM, syscall.SIGINT)
 	// Split the listen string of the form proto://addr
@@ -182,11 +186,14 @@ func daemon(context *cli.Context) error {
 		return fmt.Errorf("bad listen address format %s, expected proto://address", listenSpec)
 	}
 	// Register server early to allow healthcheck to be done
-	server, err := startServer(listenParts[0], listenParts[1])
+	//启动docker-containerd http server  ，启动grpc server
+	server, err := startServer(listenParts[0], listenParts[1]) //grpc server处理
 	if err != nil {
 		return err
 	}
-	sv, err := supervisor.New(
+
+	//创建supervisor，使用supervisor来启动daemon进程，并管理daemon的生命周期。
+	sv, err := supervisor.New( //dockerd运行containerd的时候写带的参数信息
 		stateDir,
 		context.String("runtime"),
 		context.String("shim"),
@@ -196,13 +203,19 @@ func daemon(context *cli.Context) error {
 	if err != nil {
 		return err
 	}
+
+	//注册grpc的各种回调，例如CreateContainer
 	types.RegisterAPIServer(server, grpcserver.NewServer(sv))
 	wg := &sync.WaitGroup{}
 	for i := 0; i < 10; i++ {
 		wg.Add(1)
 		w := supervisor.NewWorker(sv, wg)
+		//(w *worker) Start()
 		go w.Start()
 	}
+
+	//(s *Supervisor) Start()    containerd/supervisor/supervisor.go
+	//启动一个goroutine，再for i := range s.tasks，调用s.handlerTask(i)
 	if err := sv.Start(); err != nil {
 		return err
 	}
@@ -217,6 +230,7 @@ func daemon(context *cli.Context) error {
 	return nil
 }
 
+//启动grpc server
 func startServer(protocol, address string) (*grpc.Server, error) {
 	// TODO: We should use TLS.
 	// TODO: Add an option for the SocketGroup.

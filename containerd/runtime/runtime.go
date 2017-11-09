@@ -44,9 +44,15 @@ const (
 	ControlFile = "control"
 	// InitProcessID holds the special ID used for the very first
 	// container's process
-	InitProcessID = "init"
+	/*
+	root@fd-mesos-XXX.gz01:/var/run/docker/libcontainerd/containerd/9be24974a6a7cf064f4a238f70260b13b15359248b3267602bfc49e00f13d670/init$ ls
+	control  exit  log.json  pid  process.json  shim-log.json  starttime
+	root@fd-mesos-XXX.gz01:/var/run/docker/libcontainerd/containerd/9be24974a6a7cf064f4a238f70260b13b15359248b3267602bfc49e00f13d670/init$
+	pid中记录的是init进程的进程号
+	*/
+	InitProcessID = "init" //init进程，
 	// StartTimeFile holds the name of the file in which the process
-	// start time is saved
+	// start time is saved  saveStartTime 中赋值
 	StartTimeFile = "starttime"
 
 	// UnknownStatus is the value returned when a process exit
@@ -55,6 +61,7 @@ const (
 )
 
 // Checkpoint holds information regarding a container checkpoint
+//CreateContainer 会用到该类
 type Checkpoint struct {
 	// Timestamp is the time that checkpoint happened
 	Created time.Time `json:"created"`
@@ -104,6 +111,7 @@ const (
 	Running = State("running")
 )
 
+//在container.go 中的 func New(opts ContainerOpts)  序列化写入"state.json" 文件
 type state struct {
 	Bundle      string   `json:"bundle"`
 	Labels      []string `json:"labels"`

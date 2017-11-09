@@ -37,6 +37,7 @@ type checkpoint struct {
 	EmptyNS []string `json:"emptyNS,omitempty"`
 }
 
+//loadProcess 中从process.json中加载进来，  下面的type process struct包含该结构
 type processState struct {
 	specs.ProcessSpec
 	Exec           bool     `json:"exec"`
@@ -50,9 +51,12 @@ type processState struct {
 	RootGID        int      `json:"rootGID"`
 }
 
+//newProcess 中构造process
 type process struct {
 	sync.WaitGroup
+	//bd20340c7d49585b7aa697b2ffb2546d1b76c6695fc33573510cc5ed13737b0d
 	id             string
+	// /var/run/docker/libcontainerd/bd20340c7d49585b7aa697b2ffb2546d1b76c6695fc33573510cc5ed13737b0d
 	bundle         string
 	stdio          *stdio
 	containerPid   int
@@ -60,18 +64,24 @@ type process struct {
 	checkpointPath string
 	shimIO         *IO
 	stdinCloser    io.Closer
+	//赋值见 (p *process) openIO
 	console        *os.File
 	consolePath    string
+	//赋值见newProcess
 	state          *processState
+	// docker-runc
 	runtime        string
 }
 
+//docker-containerd-shim bd20340c7d49585b7aa697b2ffb2546d1b76c6695fc33573510cc5ed13737b0d /var/run/docker/libcontainerd/bd20340c7d49585b7aa697b2ffb2546d1b76c6695fc33573510cc5ed13737b0d docker-runc
 func newProcess(id, bundle, runtimeName string) (*process, error) {
 	p := &process{
 		id:      id,
 		bundle:  bundle,
 		runtime: runtimeName,
 	}
+
+	//从process.json文件中加载state
 	s, err := loadProcess()
 	if err != nil {
 		return nil, err
@@ -91,7 +101,9 @@ func newProcess(id, bundle, runtimeName string) (*process, error) {
 	return p, nil
 }
 
+//从process.json文件中加载state  //读取process.json文件，获取进程状态
 func loadProcess() (*processState, error) {
+	//docker-containerd 中的 newProcess 中创建该文件并写入内容  runtime\process.go中创建改文件
 	f, err := os.Open("process.json")
 	if err != nil {
 		return nil, err
@@ -117,16 +129,22 @@ func loadCheckpoint(checkpointPath string) (*checkpoint, error) {
 	return &cpt, nil
 }
 
+//运行docker-runc
 func (p *process) create() error {
+	//获取当前目录
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
 	}
+	//当前目录下的log.json
 	logPath := filepath.Join(cwd, "log.json")
+	//args设置--log，--log-format，还有p.state.RuntimeArgs，
 	args := append([]string{
 		"--log", logPath,
 		"--log-format", "json",
 	}, p.state.RuntimeArgs...)
+
+	//下面是设置各种类型args
 	if p.state.Exec {
 		args = append(args, "exec",
 			"-d",
@@ -159,6 +177,7 @@ func (p *process) create() error {
 		}
 
 	} else {
+		//create容器，
 		args = append(args, "create",
 			"--bundle", p.bundle,
 			"--console", p.consolePath,
@@ -167,18 +186,24 @@ func (p *process) create() error {
 			args = append(args, "--no-pivot")
 		}
 	}
+
+	//设置--pid-file
 	args = append(args,
 		"--pid-file", filepath.Join(cwd, "pid"),
 		p.id,
 	)
+
+	//运行docker-runc，args为携带的参数
 	cmd := exec.Command(p.runtime, args...)
-	cmd.Dir = p.bundle
+	cmd.Dir = p.bundle  //准备的rootfs
 	cmd.Stdin = p.stdio.stdin
 	cmd.Stdout = p.stdio.stdout
 	cmd.Stderr = p.stdio.stderr
 	// Call out to setPDeathSig to set SysProcAttr as elements are platform specific
+	//设置父进程SIGKILL信号，以便如果shim死了，容器进程也会被杀死。
 	cmd.SysProcAttr = setPDeathSig()
 
+	//docker-runc启动容器
 	if err := cmd.Start(); err != nil {
 		if exErr, ok := err.(*exec.Error); ok {
 			if exErr.Err == exec.ErrNotFound || exErr.Err == os.ErrNotExist {
@@ -277,6 +302,7 @@ func (p *process) Close() error {
 	return p.stdio.Close()
 }
 
+//(p *process) openIO() 中会构造使用该类
 type stdio struct {
 	stdin  *os.File
 	stdout *os.File

@@ -18,16 +18,24 @@ const (
 )
 
 // New returns an initialized Process supervisor.
+//containerd\main.go中的daemon函数执行  创建Supervisor对象，管理containerd进程。   supervisor.go中的New函数
+//supervisor.New(stateDir, context.String("runtime"), context.String("shim"), context.StringSlice("runtime-args"), context.Duration("start-timeout"), context.Int("retain-count"))
 func New(stateDir string, runtimeName, shimName string, runtimeArgs []string, timeout time.Duration, retainCount int) (*Supervisor, error) {
 	startTasks := make(chan *startTask, 10)
+	//检查机器信息，返回cpu数量，内存数量。
 	machine, err := CollectMachineInformation()
 	if err != nil {
 		return nil, err
 	}
+
+	//epoll create  监视器
+	// 创建epoll epoll_wait等待时间发生
 	monitor, err := NewMonitor()
 	if err != nil {
 		return nil, err
 	}
+
+	//创建Supervisor对象
 	s := &Supervisor{
 		stateDir:          stateDir,
 		containers:        make(map[string]*containerInfo),
@@ -47,13 +55,17 @@ func New(stateDir string, runtimeName, shimName string, runtimeArgs []string, ti
 	}
 	go s.exitHandler()
 	go s.oomHandler()
+
+	//s.restore()加载之前已经存在的容器
 	if err := s.restore(); err != nil {
 		return nil, err
 	}
 	return s, nil
 }
 
-type containerInfo struct {
+//Supervisor中的containers成员包含该结构，
+type containerInfo struct { //赋值见(s *Supervisor) start  create.go
+	//赋值为 container.go 中的type container struct {}
 	container runtime.Container
 }
 
@@ -119,6 +131,14 @@ func eventLogger(s *Supervisor, path string, events chan Event, retainCount int)
 	return nil
 }
 
+/*
+{"id":"63b247fa2c3c782ceb5b3aaafe3b7104aac4aa222bfec62ade9ebe6bab98664d","type":"start-container","timestamp":"2017-11-08T14:22:42.825555736+08:00"}
+{"id":"63b247fa2c3c782ceb5b3aaafe3b7104aac4aa222bfec62ade9ebe6bab98664d","type":"exit","timestamp":"2017-11-08T14:23:52.246504551+08:00","pid":"init"}
+{"id":"c0efd5284e6e0539ff77d76f64fd1f117c37bc2fb4245f5576009d21a8f43d7c","type":"start-container","timestamp":"2017-11-08T15:01:35.126886477+08:00"}
+{"id":"c0efd5284e6e0539ff77d76f64fd1f117c37bc2fb4245f5576009d21a8f43d7c","type":"exit","timestamp":"2017-11-08T15:09:40.003760182+08:00","pid":"init"}
+{"id":"8be0e38f7ed49b193103483181c8f1218bdb9e6a8385406b1422d08303d2ab0a","type":"start-container","timestamp":"2017-11-08T15:09:45.508301624+08:00"}
+{"id":"8be0e38f7ed49b193103483181c8f1218bdb9e6a8385406b1422d08303d2ab0a","type":"exit","timestamp":"2017-11-08T17:02:53.180061942+08:00","pid":"init","status":130}
+*/
 func readEventLog(s *Supervisor) error {
 	f, err := os.Open(filepath.Join(s.stateDir, "events.log"))
 	if err != nil {
@@ -150,24 +170,59 @@ func readEventLog(s *Supervisor) error {
 }
 
 // Supervisor represents a container supervisor
-type Supervisor struct {
+/*
+containerd 最重要的就是Supervisot中的两个go chan:Task 和startTask。还有三个重要的go协程。
+1. api server协程，主要负责将Task放入Task chan
+2. supervisor协程，主要将Task从Task chan中取出放入startTask chan
+3. spuervisor worker协程（十个）主要负责从startTask chan中取出startTask，做相应的操作。
+*/
+//apiServer中包含该结构，supervisor源头在apiServer
+type Supervisor struct { //Supervisor.go 中的New中构造该类
 	// stateDir is the directory on the system to store container runtime state information.
+	//默认/var/run/docker/libcontainerd/containerd
 	stateDir string
 	// name of the OCI compatible runtime used to execute containers
+	////docker-runc
 	runtime     string
 	runtimeArgs []string
+	////docker-containerd-shim
 	shim        string
+	//container都存入该hash中，赋值见create.go中的 (s *Supervisor) start
+	//  (s *Supervisor) start 注册新增加的容器  deleteContainer 中移除
 	containers  map[string]*containerInfo
+	//supervisor.go中的New函数赋值，10个task, task 生效使用见 (w *worker) Start
+	//handleTask->(s *Supervisor) start(create.go)中放入startTasks
+	/*
+	例如 CreateContainer 的时候会调用SendTask把StartTask放入 Supervisor.tasks 中，然后
+	 supervisor.go中的(s *Supervisor) start 会从tasks中取出对应的task，然后调用(s *Supervisor) handleTask 处理这些task
+	 然后handleTask->(s *Supervisor) start(create.go)中放入 startTasks chan
+	 然后触发执行 create.go 中的(s *Supervisor) start
+	*/
 	startTasks  chan *startTask
 	// we need a lock around the subscribers map only because additions and deletions from
 	// the map are via the API so we cannot really control the concurrency
 	subscriberLock sync.RWMutex
 	subscribers    map[chan Event]struct{}
+	//CollectMachineInformation 中获取
 	machine        Machine
-	tasks          chan Task
+	/*
+	containerd 最重要的就是Supervisot中的两个go chan:Task 和startTask。还有三个重要的go协程。
+	1. api server协程，主要负责将Task放入Task chan
+	2. supervisor协程，主要将Task从Task chan中取出放入startTask chan
+	3. spuervisor worker协程（十个）主要负责从startTask chan中取出startTask，做相应的操作。
+
+	例如 CreateContainer 的时候会调用SendTask把StartTask放入 Supervisor.tasks 中，然后
+	 supervisor.go中的(s *Supervisor) start 会从tasks中取出对应的task，然后调用(s *Supervisor) handleTask 处理这些task
+	 然后handleTask->(s *Supervisor) start(create.go)中放入 startTasks chan
+	 然后触发执行 crate.go 中的(s *Supervisor) start
+	*/
+	tasks          chan Task  //见 SendTask 中放入task到tasks，
+	//NewMonitor 返回值
 	monitor        *Monitor
+	//readEventLog 中赋值
 	eventLog       []Event
 	eventLock      sync.Mutex
+	//默认--start-timeout 2m
 	timeout        time.Duration
 	// This is used to ensure that exec process death events are sent
 	// before the init process death
@@ -266,6 +321,7 @@ func (s *Supervisor) notifySubscribers(e Event) {
 // This event loop is the only thing that is allowed to modify state of containers and processes
 // therefore it is save to do operations in the handlers that modify state of the system or
 // state of the Supervisor
+//注意create.go和supervisor.go中的(s *Supervisor) start 和 container.go中的(c *container) Start 的区别
 func (s *Supervisor) Start() error {
 	logrus.WithFields(logrus.Fields{
 		"stateDir":    s.stateDir,
@@ -274,7 +330,7 @@ func (s *Supervisor) Start() error {
 		"memory":      s.machine.Memory,
 		"cpus":        s.machine.Cpus,
 	}).Debug("containerd: supervisor running")
-	go func() {
+	go func() { //启动一个goroutine，再for i := range s.tasks，调用s.handlerTask(i)
 		for i := range s.tasks {
 			s.handleTask(i)
 		}
@@ -289,12 +345,18 @@ func (s *Supervisor) Machine() Machine {
 }
 
 // SendTask sends the provided event the the supervisors main event loop
-func (s *Supervisor) SendTask(evt Task) {
+//SendTask会将Task放入Task chan  例如CreateContainer 的时候会调用SendTask把StartTask放入tasks中，然后由 handleTask 进行调度处理
+func (s *Supervisor) SendTask(evt Task) { //例如创建容器的时候会调用 CreateContainer->SendTask
 	TasksCounter.Inc(1)
 	s.tasks <- evt
 }
 
+/*
+在启动daemon的时候，启动过一个exitHandler的goroutine，该函数主要的作用就是从s.monitor.exits这个runtime.Process类型的channel中获取退出的process。
+对于每个退出的process，创建 e := &ExitTask{Process: p,}，最后s.SendTask(e)，最终经过 handleTask 的调度，最终会在exit()函数进行处理
+*/
 func (s *Supervisor) exitHandler() {
+	//processEvent
 	for p := range s.monitor.Exits() {
 		e := &ExitTask{
 			Process: p,
@@ -316,22 +378,29 @@ func (s *Supervisor) monitorProcess(p runtime.Process) error {
 	return s.monitor.Monitor(p)
 }
 
+//加载之前已经存在的容器
 func (s *Supervisor) restore() error {
 	dirs, err := ioutil.ReadDir(s.stateDir)
 	if err != nil {
 		return err
 	}
+
+	//遍历目录s.stateDir（其实就是/var/run/docker/libcontainerd/containerd）
 	for _, d := range dirs {
 		if !d.IsDir() {
 			continue
 		}
+		//调用id := d.Name()获取容器id
 		id := d.Name()
+		//load的作用就是加载s.stateDir/$containerid/state.json获取容器实例  之后，再遍历s.stateDir/id/下的pid 文件，加载容器中的process。
 		container, err := runtime.Load(s.stateDir, id, s.shim, s.timeout)
 		if err != nil {
 			logrus.WithFields(logrus.Fields{"error": err, "id": id}).Warnf("containerd: failed to load container,removing state directory.")
 			os.RemoveAll(filepath.Join(s.stateDir, id))
 			continue
 		}
+
+		//加载容器中的process存入processes数组
 		processes, err := container.Processes()
 		if err != nil {
 			return err
@@ -350,6 +419,7 @@ func (s *Supervisor) restore() error {
 		logrus.WithField("id", id).Debug("containerd: container restored")
 		var exitedProcesses []runtime.Process
 		for _, p := range processes {
+			//如果process的状态为running，则调用s.monitorProcess(p)对其进行监控，并对其中不在运行的process进行处理。
 			if p.State() == runtime.Running {
 				if err := s.monitorProcess(p); err != nil {
 					return err
@@ -361,7 +431,7 @@ func (s *Supervisor) restore() error {
 				s.newExecSyncChannel(container.ID(), p.ID())
 			}
 		}
-		if len(exitedProcesses) > 0 {
+		if len(exitedProcesses) > 0 { //对不处于running的process进行处理
 			// sort processes so that init is fired last because that is how the kernel sends the
 			// exit events
 			sortProcesses(exitedProcesses)
@@ -376,6 +446,7 @@ func (s *Supervisor) restore() error {
 	return nil
 }
 
+//函数根据i的类型，调用相应的处理函数进行处理。例如，i.(type)为*StartTask时，则调用s.start(t)，若i.(type)为*DeleteTask时，则调用s.delete(t)。
 func (s *Supervisor) handleTask(i Task) {
 	var err error
 	switch t := i.(type) {

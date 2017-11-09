@@ -183,7 +183,7 @@ func (m *UpdateProcessResponse) String() string            { return proto.Compac
 func (*UpdateProcessResponse) ProtoMessage()               {}
 func (*UpdateProcessResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
 
-type CreateContainerRequest struct {
+type CreateContainerRequest struct { //见CreateContainer
 	Id            string   `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
 	BundlePath    string   `protobuf:"bytes,2,opt,name=bundlePath" json:"bundlePath,omitempty"`
 	Checkpoint    string   `protobuf:"bytes,3,opt,name=checkpoint" json:"checkpoint,omitempty"`
@@ -1953,6 +1953,7 @@ const _ = grpc.SupportPackageIsVersion4
 
 type APIClient interface {
 	GetServerVersion(ctx context.Context, in *GetServerVersionRequest, opts ...grpc.CallOption) (*GetServerVersionResponse, error)
+	//worker(client types.APIClient) 中执行
 	CreateContainer(ctx context.Context, in *CreateContainerRequest, opts ...grpc.CallOption) (*CreateContainerResponse, error)
 	UpdateContainer(ctx context.Context, in *UpdateContainerRequest, opts ...grpc.CallOption) (*UpdateContainerResponse, error)
 	Signal(ctx context.Context, in *SignalRequest, opts ...grpc.CallOption) (*SignalResponse, error)

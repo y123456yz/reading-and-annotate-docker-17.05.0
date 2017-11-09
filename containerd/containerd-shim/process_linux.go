@@ -15,6 +15,7 @@ import (
 
 // setPDeathSig sets the parent death signal to SIGKILL so that if the
 // shim dies the container process also dies.
+//设置父进程SIGKILL信号，以便如果shim死了，容器进程也会被杀死。
 func setPDeathSig() *syscall.SysProcAttr {
 	return &syscall.SysProcAttr{
 		Pdeathsig: syscall.SIGKILL,
@@ -49,6 +50,9 @@ func (p *process) openIO() error {
 		if err != nil {
 			return err
 		}
+
+		//io.Copy将stdin/stdout与master相连
+		//p.state.Stdout和p.state.Stderr（方式为可读写）分别与i.Stdou和i.Stderr相连。接着打开p.state.Stdin为只读模式，再将i.Stdin和p.state.Stdin相连
 		go io.Copy(master, stdin)
 		stdoutw, err := fifo.OpenFifo(ctx, p.state.Stdout, syscall.O_WRONLY, 0)
 		if err != nil {
@@ -121,6 +125,7 @@ func (p *process) openIO() error {
 func (p *process) killAll() error {
 	if !p.state.Exec {
 		cmd := exec.Command(p.runtime, append(p.state.RuntimeArgs, "kill", "--all", p.id, "SIGKILL")...)
+		//设置父进程SIGKILL信号，以便如果shim死了，容器进程也会被杀死。
 		cmd.SysProcAttr = setPDeathSig()
 		out, err := cmd.CombinedOutput()
 		if err != nil {

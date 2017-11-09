@@ -12,6 +12,7 @@ type Machine struct {
 
 // CollectMachineInformation returns information regarding the current
 // machine (e.g. CPU count, RAM amount)
+//检查机器信息，返回cpu数量，内存数量。
 func CollectMachineInformation() (Machine, error) {
 	m := Machine{}
 	cpu := sigar.CpuList{}

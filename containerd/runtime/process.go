@@ -53,10 +53,14 @@ type Process interface {
 	Wait()
 }
 
+//该结构构造见  (c *container) Start   container.go
 type processConfig struct {
+	//InitProcessID = "init"
 	id          string
+	//// /var/run/docker/libcontainerd/containerd/$containerID/init
 	root        string
 	processSpec specs.ProcessSpec
+	///var/run/docker/libcontainerd/$containerID/config.json 中的内容序列化返回
 	spec        *specs.Spec
 	c           *container
 	stdio       Stdio
@@ -78,12 +82,16 @@ func newProcess(config *processConfig) (*process, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	////// /var/run/docker/libcontainerd/containerd/$containerID/init/process.json
+	//containerd-shim中的 loadProcess 中会加载使用该文件
 	f, err := os.Create(filepath.Join(config.root, "process.json"))
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
 
+	//根据config生成process实例
 	ps := ProcessState{
 		ProcessSpec: config.processSpec,
 		Exec:        config.exec,
@@ -99,9 +107,13 @@ func newProcess(config *processConfig) (*process, error) {
 		NoPivotRoot: config.c.noPivotRoot,
 	}
 
+	//生成ps := ProcessState{...}，并将ps的内容写入状态文件process.json中
 	if err := json.NewEncoder(f).Encode(ps); err != nil {
 		return nil, err
 	}
+
+	//生成两个pipe文件，并分别将exit和control赋值给p.exitPipe和p.controlPipe
+	//getExitPipe和getControlPipe生成两个FIFO文件，其中Exit函数中的FIFO是只读的，而Control函数中的FIFO是读写的
 	exit, err := getExitPipe(filepath.Join(config.root, ExitFile))
 	if err != nil {
 		return nil, err
@@ -110,6 +122,8 @@ func newProcess(config *processConfig) (*process, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	//getExitPipe和getControlPipe生成两个FIFO文件，其中Exit函数中的FIFO是只读的，而Control函数中的FIFO是读写的
 	p.exitPipe = exit
 	p.controlPipe = control
 	return p, nil
@@ -184,15 +198,20 @@ func readProcStatField(pid int, field int) (string, error) {
 	return parts[0], nil
 }
 
+//newProcess 中构造该类
 type process struct {
+	// /var/run/docker/libcontainerd/containerd/$containerID/init/pid
 	root        string
 	id          string
+	//getPidFromFile 中赋值
 	pid         int
+	//getExitPipe和getControlPipe生成两个FIFO文件，其中Exit函数中的FIFO是只读的，而Control函数中的FIFO是读写的
 	exitPipe    *os.File
 	controlPipe *os.File
 	container   *container
 	spec        specs.ProcessSpec
 	stdio       Stdio
+	//赋值见createCmd
 	cmd         *exec.Cmd
 	cmdSuccess  bool
 	cmdDoneCh   chan struct{}
@@ -369,7 +388,8 @@ func (p *process) saveStartTime() error {
 
 func (p *process) isSameProcess() (bool, error) {
 	if p.pid == 0 {
-		_, err := p.getPidFromFile()
+		//读取文件/var/run/docker/libcontainerd/containerd/$containerID/init/pid内容，也就是容器的 /sbin/init 进程号
+		_, err := p.getPidFromFile() //注意，调用的是process_linux.go
 		if err != nil {
 			return false, err
 		}

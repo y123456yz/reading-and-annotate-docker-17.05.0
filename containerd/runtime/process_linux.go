@@ -8,6 +8,7 @@ import (
 	"strconv"
 )
 
+// /var/run/docker/libcontainerd/containerd/$containerID/init/pid
 func (p *process) getPidFromFile() (int, error) {
 	data, err := ioutil.ReadFile(filepath.Join(p.root, "pid"))
 	if err != nil {

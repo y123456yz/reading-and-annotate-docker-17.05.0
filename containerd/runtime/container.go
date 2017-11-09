@@ -20,7 +20,7 @@ import (
 )
 
 // Container defines the operations allowed on a container
-type Container interface {
+type Container interface { //下面的 type container struct 结构实现以下方法
 	// ID returns the container ID
 	ID() string
 	// Path returns the path to the bundle
@@ -74,7 +74,7 @@ type OOM interface {
 }
 
 // Stdio holds the path to the 3 pipes used for the standard ios.
-type Stdio struct {
+type Stdio struct { //NewStdio 中构造使用
 	Stdin  string
 	Stdout string
 	Stderr string
@@ -98,8 +98,10 @@ func NewStdio(stdin, stdout, stderr string) Stdio {
 }
 
 // ContainerOpts keeps the options passed at container creation
-type ContainerOpts struct {
+type ContainerOpts struct { //(s *Supervisor) start 中赋值
+	//默认/var/run/docker/libcontainerd/containerd
 	Root        string
+	//容器ID
 	ID          string
 	Bundle      string
 	Runtime     string
@@ -107,10 +109,13 @@ type ContainerOpts struct {
 	Shim        string
 	Labels      []string
 	NoPivotRoot bool
+	//生效见(c *container) waitForCreate， 实际上是等待docker-containerd-shim运行的超时时间 --start-timeout
 	Timeout     time.Duration
 }
 
 // New returns a new container
+//create.go 中的(s *Supervisor) start 会调用该函数
+//创建/var/run/docker/libcontainerd/containerd/state.json文件并序列化写入相关内容
 func New(opts ContainerOpts) (Container, error) {
 	c := &container{
 		root:        opts.Root,
@@ -127,6 +132,8 @@ func New(opts ContainerOpts) (Container, error) {
 	if err := os.Mkdir(filepath.Join(c.root, c.id), 0755); err != nil {
 		return nil, err
 	}
+
+	//创建 /var/run/docker/libcontainerd/containerd/state.json 文件
 	f, err := os.Create(filepath.Join(c.root, c.id, StateFile))
 	if err != nil {
 		return nil, err
@@ -146,6 +153,7 @@ func New(opts ContainerOpts) (Container, error) {
 }
 
 // Load return a new container from the matchin state file on disk.
+//(s *Supervisor) restore() 中调用
 func Load(root, id, shimName string, timeout time.Duration) (Container, error) {
 	var s state
 	f, err := os.Open(filepath.Join(root, id, StateFile))
@@ -209,18 +217,25 @@ func readProcessState(dir string) (*ProcessState, error) {
 	return &s, nil
 }
 
+//create.go 中的(s *Supervisor) start 会构造该类
 type container struct {
 	// path to store runtime state information
+	//默认/var/run/docker/libcontainerd/containerd
+	//容器ID
 	root        string
 	id          string
 	bundle      string
+	//docker-runc
 	runtime     string
 	runtimeArgs []string
 	shim        string
+	// (c *container) Processes 中遍历使用
 	processes   map[string]*process
 	labels      []string
 	oomFds      []int
 	noPivotRoot bool
+	//生效见(c *container) waitForCreate
+	//生效见(c *container) waitForCreate， 实际上是等待docker-containerd-shim运行的超时时间 --start-timeout
 	timeout     time.Duration
 }
 
@@ -236,8 +251,10 @@ func (c *container) Labels() []string {
 	return c.labels
 }
 
+///var/run/docker/libcontainerd/$containerID/config.json 中的内容序列化返回
 func (c *container) readSpec() (*specs.Spec, error) {
 	var spec specs.Spec
+	///var/run/docker/libcontainerd/$containerID/config.json
 	f, err := os.Open(filepath.Join(c.bundle, "config.json"))
 	if err != nil {
 		return nil, err
@@ -249,12 +266,17 @@ func (c *container) readSpec() (*specs.Spec, error) {
 	return &spec, nil
 }
 
+//利用exec.Command直接调用调用命令行`docker-runc delete contain-id。
+//删除目录/var/run/docker/libcontainerd/containerd/container-id，
 func (c *container) Delete() error {
 	var err error
 	args := append(c.runtimeArgs, "delete", c.id)
+	//利用exec.Command直接调用调用命令行`docker-runc delete contain-id。
 	if b, derr := exec.Command(c.runtime, args...).CombinedOutput(); derr != nil && !strings.Contains(string(b), "does not exist") {
 		err = fmt.Errorf("%s: %q", derr, string(b))
 	}
+
+	//删除目录/var/run/docker/libcontainerd/containerd/container-id，
 	if rerr := os.RemoveAll(filepath.Join(c.root, c.id)); rerr != nil {
 		if err != nil {
 			err = fmt.Errorf("%s; failed to remove %s: %s", err, filepath.Join(c.root, c.id), rerr)
@@ -265,6 +287,8 @@ func (c *container) Delete() error {
 	return err
 }
 
+////加载容器中的process，如果process的状态为running，则调用s.monitorProcess(p)对其进行监控，并对其中不在运行的process进行处理。
+//获取容器中所有的process实例
 func (c *container) Processes() ([]Process, error) {
 	out := []Process{}
 	for _, p := range c.processes {
@@ -400,11 +424,20 @@ func (c *container) DeleteCheckpoint(name string, checkpointDir string) error {
 	return os.RemoveAll(filepath.Join(checkpointDir, name))
 }
 
+//注意create.go和supervisor.go中的(s *Supervisor) start 和 container.go中的(c *container) Start 的区别
+
+////启动容器，执行docker-containerd-shim   (w *worker) Start() 中执行
 func (c *container) Start(ctx context.Context, checkpointPath string, s Stdio) (Process, error) {
+	// /var/run/docker/libcontainerd/containerd/$containerID/init
 	processRoot := filepath.Join(c.root, c.id, InitProcessID)
 	if err := os.Mkdir(processRoot, 0755); err != nil {
 		return nil, err
 	}
+
+	/*
+       docker-containerd-shim 817c43b3f5794d0e5dfdb92acf60fe7653b3efc33a4388733d357d00a8d8ae1a
+       /var/run/docker/libcontainerd/817c43b3f5794d0e5dfdb92acf60fe7653b3efc33a4388733d357d00a8d8ae1a docker-runc
+       */ //把docker-containerd-shim进程起起来
 	cmd := exec.Command(c.shim,
 		c.id, c.bundle, c.runtime,
 	)
@@ -412,6 +445,8 @@ func (c *container) Start(ctx context.Context, checkpointPath string, s Stdio) (
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Setpgid: true,
 	}
+
+	///var/run/docker/libcontainerd/$containerID/config.json 中的内容序列化返回
 	spec, err := c.readSpec()
 	if err != nil {
 		return nil, err
@@ -425,10 +460,14 @@ func (c *container) Start(ctx context.Context, checkpointPath string, s Stdio) (
 		spec:        spec,
 		processSpec: specs.ProcessSpec(spec.Process),
 	}
+
+	//根据config，调用p, err := newProcess(config)，生成process实例
 	p, err := newProcess(config)
 	if err != nil {
 		return nil, err
 	}
+
+	//调用cmd.Start()系统命令启动docker-containerd-shim进程。
 	if err := c.createCmd(ctx, InitProcessID, cmd, p); err != nil {
 		return nil, err
 	}
@@ -477,6 +516,7 @@ func (c *container) Exec(ctx context.Context, pid string, pspec specs.ProcessSpe
 
 func (c *container) createCmd(ctx context.Context, pid string, cmd *exec.Cmd, p *process) error {
 	p.cmd = cmd
+	//调用cmd.Start()系统命令启动cmd指定的进程
 	if err := cmd.Start(); err != nil {
 		close(p.cmdDoneCh)
 		if exErr, ok := err.(*exec.Error); ok {
@@ -517,6 +557,7 @@ func (c *container) createCmd(ctx context.Context, pid string, cmd *exec.Cmd, p 
 
 	ch := make(chan error)
 	go func() {
+		//等待cmd指定的程序运行，如果超时则直接返回err
 		if err := c.waitForCreate(p, cmd); err != nil {
 			ch <- err
 			return
@@ -598,10 +639,12 @@ type waitArgs struct {
 	err error
 }
 
+//等待cmd指定的程序运行，如果超时则直接返回err
 func (c *container) waitForCreate(p *process, cmd *exec.Cmd) error {
 	wc := make(chan error, 1)
 	go func() {
 		for {
+			//该函数先启动一个goroutine用于从pidfile中读取pid
 			if _, err := p.getPidFromFile(); err != nil {
 				if os.IsNotExist(err) || err == errInvalidPidInt || err == errContainerNotFound {
 					alive, err := isAlive(cmd)
@@ -652,6 +695,8 @@ func (c *container) waitForCreate(p *process, cmd *exec.Cmd) error {
 			return
 		}
 	}()
+
+	//select，从上面go中的goroutine接收结果，或者超时，当超时时，调用cmd.Process.Kill()和cmd.Wait()
 	select {
 	case err := <-wc:
 		if err != nil {
@@ -663,6 +708,7 @@ func (c *container) waitForCreate(p *process, cmd *exec.Cmd) error {
 		}
 		return nil
 	case <-time.After(c.timeout):
+		//超时时，调用cmd.Process.Kill()和cmd.Wait()
 		cmd.Process.Kill()
 		cmd.Wait()
 		return ErrContainerStartTimeout

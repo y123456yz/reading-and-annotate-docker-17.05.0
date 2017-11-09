@@ -33,14 +33,18 @@ type controlMessage struct {
 // Arg2: runtime binary
 func main() {
 	flag.Parse()
+	//getcwd()获取工作目录的绝对路径
 	cwd, err := os.Getwd()
 	if err != nil {
 		panic(err)
 	}
+
+	//创建shim-log.json文件,格式类似{"level": "%s","msg": "%s"}
 	f, err := os.OpenFile(filepath.Join(cwd, "shim-log.json"), os.O_CREATE|os.O_WRONLY|os.O_APPEND|os.O_SYNC, 0666)
 	if err != nil {
 		panic(err)
 	}
+
 	if err := start(f); err != nil {
 		// this means that the runtime failed starting the container and will have the
 		// proper error messages in the runtime log so we should to treat this as a
@@ -64,9 +68,14 @@ func start(log *os.File) error {
 	signals := make(chan os.Signal, 2048)
 	signal.Notify(signals)
 	// set the shim as the subreaper for all orphaned processes created by the container
+	//保证容器中的所有孤儿进程被docker-containerd-shim接管，孤儿进程的父进程变为docker-containerd-shim
+	//参考https://yq.aliyun.com/articles/61894
+	//ps xf -o pid,ppid,stat,args 查看进程树
 	if err := osutils.SetSubreaper(1); err != nil {
 		return err
 	}
+
+	//打开exit pipe和control pipe     docker-containerd 进程中会创建者两个pipe
 	// open the exit pipe
 	f, err := os.OpenFile("exit", syscall.O_WRONLY, 0)
 	if err != nil {
@@ -78,6 +87,9 @@ func start(log *os.File) error {
 		return err
 	}
 	defer control.Close()
+
+	// //创建Process，参数：arg0，arg1，arg2
+	//docker-containerd-shim bd20340c7d49585b7aa697b2ffb2546d1b76c6695fc33573510cc5ed13737b0d /var/run/docker/libcontainerd/bd20340c7d49585b7aa697b2ffb2546d1b76c6695fc33573510cc5ed13737b0d docker-runc
 	p, err := newProcess(flag.Arg(0), flag.Arg(1), flag.Arg(2))
 	if err != nil {
 		return err
@@ -91,10 +103,13 @@ func start(log *os.File) error {
 		p.delete()
 		return err
 	}
+
+	//创建一个goroutine，从control pipe中不断读取controlMessage
 	msgC := make(chan controlMessage, 32)
 	go func() {
 		for {
 			var m controlMessage
+			//从control pipe中不断读取controlMessage
 			if _, err := fmt.Fscanf(control, "%d %d %d\n", &m.Type, &m.Width, &m.Height); err != nil {
 				continue
 			}
@@ -105,10 +120,12 @@ func start(log *os.File) error {
 		return nil
 	}
 	var exitShim bool
+	//无限for循环，对来自signal的信号和controlMessage进行处理
 	for {
 		select {
 		case s := <-signals:
 			switch s {
+			//当从signal中获得的信号为SIGCHLD时，当退出的进程为runtime时，退出shim
 			case syscall.SIGCHLD:
 				exits, _ := osutils.Reap(false)
 				for _, e := range exits {
@@ -131,6 +148,8 @@ func start(log *os.File) error {
 				// the close of the exit fifo will happen when the shim exits
 				return nil
 			}
+
+		//对来此control pipe的controlMessage进行处理，当msg的Type为0时，关闭stdin，当Type为1时，且p.console不为nil，则调整tty的窗口大小
 		case msg := <-msgC:
 			switch msg.Type {
 			case 0:

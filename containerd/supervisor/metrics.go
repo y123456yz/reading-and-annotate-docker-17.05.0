@@ -12,6 +12,7 @@ var (
 	// ContainerStatsTimer holds the metrics timer associated with container stats generation
 	ContainerStatsTimer = metrics.NewTimer()
 	// ContainersCounter keeps track of the number of active containers
+	//container数  (s *Supervisor) start  create.go 中自增
 	ContainersCounter = metrics.NewCounter()
 	// EventSubscriberCounter keeps track of the number of active event subscribers
 	EventSubscriberCounter = metrics.NewCounter()

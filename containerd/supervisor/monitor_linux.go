@@ -10,6 +10,7 @@ import (
 )
 
 // NewMonitor starts a new process monitor and returns it
+//创建epoll epoll_wait等待时间发生
 func NewMonitor() (*Monitor, error) {
 	m := &Monitor{
 		receivers: make(map[int]interface{}),
@@ -21,20 +22,24 @@ func NewMonitor() (*Monitor, error) {
 		return nil, err
 	}
 	m.epollFd = fd
+	//epoll_wait等待时间发生  monitorProcess  MonitorOOM 结合NewMonitor 阅读
 	go m.start()
 	return m, nil
 }
 
 // Monitor represents a runtime.Process monitor
-type Monitor struct {
+type Monitor struct { //NewMonitor 中构造
 	m         sync.Mutex
 	receivers map[int]interface{}
+	//processEvent  exitHandler
 	exits     chan runtime.Process
+	//processEvent
 	ooms      chan string
 	epollFd   int
 }
 
 // Exits returns the channel used to notify of a process exit
+//exitHandler 中调用  processEvent 中写入chan
 func (m *Monitor) Exits() chan runtime.Process {
 	return m.exits
 }
@@ -87,12 +92,14 @@ func (m *Monitor) Close() error {
 	return syscall.Close(m.epollFd)
 }
 
+//EPOLL时间处理 monitorProcess  MonitorOOM 结合 NewMonitor 阅读
 func (m *Monitor) processEvent(fd int, event uint32) {
 	m.m.Lock()
 	r := m.receivers[fd]
 	switch t := r.(type) {
 	case runtime.Process:
 		if event == syscall.EPOLLHUP {
+			//先对该process从events中删除，进行epoll相关的清理操作
 			delete(m.receivers, fd)
 			if err := syscall.EpollCtl(m.epollFd, syscall.EPOLL_CTL_DEL, fd, &syscall.EpollEvent{
 				Events: syscall.EPOLLHUP,
@@ -106,6 +113,7 @@ func (m *Monitor) processEvent(fd int, event uint32) {
 			EpollFdCounter.Dec(1)
 			// defer until lock is released
 			defer func() {
+				//exitHandler 会使用
 				m.exits <- t
 			}()
 		}
@@ -129,6 +137,7 @@ func (m *Monitor) processEvent(fd int, event uint32) {
 	m.m.Unlock()
 }
 
+//epoll_wait等待时间发生
 func (m *Monitor) start() {
 	var events [128]syscall.EpollEvent
 	for {
@@ -140,7 +149,8 @@ func (m *Monitor) start() {
 			logrus.WithField("error", err).Fatal("containerd: epoll wait")
 		}
 		// process events
-		for i := 0; i < n; i++ {
+		for i := 0; i < n; i++ { //
+			// monitorProcess  MonitorOOM 结合NewMonitor 阅读
 			m.processEvent(int(events[i].Fd), events[i].Events)
 		}
 	}

@@ -40,6 +40,7 @@ func GetSubreaper() (int, error) {
 }
 
 // SetSubreaper sets the value i as the subreaper setting for the calling process
+////保证容器中的所有孤儿进程被docker-containerd-shim接管，孤儿进程的父进程变为docker-containerd-shim
 func SetSubreaper(i int) error {
 	if _, _, err := syscall.RawSyscall(syscall.SYS_PRCTL, prSetChildSubreaper, uintptr(i), 0); err != 0 {
 		return err

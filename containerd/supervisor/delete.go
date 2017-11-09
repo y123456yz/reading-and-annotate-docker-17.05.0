@@ -17,7 +17,10 @@ type DeleteTask struct {
 	Process runtime.Process
 }
 
+//容器中某个进程退出调用 (s *Supervisor) execExit,如果是init进程退出调用  (s *Supervisor) delete
+//若为退出的是init进程，则创建一个ne := &DeleteTask{}，再调用s.delete(ne)进行处理
 func (s *Supervisor) delete(t *DeleteTask) error {
+	//调用i, ok := s.containers[t.ID]获取容器实例，再调用s.deleteContainer(i.container)
 	if i, ok := s.containers[t.ID]; ok {
 		start := time.Now()
 		if err := s.deleteContainer(i.container); err != nil {
@@ -49,7 +52,14 @@ func (s *Supervisor) delete(t *DeleteTask) error {
 	return nil
 }
 
+//利用exec.Command直接调用调用命令行`docker-runc delete contain-id。
+//删除目录/var/run/docker/libcontainerd/containerd/container-id，
 func (s *Supervisor) deleteContainer(container runtime.Container) error {
+	//把ID容器从 s.containers hash中移除
 	delete(s.containers, container.ID())
+
+	//利用exec.Command直接调用调用命令行`docker-runc delete contain-id。
+	//删除目录/var/run/docker/libcontainerd/containerd/container-id，
+	// (c *container) Delete()
 	return container.Delete()
 }
