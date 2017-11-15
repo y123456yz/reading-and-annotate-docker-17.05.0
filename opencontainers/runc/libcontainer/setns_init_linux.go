@@ -16,6 +16,7 @@ import (
 
 // linuxSetnsInit performs the container's initialization for running a new process
 // inside an existing container.
+//newContainerInit 中构造使用该类
 type linuxSetnsInit struct {
 	config     *initConfig
 	stateDirFD int

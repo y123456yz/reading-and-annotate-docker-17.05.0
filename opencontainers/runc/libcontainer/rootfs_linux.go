@@ -679,6 +679,7 @@ func createIfNotExists(path string, isDir bool) error {
 }
 
 // remountReadonly will bind over the top of an existing path and ensure that it is read-only.
+//挂载ReadonlyPaths，在配置文件中为/proc/asound,/proc/bus, /proc/fs等等
 func remountReadonly(path string) error {
 	for i := 0; i < 5; i++ {
 		if err := syscall.Mount("", path, "", syscall.MS_REMOUNT|syscall.MS_RDONLY, ""); err != nil && !os.IsNotExist(err) {

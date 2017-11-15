@@ -22,6 +22,7 @@ var strategies = map[string]networkStrategy{
 
 // networkStrategy represents a specific network configuration for
 // a container's networking stack
+//loopback veth结构都会实现这些接口
 type networkStrategy interface {
 	create(*network, int) error
 	initialize(*network) error

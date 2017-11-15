@@ -10,6 +10,7 @@ const (
 	Thawed    FreezerState = "THAWED"
 )
 
+//createCgroupConfig 中构造使用
 type Cgroup struct {
 	// Deprecated, use Path instead
 	Name string `json:"name,omitempty"`
@@ -20,7 +21,7 @@ type Cgroup struct {
 
 	// Path specifies the path to cgroups that are created and/or joined by the container.
 	// The path is assumed to be relative to the host system cgroup mountpoint.
-	Path string `json:"path"`
+	Path string `json:"path"` //config.json中的cgroupsPath
 
 	// ScopePrefix describes prefix for the scope name
 	ScopePrefix string `json:"scope_prefix"`
@@ -30,10 +31,12 @@ type Cgroup struct {
 	Paths map[string]string
 
 	// Resources contains various cgroups settings to apply
-	*Resources
+	// 内存 CPU 磁盘等占用都在这里面存储
+	*Resources //赋值见 createCgroupConfig
 }
 
-type Resources struct {
+//Cgroup  包含该结构，赋值主要见 createCgroupConfig
+type Resources struct { //内存 CPU 磁盘等占用都在这里面存储
 	// If this is true allow access to any kind of device within the container.  If false, allow access only to devices explicitly listed in the allowed_devices list.
 	// Deprecated
 	AllowAllDevices *bool `json:"allow_all_devices,omitempty"`

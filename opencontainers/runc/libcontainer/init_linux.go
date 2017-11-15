@@ -43,6 +43,7 @@ type network struct {
 }
 
 // initConfig is used for transferring parameters from Exec() to Init()
+//newInitConfig 中初始化
 type initConfig struct {
 	Args             []string         `json:"args"`
 	Env              []string         `json:"env"`
@@ -66,16 +67,20 @@ type initer interface {
 	Init() error
 }
 
+//从管道中获取配置信息  返回 linuxStandardInit 或者 linuxStandardInit
 func newContainerInit(t initType, pipe *os.File, stateDirFD int) (initer, error) {
 	var config *initConfig
+	//从管道中获取配置信息
 	if err := json.NewDecoder(pipe).Decode(&config); err != nil {
 		return nil, err
 	}
+
+	//将config中的环境变量加载到当前进程中
 	if err := populateProcessEnvironment(config.Env); err != nil {
 		return nil, err
 	}
 	switch t {
-	case initSetns:
+	case initSetns:linuxStandardInit
 		return &linuxSetnsInit{
 			config:     config,
 			stateDirFD: stateDirFD,
@@ -93,6 +98,7 @@ func newContainerInit(t initType, pipe *os.File, stateDirFD int) (initer, error)
 
 // populateProcessEnvironment loads the provided environment variables into the
 // current processes's environment.
+//将env中的环境变量加载到当前进程中
 func populateProcessEnvironment(env []string) error {
 	for _, pair := range env {
 		p := strings.SplitN(pair, "=", 2)
@@ -154,6 +160,7 @@ func finalizeNamespace(config *initConfig) error {
 // syncParentReady sends to the given pipe a JSON payload which indicates that
 // the init is ready to Exec the child process. It then waits for the parent to
 // indicate that it is cleared to Exec.
+// 告诉父进程容器可以执行Execv了, 从父进程来看，create已经完成了
 func syncParentReady(pipe io.ReadWriter) error {
 	// Tell parent.
 	if err := utils.WriteJSON(pipe, syncT{procReady}); err != nil {

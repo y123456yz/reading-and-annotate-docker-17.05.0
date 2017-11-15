@@ -3,6 +3,7 @@ package specs
 import "os"
 
 // Spec is the base configuration for the container.
+//config.json 中的内容就是序列化在该结构中，见setupSpec
 type Spec struct {
 	// Version of the Open Container Runtime Specification with which the bundle complies.
 	Version string `json:"ociVersion"`

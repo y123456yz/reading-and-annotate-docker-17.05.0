@@ -16,12 +16,13 @@ type processOperations interface {
 }
 
 // Process specifies the configuration and IO for a process inside
-// a container.
+// a container.  newProcess 中构造使用  newProcess
 type Process struct {
 	// The command to be run followed by any arguments.
 	Args []string
 
 	// Env specifies the environment variables for the process.
+	//设置对应的环境变量
 	Env []string
 
 	// User will set the uid and gid of the executing process running inside the container
@@ -45,7 +46,7 @@ type Process struct {
 	Stderr io.Writer
 
 	// ExtraFiles specifies additional open files to be inherited by the container
-	ExtraFiles []*os.File
+	ExtraFiles []*os.File //commandTemplate 中会加入
 
 	// consolePath is the path to the console allocated to the container.
 	consolePath string

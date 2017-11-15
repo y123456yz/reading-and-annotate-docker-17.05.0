@@ -42,13 +42,14 @@ type exit struct {
 	status int
 }
 
+//newSignalHandler 中构造使用
 type signalHandler struct {
 	signals chan os.Signal
 	tty     *tty
 }
 
 // forward handles the main signal event loop forwarding, resizing, or reaping depending
-// on the signal received.
+// on the signal received. //event loop 循环等待各种信号处理
 func (h *signalHandler) forward(process *libcontainer.Process) (int, error) {
 	// make sure we know the pid of our main process so that we can return
 	// after it dies.

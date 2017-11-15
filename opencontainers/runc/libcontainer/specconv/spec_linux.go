@@ -139,18 +139,26 @@ var allowedDevices = []*configs.Device{
 	},
 }
 
+//构造使用见createContainer
 type CreateOpts struct {
+	//实际上是容器名
 	CgroupName       string
+	//runc全局配置systemd-cgroup指定
 	UseSystemdCgroup bool
+	//runc create --no-pivot启用
 	NoPivotRoot      bool
+	//runc create --no-new-keyring 启用
 	NoNewKeyring     bool
+	//config.json中的内容，setupSpec 中加载
 	Spec             *specs.Spec
 }
 
 // CreateLibcontainerConfig creates a new libcontainer configuration from a
 // given specification and a cgroup name
+//将配置转换为符合libcontainer要求的配置格式存储到config结构   createContainer 中执行
 func CreateLibcontainerConfig(opts *CreateOpts) (*configs.Config, error) {
 	// runc's cwd will always be the bundle path
+	//获取当前工作目录的绝对路径
 	rcwd, err := os.Getwd()
 	if err != nil {
 		return nil, err
@@ -160,6 +168,7 @@ func CreateLibcontainerConfig(opts *CreateOpts) (*configs.Config, error) {
 		return nil, err
 	}
 	spec := opts.Spec
+	//config.json中的 root 配置
 	rootfsPath := spec.Root.Path
 	if !filepath.IsAbs(rootfsPath) {
 		rootfsPath = filepath.Join(cwd, rootfsPath)
@@ -202,12 +211,16 @@ func CreateLibcontainerConfig(opts *CreateOpts) (*configs.Config, error) {
 	for _, m := range spec.Mounts {
 		config.Mounts = append(config.Mounts, createLibcontainerMount(cwd, m))
 	}
+
+	//获取所有的device存入config.Devices
 	if err := createDevices(spec, config); err != nil {
 		return nil, err
 	}
 	if err := setupUserNamespace(spec, config); err != nil {
 		return nil, err
 	}
+
+	//获取限制cpu mem disk的cgroup信息存入configs.Resources
 	c, err := createCgroupConfig(opts.CgroupName, opts.UseSystemdCgroup, spec)
 	if err != nil {
 		return nil, err
@@ -255,6 +268,7 @@ func createLibcontainerMount(cwd string, m specs.Mount) *configs.Mount {
 	}
 }
 
+//获取限制cpu mem disk的cgroup信息存入configs.Resources
 func createCgroupConfig(name string, useSystemdCgroup bool, spec *specs.Spec) (*configs.Cgroup, error) {
 	var myCgroupPath string
 
@@ -262,6 +276,7 @@ func createCgroupConfig(name string, useSystemdCgroup bool, spec *specs.Spec) (*
 		Resources: &configs.Resources{},
 	}
 
+	fmt.Printf("yang test linux:%s, cgrouppath:%s\n\n", spec.Linux, spec.Linux.CgroupsPath)
 	if spec.Linux != nil && spec.Linux.CgroupsPath != nil {
 		myCgroupPath = libcontainerUtils.CleanPath(*spec.Linux.CgroupsPath)
 		if useSystemdCgroup {
@@ -480,6 +495,7 @@ func stringToDeviceRune(s string) (rune, error) {
 	}
 }
 
+//获取所有的device存入config.Devices
 func createDevices(spec *specs.Spec, config *configs.Config) error {
 	// add whitelisted devices
 	config.Devices = []*configs.Device{

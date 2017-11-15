@@ -9,6 +9,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/urfave/cli"
+	"github.com/opencontainers/runc/Godeps/_workspace/src/github.com/opencontainers/runtime-spec/specs-go"
 )
 
 // version will be populated by the Makefile, read from
@@ -20,7 +21,9 @@ var version = ""
 var gitCommit = ""
 
 const (
-	specConfig = "config.json"
+	//config.json在containerd中的(clnt *client) Create (libcontainerd\container.go) 创建改文件并写入对应spec内容，
+	//使用在runc中  setupSpec 中使用   存储路径在/var/run/docker/libcontainerd/$containerID
+	specConfig = "config.json" //在containerd中的(clnt *client) Create (libcontainerd\container.go) 创建改文件并写入对应spec内容，
 	usage      = `Open Container Initiative runtime
 
 runc is a command line client for running applications packaged according to
@@ -120,10 +123,13 @@ func main() {
 			}
 			logrus.SetOutput(f)
 		}
+
+		// --log-format value  set the format used by logs ('text' (default), or 'json') (default: "text")
 		switch context.GlobalString("log-format") {
 		case "text":
 			// retain logrus's default.
 		case "json":
+			//初始化了一下logrus的日志配置
 			logrus.SetFormatter(new(logrus.JSONFormatter))
 		default:
 			return fmt.Errorf("unknown log-format %q", context.GlobalString("log-format"))
@@ -134,6 +140,9 @@ func main() {
 	// the error on cli.ErrWriter and exit.
 	// Use our own writer here to ensure the log gets sent to the right location.
 	cli.ErrWriter = &FatalWriter{cli.ErrWriter}
+	/*
+	例如docker run会执行 createCommand 中的Action: func
+	*/
 	if err := app.Run(os.Args); err != nil {
 		fatal(err)
 	}

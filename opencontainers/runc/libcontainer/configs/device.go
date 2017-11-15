@@ -11,6 +11,7 @@ const (
 
 // TODO Windows: This can be factored out in the future
 
+//createDevices 中构造使用
 type Device struct {
 	// Device type, block, char, etc.
 	Type rune `json:"type"`
@@ -30,10 +31,10 @@ type Device struct {
 	// FileMode permission bits for the device.
 	FileMode os.FileMode `json:"file_mode"`
 
-	// Uid of the device.
+	// Uid of the device.  赋值见setupUserNamespace
 	Uid uint32 `json:"uid"`
 
-	// Gid of the device.
+	// Gid of the device.   赋值见setupUserNamespace
 	Gid uint32 `json:"gid"`
 
 	// Write the file to the allowed list

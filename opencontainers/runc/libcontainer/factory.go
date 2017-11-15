@@ -4,6 +4,7 @@ import (
 	"github.com/opencontainers/runc/libcontainer/configs"
 )
 
+//linux对应的是 LinuxFactory，赋值见loadFactory
 type Factory interface {
 	// Creates a new container with the given id and starts the initial process inside it.
 	// id must be a string containing only letters, digits and underscores and must contain

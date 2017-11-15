@@ -73,6 +73,7 @@ func runPoststopHooks(c *linuxContainer) error {
 }
 
 // stoppedState represents a container is a stopped/destroyed state.
+//(l *LinuxFactory) Create 中构造使用
 type stoppedState struct {
 	c *linuxContainer
 }
@@ -137,6 +138,7 @@ func (r *runningState) destroy() error {
 	return destroy(r.c)
 }
 
+//(c *linuxContainer) start 中构造使用
 type createdState struct {
 	c *linuxContainer
 }

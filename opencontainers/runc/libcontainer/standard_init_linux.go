@@ -17,7 +17,9 @@ import (
 	"github.com/opencontainers/runc/libcontainer/system"
 )
 
+//newContainerInit 中构造使用
 type linuxStandardInit struct {
+	//init进程和其他进程通信的pipe //本进程和init进程通过管道，也就是 initProcess 中的 parentPipe 和 childPipe 通信
 	pipe       io.ReadWriteCloser
 	parentPid  int
 	stateDirFD int
@@ -43,7 +45,7 @@ func (l *linuxStandardInit) getSessionRingParams() (string, uint32, uint32) {
 // PR_SET_NO_NEW_PRIVS isn't exposed in Golang so we define it ourselves copying the value
 // the kernel
 const PR_SET_NO_NEW_PRIVS = 0x26
-
+//runc init 进程执行，  (l *LinuxFactory) StartInitialization() 中调用
 func (l *linuxStandardInit) Init() error {
 	if !l.config.Config.NoNewKeyring {
 		ringname, keepperms, newperms := l.getSessionRingParams()
@@ -102,6 +104,8 @@ func (l *linuxStandardInit) Init() error {
 			return err
 		}
 	}
+
+	//重新挂载ReadonlyPaths，在配置文件中为/proc/asound,/proc/bus, /proc/fs等等
 	for _, path := range l.config.Config.ReadonlyPaths {
 		if err := remountReadonly(path); err != nil {
 			return err
@@ -124,6 +128,7 @@ func (l *linuxStandardInit) Init() error {
 	// Tell our parent that we're ready to Execv. This must be done before the
 	// Seccomp rules have been applied, because we need to be able to read and
 	// write to a socket.
+	// 告诉父进程容器可以执行Execv了, 从父进程来看，create已经完成了
 	if err := syncParentReady(l.pipe); err != nil {
 		return err
 	}
@@ -146,7 +151,7 @@ func (l *linuxStandardInit) Init() error {
 	// compare the parent from the initial start of the init process and make sure that it did not change.
 	// if the parent changes that means it died and we were reparented to something else so we should
 	// just kill ourself and not cause problems for someone else.
-	if syscall.Getppid() != l.parentPid {
+	if syscall.Getppid() != l.parentPid { //判断syscall.Getppid()和l.parentPid是否相等,正常情况应该相等，init的父进程为 runc create进程
 		return syscall.Kill(syscall.Getpid(), syscall.SIGKILL)
 	}
 	// check for the arg before waiting to make sure it exists and it is returned
@@ -158,7 +163,7 @@ func (l *linuxStandardInit) Init() error {
 	// close the pipe to signal that we have completed our init.
 	l.pipe.Close()
 	// wait for the fifo to be opened on the other side before
-	// exec'ing the users process.
+	// exec'ing the users process.  其实此处就是在等待start命令
 	fd, err := syscall.Openat(l.stateDirFD, execFifoFilename, os.O_WRONLY|syscall.O_CLOEXEC, 0)
 	if err != nil {
 		return newSystemErrorWithCause(err, "openat exec fifo")
@@ -174,6 +179,13 @@ func (l *linuxStandardInit) Init() error {
 	// close the statedir fd before exec because the kernel resets dumpable in the wrong order
 	// https://github.com/torvalds/linux/blob/v4.9/fs/exec.c#L1290-L1318
 	syscall.Close(l.stateDirFD)
+
+	/*
+	 "args": [
+	      "/sbin/init"
+	  ],
+	*/
+	//执行容器命令  config.json中的 args 配置项
 	if err := syscall.Exec(name, l.config.Args[0:], os.Environ()); err != nil {
 		return newSystemErrorWithCause(err, "exec user process")
 	}

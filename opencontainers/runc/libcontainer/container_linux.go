@@ -30,14 +30,21 @@ import (
 
 const stdioFdCount = 3
 
+//(l *LinuxFactory) Create 中构造使用      stoppedState 中包含该结构
 type linuxContainer struct {
+	//容器名
 	id                   string
+	///run/runc/容器名
 	root                 string
+	//CreateLibcontainerConfig 中构造该类型  数据来源大部分是/var/run/docker/libcontainerd/xxx/config.json
 	config               *configs.Config
+	//type Manager struct
 	cgroupManager        cgroups.Manager
+	// []string{"/proc/self/exe", "init"}, initArgs[0]:/proc/self/exe, initArgs[1]:init
 	initArgs             []string
 	initProcess          parentProcess
 	initProcessStartTime string
+	//criu 配置指定，赋值见loadFactory
 	criuPath             string
 	m                    sync.Mutex
 	criuVersion          int
@@ -68,7 +75,7 @@ type State struct {
 // Each container is thread-safe within the same process. Since a container can
 // be destroyed by a separate process, any function may return that the container
 // was not found.
-type Container interface {
+type Container interface { //linuxContainer 结构中实现，赋值见(l *LinuxFactory) Create
 	BaseContainer
 
 	// Methods below here are platform specific
@@ -184,6 +191,8 @@ func (c *linuxContainer) Set(config configs.Config) error {
 	return c.cgroupManager.Set(c.config)
 }
 
+//(r *runner) run 中调用执行
+//先调用status, err := c.currentStatus()获取容器的当前状态，最后调用c.start(process, status == Stopped)，在create时，此时容器的状态确实为Stopped
 func (c *linuxContainer) Start(process *Process) error {
 	c.m.Lock()
 	defer c.m.Unlock()
@@ -194,6 +203,7 @@ func (c *linuxContainer) Start(process *Process) error {
 	return c.start(process, status == Stopped)
 }
 
+//(r *runner) run 中调用执行
 func (c *linuxContainer) Run(process *Process) error {
 	c.m.Lock()
 	defer c.m.Unlock()
@@ -234,16 +244,21 @@ func (c *linuxContainer) exec() error {
 	return fmt.Errorf("cannot start an already running container")
 }
 
+//(c *linuxContainer) Start 中调用，这样是Start，不是start
 func (c *linuxContainer) start(process *Process, isInit bool) error {
+	//返回 initProcess 结构
 	parent, err := c.newParentProcess(process, isInit)
 	if err != nil {
 		return newSystemErrorWithCause(err, "creating new parent process")
 	}
+
+	//如果是runc create则这里对应(p *initProcess) start()，否则对应 (p *setnsProcess) start()
 	if err := parent.start(); err != nil {
 		// terminate the process to ensure that it properly is reaped.
 		if err := parent.terminate(); err != nil {
 			logrus.Warn(err)
 		}
+
 		return newSystemErrorWithCause(err, "starting container process")
 	}
 	// generate a timestamp indicating when the container was started
@@ -292,25 +307,35 @@ func (c *linuxContainer) Signal(s os.Signal, all bool) error {
 	return nil
 }
 
+//获取一个parentProcess的接口类型，返回 initProcess 结构
 func (c *linuxContainer) newParentProcess(p *Process, doInit bool) (parentProcess, error) {
+	//生成一对管道  创建一对pipe，parentPipe和childPipe，作为 runc start 进程与容器内部 init 进程通信管道
 	parentPipe, childPipe, err := newPipe()
 	if err != nil {
 		return nil, newSystemErrorWithCause(err, "creating new init pipe")
 	}
+
+	//打开/run/runc/container-id
 	rootDir, err := os.Open(c.root)
 	if err != nil {
 		return nil, err
 	}
+
+	//配置启动命令  组[]string{"/proc/self/exe", "init"}对应的cmd
 	cmd, err := c.commandTemplate(p, childPipe, rootDir)
 	if err != nil {
 		return nil, newSystemErrorWithCause(err, "creating new command template")
 	}
+
+	//若为create container，则调用c.newInitProcess(p, cmd, parentPipe, childPipe, rootDir)，
+	// 否则调用c.newSetnsProcess(p, cmd, parentPipe, childPipe, rootDir)
 	if !doInit {
 		return c.newSetnsProcess(p, cmd, parentPipe, childPipe, rootDir)
 	}
 	return c.newInitProcess(p, cmd, parentPipe, childPipe, rootDir)
 }
 
+//配置启动命令    组[]string{"/proc/self/exe", "init"}对应的cmd
 func (c *linuxContainer) commandTemplate(p *Process, childPipe, rootDir *os.File) (*exec.Cmd, error) {
 	cmd := exec.Command(c.initArgs[0], c.initArgs[1:]...)
 	cmd.Stdin = p.Stdin
@@ -320,7 +345,12 @@ func (c *linuxContainer) commandTemplate(p *Process, childPipe, rootDir *os.File
 	if cmd.SysProcAttr == nil {
 		cmd.SysProcAttr = &syscall.SysProcAttr{}
 	}
+
+	//childPipe 和打开/var/run/docker的file句柄信息添加到ExtraFiles
 	cmd.ExtraFiles = append(p.ExtraFiles, childPipe, rootDir)
+
+	//设置输入输出对应的环境变量 _LIBCONTAINER_INITPIPE _LIBCONTAINER_STATEDIR，
+	// commandTemplate 和 StartInitialization(init进程) 对应，本进程和init进程通过这两个管道通信
 	cmd.Env = append(cmd.Env,
 		fmt.Sprintf("_LIBCONTAINER_INITPIPE=%d", stdioFdCount+len(cmd.ExtraFiles)-2),
 		fmt.Sprintf("_LIBCONTAINER_STATEDIR=%d", stdioFdCount+len(cmd.ExtraFiles)-1))
@@ -333,9 +363,12 @@ func (c *linuxContainer) commandTemplate(p *Process, childPipe, rootDir *os.File
 	return cmd, nil
 }
 
+//若为create container，则调用c.newInitProcess(p, cmd, parentPipe, childPipe, rootDir)，
+// 否则调用c.newSetnsProcess(p, cmd, parentPipe, childPipe, rootDir)
 func (c *linuxContainer) newInitProcess(p *Process, cmd *exec.Cmd, parentPipe, childPipe, rootDir *os.File) (*initProcess, error) {
 	cmd.Env = append(cmd.Env, "_LIBCONTAINER_INITTYPE="+string(initStandard))
 	nsMaps := make(map[configs.NamespaceType]string)
+	// /var/run/docker/libcontainerd/xxx/config.json 中的namespaces 项中的内容
 	for _, ns := range c.config.Namespaces {
 		if ns.Path != "" {
 			nsMaps[ns.Type] = ns.Path
@@ -360,6 +393,8 @@ func (c *linuxContainer) newInitProcess(p *Process, cmd *exec.Cmd, parentPipe, c
 	}, nil
 }
 
+//若为create container，则调用c.newInitProcess(p, cmd, parentPipe, childPipe, rootDir)，
+// 否则调用c.newSetnsProcess(p, cmd, parentPipe, childPipe, rootDir)
 func (c *linuxContainer) newSetnsProcess(p *Process, cmd *exec.Cmd, parentPipe, childPipe, rootDir *os.File) (*setnsProcess, error) {
 	cmd.Env = append(cmd.Env, "_LIBCONTAINER_INITTYPE="+string(initSetns))
 	state, err := c.currentState()
@@ -1281,6 +1316,11 @@ func encodeIDMapping(idMap []configs.IDMap) ([]byte, error) {
 // such as one that uses nsenter package to bootstrap the container's
 // init process correctly, i.e. with correct namespaces, uid/gid
 // mapping etc.
+//先创建一个利用r := nl.NewlinkRequest(int(InitMsg), 0)创建一个netlink message。
+// 之后，将cloneFlags，console path, namespace path等信息写入。
+// 最后，return bytes.NewReader(r.Serialize())
+
+//对于namespace的隔离，主要通过bootstrapData封装好clone flags。
 func (c *linuxContainer) bootstrapData(cloneFlags uintptr, nsMaps map[configs.NamespaceType]string, consolePath string) (io.Reader, error) {
 	// create the netlink message
 	r := nl.NewNetlinkRequest(int(InitMsg), 0)

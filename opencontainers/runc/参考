@@ -1,0 +1,70 @@
+常用命令操作:
+[root@newnamespace yyztest]# runc start mytest
+[root@newnamespace yyztest]# runc list
+ID          PID         STATUS      BUNDLE                     CREATED
+mytest      505         running     /home/xxx/lxc/yyztest   2017-11-14T08:31:52.18899667Z
+[root@newnamespace yyztest]# runc exec mytest ls
+bin
+boot
+dev
+etc
+home
+lib
+lib64
+media
+mnt
+opt
+proc
+root
+run
+sbin
+selinux
+srv
+sys
+tmp
+usr
+var
+[root@newnamespace yyztest]# runc exec mytest ps -ef
+UID        PID  PPID  C STIME TTY          TIME CMD
+root         1     0  0 08:31 ?        00:00:00 /sbin/init
+root        13     0  0 08:32 ?        00:00:00 ps -ef
+[root@newnamespace yyztest]#
+[root@newnamespace yyztest]# runc list
+ID          PID         STATUS      BUNDLE                     CREATED
+mytest      505         running     /home/xxx/lxc/yyztest   2017-11-14T08:31:52.18899667Z
+[root@newnamespace yyztest]#
+[root@newnamespace yyztest]#
+[root@newnamespace yyztest]# runc kill mytest KILL
+[root@newnamespace yyztest]# runc list
+ID          PID         STATUS      BUNDLE                     CREATED
+mytest      0           stopped     /home/xxx/lxc/yyztest   2017-11-14T08:31:52.18899667Z
+[root@newnamespace yyztest]#
+[root@newnamespace yyztest]# runc delete mytest
+[root@newnamespace yyztest]#
+[root@newnamespace yyztest]# runc list
+ID          PID         STATUS      BUNDLE      CREATE
+
+
+
+
+
+
+
+
+
+
+
+mkdir hello
+cd hello
+docker pull hello-world
+docker export $(docker create hello-world) > hello-world.tar
+mkdir rootfs
+tar -C rootfs -xf hello-world.tar
+runc spec
+sed -i 's;"sh";"/hello";' config.json
+runc run container1
+
+
+
+
+https://yq.aliyun.com/articles/65118?spm=5176.8091938.0.0.NeNDgC

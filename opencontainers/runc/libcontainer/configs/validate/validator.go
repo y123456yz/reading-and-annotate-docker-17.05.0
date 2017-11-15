@@ -21,6 +21,7 @@ func New() Validator {
 type ConfigValidator struct {
 }
 
+//config内容检查
 func (v *ConfigValidator) Validate(config *configs.Config) error {
 	if err := v.rootfs(config); err != nil {
 		return err

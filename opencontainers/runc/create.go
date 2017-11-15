@@ -48,12 +48,20 @@ command(s) that get executed on start, edit the args parameter of the spec. See
 			Usage: "do not create a new session keyring for the container.  This will cause the container to inherit the calling processes session key",
 		},
 	},
+	//runc  create -b /home/XXX/lxc/yyztest mytest
 	Action: func(context *cli.Context) error {
-		if context.NArg() != 1 {
+
+		if context.NArg() != 1 {//./runc create XXX XXX，则narg为2
 			fmt.Printf("Incorrect Usage.\n\n")
 			cli.ShowCommandHelp(context, "create")
 			return fmt.Errorf("runc: \"create\" requires exactly one argument")
 		}
+
+		/*
+		首先调用spec, err := setupSpec(context)加载配置文件config.json的内容。
+		之后调用status, err := startcontainer(context, spec, true)进行
+		容器的创建工作，其中最后一个布尔型的参数为true，表示进行容器的创建。
+		*/
 		spec, err := setupSpec(context)
 		if err != nil {
 			return err

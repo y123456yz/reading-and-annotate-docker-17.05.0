@@ -19,6 +19,7 @@ import (
 	"github.com/opencontainers/runc/libcontainer/utils"
 )
 
+//initProcess 中实现这些接口， 赋值见newParentProcess
 type parentProcess interface {
 	// pid returns the pid for the running process.
 	pid() int
@@ -44,6 +45,7 @@ type parentProcess interface {
 
 type setnsProcess struct {
 	cmd           *exec.Cmd
+	//本进程和init进程通过管道 parentPipe 和 childPipe 通信
 	parentPipe    *os.File
 	childPipe     *os.File
 	cgroupPaths   map[string]string
@@ -66,6 +68,7 @@ func (p *setnsProcess) signal(sig os.Signal) error {
 	return syscall.Kill(p.pid(), s)
 }
 
+//(c *linuxContainer) start 中如果是runc create则这里对应(p *initProcess) start()，否则对应 (p *setnsProcess) start()
 func (p *setnsProcess) start() (err error) {
 	defer p.parentPipe.Close()
 	err = p.cmd.Start()
@@ -177,15 +180,26 @@ func (p *setnsProcess) setExternalDescriptors(newFds []string) {
 	p.fds = newFds
 }
 
+//newInitProcess 中构造使用该类   对应init进程
 type initProcess struct {
+	/*
+	[root@newnamespace runc]# ll /proc/self/exe
+	lrwxrwxrwx. 1 root root 0 Nov 14 14:39 /proc/self/exe -> /usr/bin/ls
+	*/
+	// []string{"/proc/self/exe", "init"},  commandTemplate 中组该cmd
 	cmd           *exec.Cmd
+	//通信用，可以参考sendConfig
+	//本进程和init进程通过管道 parentPipe 和 childPipe 通信
 	parentPipe    *os.File
 	childPipe     *os.File
+	//newInitConfig 中初始化
 	config        *initConfig
 	manager       cgroups.Manager
 	container     *linuxContainer
+	//赋值见setExternalDescriptors
 	fds           []string
 	process       *Process
+	//赋值见newInitProcess，数据来源见 对于namespace的隔离，主要通过bootstrapData封装好clone flags。
 	bootstrapData io.Reader
 	sharePidns    bool
 	rootDir       *os.File
@@ -204,6 +218,7 @@ func (p *initProcess) externalDescriptors() []string {
 // before the go runtime boots, we wait on the process to die and receive the child's pid
 // over the provided pipe.
 // This is called by initProcess.start function
+//// 获取容器init进程的pid，
 func (p *initProcess) execSetns() error {
 	status, err := p.cmd.Process.Wait()
 	if err != nil {
@@ -228,19 +243,59 @@ func (p *initProcess) execSetns() error {
 	return nil
 }
 
+/*
+这里是父进程也就是我们当前进程执行的内容，根据我们上一章介绍的内容，应该比较容易明白
+1.这里的/proc/self/exe 调用，其中/proc/self指的是当前运行进程自己的环境，exec其实就是自己调用了自己，我们使用这种方式实现对创建出来的进程进行初始化
+2.后面args是参数，其中 init 是传递给本进程的第一个参数，这在本例子中，其实就是会去调用我们的initCommand去初始化进程的一些环境和资源
+3. 下面的clone 参数就是去 fork 出来的一个新进程，并且使用了namespace隔离新创建的进程和外部的环境。
+4. 如果用户指定了-ti 参数，我们就需要把当前进程的输入输出导入到标准输入输出上
+func NewParentProcess(tty bool, command string) *exec.Cmd {
+	args := []string{"init", command}
+	cmd := exec.Command("/proc/self/exe", args...)
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Cloneflags: syscall.CLONE_NEWUTS | syscall.CLONE_NEWPID | syscall.CLONE_NEWNS |
+			syscall.CLONE_NEWNET | syscall.CLONE_NEWIPC,
+	}
+	if tty {
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+	}
+	return cmd
+}
+*/
+
+//(c *linuxContainer) start 中如果是runc create则这里对应(p *initProcess) start()，否则对应 (p *setnsProcess) start()
+//(c *linuxContainer) start 中执行
+//调用 parent.start() 启动 initCommand 对应的进程
 func (p *initProcess) start() error {
 	defer p.parentPipe.Close()
+
+	/*
+	[root@newnamespace runc]# ps -ef | grep init
+	root      1996     1  0 18:08 ?        00:00:00 /proc/self/exe init
+	1.这里的/proc/self/exe 调用，其中/proc/self指的是当前运行进程自己的环境，exec其实就是自己调用了自己，我们使用这种方式实现对创建出来的进程进行初始化
+	2.后面args是参数，其中 init 是传递给本进程的第一个参数，这在本例子中，其实就是会去调用我们的 initCommand 去初始化进程的一些环境和资源
+	*/
+	//调用p.cmd.Start启动 容器的 initCommand init进程
 	err := p.cmd.Start()
 	p.process.ops = p
 	p.childPipe.Close()
 	p.rootDir.Close()
+
+	//yang test .... initprocess tart:/proc/self/exe
+	//fmt.Printf("yang test .... initprocess tart:%s\n\n", p.cmd.Path);
 	if err != nil {
 		p.process.ops = nil
 		return newSystemErrorWithCause(err, "starting init process command")
 	}
+
+	// 将bootstrapData的数据(namespace flag等信息)传入runc init ，本进程和init进程通过管道 parentPipe 和 childPipe 通信
 	if _, err := io.Copy(p.parentPipe, p.bootstrapData); err != nil {
 		return err
 	}
+
+	// 获取容器init进程的pid，
 	if err := p.execSetns(); err != nil {
 		return newSystemErrorWithCause(err, "running exec setns process for init")
 	}
@@ -257,15 +312,20 @@ func (p *initProcess) start() error {
 	if err := p.manager.Apply(p.pid()); err != nil {
 		return newSystemErrorWithCause(err, "applying cgroup configuration for process")
 	}
+
 	defer func() {
 		if err != nil {
 			// TODO: should not be the responsibility to call here
 			p.manager.Destroy()
 		}
 	}()
+
+	//创建网络接口
 	if err := p.createNetworkInterfaces(); err != nil {
 		return newSystemErrorWithCause(err, "creating network interfaces")
 	}
+
+	// (p *initProcess) sendConfig()  发送配置信息到init进程
 	if err := p.sendConfig(); err != nil {
 		return newSystemErrorWithCause(err, "sending config to init process")
 	}
@@ -278,7 +338,7 @@ func (p *initProcess) start() error {
 
 	dec := json.NewDecoder(p.parentPipe)
 loop:
-	for {
+	for { //进入loop，从p.parenPipe中获取同步状态procSync
 		if err := dec.Decode(&procSync); err != nil {
 			if err == io.EOF {
 				break loop
@@ -315,7 +375,7 @@ loop:
 					}
 				}
 			}
-			// Sync with child.
+			// Sync with child. 通知init进程
 			if err := utils.WriteJSON(p.parentPipe, syncT{procRun}); err != nil {
 				return newSystemErrorWithCause(err, "writing syncT run type")
 			}
@@ -399,6 +459,7 @@ func (p *initProcess) startTime() (string, error) {
 	return system.GetProcessStartTime(p.pid())
 }
 
+//发送配置信息到init进程  sendconfig将bootstrapData封装的config传给容器起的init process。
 func (p *initProcess) sendConfig() error {
 	// send the config to the container's init process, we don't use JSON Encode
 	// here because there might be a problem in JSON decoder in some cases, see:
@@ -406,6 +467,7 @@ func (p *initProcess) sendConfig() error {
 	return utils.WriteJSON(p.parentPipe, p.config)
 }
 
+//创建网络接口
 func (p *initProcess) createNetworkInterfaces() error {
 	for _, config := range p.config.Config.Networks {
 		strategy, err := getStrategy(config.Type)
@@ -420,6 +482,7 @@ func (p *initProcess) createNetworkInterfaces() error {
 		}
 		p.config.Networks = append(p.config.Networks, n)
 	}
+
 	return nil
 }
 

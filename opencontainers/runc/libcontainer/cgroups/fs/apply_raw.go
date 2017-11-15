@@ -61,6 +61,7 @@ type subsystem interface {
 	Set(path string, cgroup *configs.Cgroup) error
 }
 
+//Cgroupfs 中构造使用
 type Manager struct {
 	mu      sync.Mutex
 	Cgroups *configs.Cgroup

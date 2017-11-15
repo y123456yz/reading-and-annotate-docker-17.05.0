@@ -76,9 +76,14 @@ type Syscall struct {
 // which are common across platforms, and those which are platform specific.
 
 // Config defines configuration options for executing a process inside a contained environment.
+/*
+CreateLibcontainerConfig 中构造该类型  数据来源大部分是/var/run/docker/libcontainerd/xxx/config.json
+config 内容检查见(v *ConfigValidator) Validate
+*/
 type Config struct {
 	// NoPivotRoot will use MS_MOVE and a chroot to jail the process into the container's rootfs
 	// This is a common option when the container is running in ramdisk
+	////runc create --no-pivot启用
 	NoPivotRoot bool `json:"no_pivot_root"`
 
 	// ParentDeathSignal specifies the signal that is sent to the container's process in the case
@@ -86,10 +91,11 @@ type Config struct {
 	ParentDeathSignal int `json:"parent_death_signal"`
 
 	// Path to a directory containing the container's root filesystem.
+	//config.json中的root
 	Rootfs string `json:"rootfs"`
 
 	// Readonlyfs will remount the container's rootfs as readonly where only externally mounted
-	// bind mounts are writtable.
+	// bind mounts are writtable. config.json中的readonlyPaths
 	Readonlyfs bool `json:"readonlyfs"`
 
 	// Specifies the mount propagation flags to be applied to /.
@@ -100,15 +106,18 @@ type Config struct {
 	Mounts []*Mount `json:"mounts"`
 
 	// The device nodes that should be automatically created within the container upon container start.  Note, make sure that the node is marked as allowed in the cgroup as well!
+	//主要来源在 createDevices 和 config.json中的device中
 	Devices []*Device `json:"devices"`
 
 	MountLabel string `json:"mount_label"`
 
 	// Hostname optionally sets the container's hostname if provided
+	//config.json 中的hostname
 	Hostname string `json:"hostname"`
 
 	// Namespaces specifies the container's namespaces that it should setup when cloning the init process
 	// If a namespace is not provided that namespace is shared from the container's parent process
+	// /var/run/docker/libcontainerd/xxx/config.json 中的namespaces 项中的内容
 	Namespaces Namespaces `json:"namespaces"`
 
 	// Capabilities specify the capabilities to keep when executing the process inside the container
@@ -123,6 +132,7 @@ type Config struct {
 
 	// Cgroups specifies specific cgroup settings for the various subsystems that the container is
 	// placed into to limit the resources the container has available
+	//赋值见 CreateLibcontainerConfig
 	Cgroups *Cgroup `json:"cgroups"`
 
 	// AppArmorProfile specifies the profile to apply to the process running in the container and is
@@ -151,6 +161,7 @@ type Config struct {
 
 	// MaskPaths specifies paths within the container's rootfs to mask over with a bind
 	// mount pointing to /dev/null as to prevent reads of the file.
+
 	MaskPaths []string `json:"mask_paths"`
 
 	// ReadonlyPaths specifies paths within the container's rootfs to remount as read-only
@@ -177,10 +188,11 @@ type Config struct {
 	Version string `json:"version"`
 
 	// Labels are user defined metadata that is stored in the config and populated on the state
+	//runc create bundle=xxx 中的 bundle=xxx,赋值见CreateLibcontainerConfig
 	Labels []string `json:"labels"`
 
 	// NoNewKeyring will not allocated a new session keyring for the container.  It will use the
-	// callers keyring in this case.
+	// callers keyring in this case. //runc create --no-new-keyring 启用
 	NoNewKeyring bool `json:"no_new_keyring"`
 }
 

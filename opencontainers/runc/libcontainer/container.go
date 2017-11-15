@@ -132,6 +132,7 @@ type BaseContainer interface {
 	// ConfigInvalid - config is invalid,
 	// ContainerPaused - Container is paused,
 	// SystemError - System error.
+	//调用startFn(process)，如果是create容器的话，那么startFn := r.container.Start，否则startFn := r.container.Run
 	Run(process *Process) (err error)
 
 	// Destroys the container after killing all running processes.

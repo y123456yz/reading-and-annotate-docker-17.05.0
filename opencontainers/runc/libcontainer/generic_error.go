@@ -12,7 +12,7 @@ import (
 type syncType uint8
 
 const (
-	procReady syncType = iota
+	procReady syncType = iota  //runc create进程和runc init进程之前的同步通知
 	procError
 	procRun
 	procHooks
