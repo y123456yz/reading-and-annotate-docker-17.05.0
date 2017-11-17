@@ -23,6 +23,7 @@ const (
 )
 
 // Service is the interface defining what a registry service should implement.
+// 赋值为 DefaultService 结构，见registry.NewService
 type Service interface {
 	Auth(ctx context.Context, authConfig *types.AuthConfig, userAgent string) (status, token string, err error)
 	LookupPullEndpoints(hostname string) (endpoints []APIEndpoint, err error)
@@ -228,6 +229,8 @@ func (s *DefaultService) Search(ctx context.Context, term string, limit int, aut
 
 // ResolveRepository splits a repository name into its components
 // and configuration of the associated registry.
+//docker pull  mysql@sha256:8d9cc6ff6a7ac9916c3384e864fb04b8ee9415b572f872a2a4c5b909dbbca81b name对应 docker.io/library/mysql@sha256:8d9cc6ff6a7ac9916c3384e864fb04b8ee9415b572f872a2a4c5b909dbbca81b
+//docker pull harbor.intra.XXX.com/XXX/centos:20150101 name对应 harbor.intra.XXX.com/XXX/centos:20150101
 func (s *DefaultService) ResolveRepository(name reference.Named) (*RepositoryInfo, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

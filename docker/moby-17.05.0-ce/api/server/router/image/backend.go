@@ -39,7 +39,7 @@ type importExportBackend interface {
 	ExportImage(names []string, outStream io.Writer) error
 }
 
-type registryBackend interface {
+type registryBackend interface { //各种不同的请求的分支见initRouter，对应不同的backend
 	PullImage(ctx context.Context, image, tag string, metaHeaders map[string][]string, authConfig *types.AuthConfig, outStream io.Writer) error
 	PushImage(ctx context.Context, image, tag string, metaHeaders map[string][]string, authConfig *types.AuthConfig, outStream io.Writer) error
 	SearchRegistryForImages(ctx context.Context, filtersArgs string, term string, limit int, authConfig *types.AuthConfig, metaHeaders map[string][]string) (*registry.SearchResults, error)

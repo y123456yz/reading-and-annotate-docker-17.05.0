@@ -16,6 +16,18 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+/*
+root@fd-mesos-slave50.gz01:/var/run/docker/libcontainerd/246d243260dc647eb174421c05b88567a0f0d64f451cbc17fde53d24cc6af340$ ls
+config.json  init-stdin  init-stdout
+io相关的命名管道，用来和容器之间进行通信，比如这里的init-stdin文件用来向容器的stdin中写数据，init-stdout用来接收容器的stdout输出
+上面只有init-stdin和init-stdout，没有init-stderr，那是因为我们创建容器的时候指定了-t参数，意思是让docker为容器创建一个tty（虚拟的），
+在这种情况下，stdout和stderr将采用同样的通道，即容器中进程往stderr中输出数据时，会写到init-stdout中。
+
+上面的config.json  init-stdin  init-stdout文件都准备好了之后，通过grpc的方式给containerd发送请求，通知containerd启动容器。
+
+参考https://segmentfault.com/a/1190000010057763
+对应这里对应的 (p *process) fifo 中创建
+*/
 var fdNames = map[int]string{
 	unix.Stdin:  "stdin",
 	unix.Stdout: "stdout",

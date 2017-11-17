@@ -70,14 +70,17 @@ func (s *imageRouter) postCommit(ctx context.Context, w http.ResponseWriter, r *
 }
 
 // Creates an image from Pull or from Import
+// 客户端 (cli *Client) ImagePull 和 服务端  r.postImagesCreate) 对应
 func (s *imageRouter) postImagesCreate(ctx context.Context, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
 	if err := httputils.ParseForm(r); err != nil {
 		return err
 	}
 
 	var ( //解析Http头中的相关信息
+		//harbor.intra.xxxx.com/xxxx/centos:XXX 中的 harbor.intra.xxxx.com/xxxx/centos
 		image   = r.Form.Get("fromImage")
 		repo    = r.Form.Get("repo")
+		//harbor.intra.xxxx.com/xxxx/centos:XXX 中的 XXX
 		tag     = r.Form.Get("tag")
 		message = r.Form.Get("message")
 		err     error
@@ -107,7 +110,7 @@ func (s *imageRouter) postImagesCreate(ctx context.Context, w http.ResponseWrite
 			}
 		}
 
-		//image_pull.go中的PullImage接口
+		//image_pull.go中的PullImage接口  (daemon *Daemon) PullImage
 		err = s.backend.PullImage(ctx, image, tag, metaHeaders, authConfig, output)
 	} else { //import
 		src := r.Form.Get("fromSrc")

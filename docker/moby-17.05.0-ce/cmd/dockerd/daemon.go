@@ -499,7 +499,7 @@ func initRouter(s *apiserver.Server, d *daemon.Daemon, c *cluster.Cluster) {
 
 	所有的client端的请求都使用api/client/请求名称.go文件来定义，在daemon端，所有请求的处理过程也放在daemon/请求名称.go文件中来定义。
 	*/
-	routers := []router.Router{
+	routers := []router.Router{ //各种不同的docker xxx请求会有不同的 NewRouter 实现
 		// we need to add the checkpoint router before the container router or the DELETE gets masked
 		checkpointrouter.NewRouter(d, decoder),    //NewRouter中的initRoutes会定义各个客户端post请求的相应回调
 		container.NewRouter(d, decoder),

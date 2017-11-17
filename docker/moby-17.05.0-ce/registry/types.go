@@ -85,12 +85,14 @@ var apiVersions = map[APIVersion]string{
 */
 //可以参考http://www.cnblogs.com/yuhan-TB/p/5053370.html   http://lib.csdn.net/article/docker/58307
 // RepositoryInfo describes a repository  RepositoryInfo其实是就是包含了所有可用仓库地址(仓库镜像地址也算)的结构.
+
+//newRepositoryInfo 中构造该类，该结构成员值可以参考上面的注释
 type RepositoryInfo struct { //RegistryService实际上是DefaultService.看下imagePullConfig.RegistryService.ResolveRepository(ref),实现在docker\registry\service.go:
 	Name reference.Named
 		// Index points to registry information
 	//Index来源于config.IndexConfigs.那config.IndexConfigs是什么呢?容易发现config.IndexConfigs来源于DefaultService的config。
 	//DefaultService的config则来源于NewService时的ServiceOptions。先看下ServiceOptions，实现在docker\registry\config.go：
-	Index *registrytypes.IndexInfo  //registry 信息
+	Index *registrytypes.IndexInfo  //  IndexInfo 类型，赋值见newRepositoryInfo
 	// Official indicates whether the repository is considered official.
 	// If the registry is official, and the normalized name does not
 	// contain a '/' (e.g. "foo"), then it is considered an official repo.

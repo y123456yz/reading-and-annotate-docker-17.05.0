@@ -98,7 +98,8 @@ type Daemon struct { //赋值见NewDaemon 见 NewDaemon
 	statsCollector            *stats.Collector
 	//提供日志的默认配置信息
 	defaultLogConfig          containertypes.LogConfig
-	//镜像存储服务相关信息
+	//镜像存储服务相关信息  赋值见 NewDaemon   registry-mirrors 配置仓库镜像地址
+	// 赋值为 DefaultService 结构，见registry.NewService
 	RegistryService           registry.Service
 	//事件服务相关信息
 	EventsService             *events.Events

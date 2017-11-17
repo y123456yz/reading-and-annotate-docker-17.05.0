@@ -47,7 +47,7 @@ func (clnt *client) prepareBundleDir(uid, gid int) (string, error) {
 
 //libcontainerd\client_unix.go中的Create函数
 //start.go中的函数 containerStart 执行
-// spec在(daemon *Daemon) createSpec获取值
+// spec在(daemon *Daemon) createSpec 获取值
 // StdioCallback为container.InitializeStdio
 func (clnt *client) Create(containerID string, checkpoint string, checkpointDir string, spec specs.Spec, attachStdio StdioCallback, options ...CreateOption) (err error) {
 	clnt.lock(containerID)
@@ -114,6 +114,7 @@ func (clnt *client) Signal(containerID string, sig int) error {
 	return err
 }
 
+//libcontainerd\client_unix.go 中的 (clnt *client) Create 调用该函数
 func (clnt *client) newContainer(dir string, options ...CreateOption) *container {
 	container := &container{
 		containerCommon: containerCommon{

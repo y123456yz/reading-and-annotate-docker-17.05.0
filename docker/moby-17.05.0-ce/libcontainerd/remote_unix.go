@@ -43,10 +43,10 @@ const (
 	eventTimestampFilename       = "event.ts"
 )
 
-//dockerd和docker-containerd之间的rpc通信用
+//dockerd和docker-containerd之间的rpc通信用  对应的服务端RPC为containerd程序中的 apiServer 中实现的相关接口
 type remote struct { //func New （libcontainerd\remote_unix.go中的 New中构造该结构）
 	sync.RWMutex
-	//dockerd和docker-containerd之间的rpc client结构
+	//dockerd和docker-containerd之间的rpc client结构   对应的服务端RPC为containerd程序中的 apiServer, 例如dockerd create 容器对应的是 (s *apiServer) CreateContainer
 	apiClient            containerd.APIClient
 	//赋值见//赋值见runContainerdDaemon
 	daemonPid            int  //"docker-containerd"进程的进程号

@@ -20,6 +20,7 @@ import (
 )
 
 // ImageTypes represents the schema2 config types for images
+//赋值给 ImagePullConfig.Schema2Types 见pullImageWithReference
 var ImageTypes = []string{
 	schema2.MediaTypeImageConfig,
 	// Handle unexpected values from https://github.com/docker/distribution/issues/1621

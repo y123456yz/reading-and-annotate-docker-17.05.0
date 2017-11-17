@@ -15,6 +15,7 @@ func IsNameOnly(ref Named) bool {
 
 // FamiliarName returns the familiar name string
 // for the given named, familiarizing if needed.
+//harbor.intra.xxxx.com/xxxx/centos:XXX 去掉:后面的tag，变为harbor.intra.xxxx.com/xxxx/centos
 func FamiliarName(ref Named) string {
 	if nn, ok := ref.(normalizedNamed); ok {
 		return nn.Familiar().Name()

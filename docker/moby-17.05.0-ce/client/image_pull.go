@@ -19,18 +19,23 @@ import (
 // FIXME(vdemeester): there is currently used in a few way in docker/docker
 // - if not in trusted content, ref is used to pass the whole reference, and tag is empty
 // - if in trusted content, ref is used to pass the reference name, and tag for the digest
+//客户端 (cli *Client) ImagePull 和 服务端  r.postImagesCreate) 对应
 func (cli *Client) ImagePull(ctx context.Context, refStr string, options types.ImagePullOptions) (io.ReadCloser, error) {
+	//获取仓库项目url全路径地址，例如harbor.XXX.xxx.com/xxx/centos:201708101210
+	//docker.io/library/redis:latest(docker pull redis,则默认加上docker.io/library/xxx:latest)
 	ref, err := reference.ParseNormalizedNamed(refStr)
 	if err != nil {
 		return nil, err
 	}
 
 	query := url.Values{}
+	//harbor.intra.xxxx.com/xxxx/centos:XXX 去掉:后面的tag，变为harbor.intra.xxxx.com/xxxx/centos
 	query.Set("fromImage", reference.FamiliarName(ref))
 	if !options.All {
-		query.Set("tag", getAPITagFromNamedRef(ref))
+		query.Set("tag", getAPITagFromNamedRef(ref)) //tag记录在这里，也就是上面的XXX
 	}
 
+	//发送post  /images/create 请求
 	resp, err := cli.tryImageCreate(ctx, query, options.RegistryAuth)
 	if resp.statusCode == http.StatusUnauthorized && options.PrivilegeFunc != nil {
 		newAuthHeader, privilegeErr := options.PrivilegeFunc()

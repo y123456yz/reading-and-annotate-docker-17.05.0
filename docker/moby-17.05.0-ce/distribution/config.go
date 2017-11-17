@@ -23,6 +23,7 @@ import (
 
 // Config stores configuration for communicating
 // with a registry.
+//ImagePullConfig 包含该结构，构造和赋值见 (daemon *Daemon) pullImageWithReference
 type Config struct {
 	// MetaHeaders stores HTTP headers with metadata about the image
 	MetaHeaders map[string][]string
@@ -34,6 +35,8 @@ type Config struct {
 	ProgressOutput progress.Output
 	// RegistryService is the registry service to use for TLS configuration
 	// and endpoint lookup.
+	// 实际上为daemon.RegistryService， 见 pullImageWithReference   registry-mirrors 配置仓库镜像地址
+	// 赋值为 DefaultService 结构，见registry.NewService
 	RegistryService registry.Service
 	// ImageEventLogger notifies events for a given image
 	ImageEventLogger func(id, name, action string)
@@ -51,10 +54,12 @@ type Config struct {
 
 // ImagePullConfig stores pull configuration.
 // 由于docker server也需要与 docker registry 通过http交互来下载docker网络镜像，所以首先封装了 imagePullConfig 参数，在与registry通信的时候使用
+//(daemon *Daemon) pullImageWithReference 中构造使用，拉取镜像时需要的信息都在该结构中
 type ImagePullConfig struct { //包含了很多拉取镜像时要用到的信息  pullImageWithReference中会有该结构
 	Config
 
 	// DownloadManager manages concurrent pulls.
+	//赋值见pullImageWithReference
 	DownloadManager RootFSDownloadManager
 	// Schema2Types is the valid schema2 configuration types allowed
 	// by the pull operation.
@@ -104,6 +109,7 @@ type PushLayer interface {
 }
 
 // RootFSDownloadManager handles downloading of the rootfs
+//ImagePullConfig 中包含该结构，赋值见pullImageWithReference
 type RootFSDownloadManager interface {
 	// Download downloads the layers into the given initial rootfs and
 	// returns the final rootfs.
@@ -112,12 +118,14 @@ type RootFSDownloadManager interface {
 	Download(ctx context.Context, initialRootFS image.RootFS, layers []xfer.DownloadDescriptor, progressOutput progress.Output) (image.RootFS, func(), error)
 }
 
+//NewImageConfigStoreFromStore 中构造使用
 type imageConfigStore struct {
 	image.Store
 }
 
 // NewImageConfigStoreFromStore returns an ImageConfigStore backed
 // by an image.Store for container images.
+//(daemon *Daemon) pullImageWithReference 中调用执行
 func NewImageConfigStoreFromStore(is image.Store) ImageConfigStore {
 	return &imageConfigStore{
 		Store: is,

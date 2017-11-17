@@ -909,8 +909,7 @@ func (devices *DeviceSet) createRegisterDevice(hash string) (*devInfo, error) {
 		break
 	}
 
-	logrus.Debugf("devmapper: Registering device (id %v) with FS size %v, hash %v, transactionid:%v", deviceID, devices.baseFsSize
-		hash, devices.OpenTransactionID)
+	logrus.Debugf("devmapper: Registering device (id %v) with FS size %v, hash %v, transactionid:%v", deviceID, devices.baseFsSize, hash, devices.OpenTransactionID)
 
 	//根据上面CreateDevice判断获取到新的deviceID后，重新更新devicemapper/metadata/$Hash文件，如果hash为""，则直接写base文件
 	info, err := devices.registerDevice(deviceID, hash, devices.baseFsSize, devices.OpenTransactionID) //向thin pool注册base device

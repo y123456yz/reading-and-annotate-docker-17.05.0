@@ -239,7 +239,9 @@ func Parse(s string) (Reference, error) {
 // form, otherwise an error is returned.
 // If an error was encountered it is returned, along with a nil Reference.
 // NOTE: ParseNamed will not handle short digests.
+//获取仓库项目url全路径地址，例如harbor.XXX.xxx.com/xxx/centos:201708101210  docker.io/library/redis:latest(docker pull redis,则默认加上docker.io/library/xxx:latest)
 func ParseNamed(s string) (Named, error) {
+	//获取仓库项目url全路径地址，例如harbor.XXX.xxx.com/xxx/centos:201708101210  docker.io/library/redis:latest(docker pull redis,则默认加上docker.io/library/xxx:latest)
 	named, err := ParseNormalizedNamed(s)
 	if err != nil {
 		return nil, err

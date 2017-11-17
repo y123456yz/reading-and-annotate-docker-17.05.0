@@ -50,14 +50,20 @@ func newPuller(endpoint registry.APIEndpoint, repoInfo *registry.RepositoryInfo,
 
 // Pull initiates a pull operation. image is the repository name to pull, and
 // tag may be either empty, or indicate a specific tag to pull.
+
+//docker pull  mysql@sha256:8d9cc6ff6a7ac9916c3384e864fb04b8ee9415b572f872a2a4c5b909dbbca81b ref对应 docker.io/library/mysql@sha256:8d9cc6ff6a7ac9916c3384e864fb04b8ee9415b572f872a2a4c5b909dbbca81b
+//docker pull harbor.intra.XXX.com/XXX/centos:20150101 ref对应 harbor.intra.XXX.com/XXX/centos:20150101
+
+//(daemon *Daemon) pullImageWithReference 调用该函数执行
 func Pull(ctx context.Context, ref reference.Named, imagePullConfig *ImagePullConfig) error {
 	// Resolve the Repository name from fqn to RepositoryInfo
 	//在/docker/registry/config.go的 newServiceConfig初始化仓库地址和仓库镜像地址，其中有官方的和通过选项insecure-registry
 	// 自定义的私有仓库,实质是通过IndexName找到IndexInfo，有用的也只有IndexName
-	//这里的imagePullConfig.RegistryService为daemon.RegistryService，也即是docker\registry\service.go的DefaultService
+	//这里的imagePullConfig.RegistryService 为daemon.RegistryService，也即是docker\registry\service.go的DefaultService
 	//初始化时,会将insecure-registry选项和registry-mirrors存入ServiceOptions,在NewService函数被调用时,作为参入传入
 
 	//repoInfo为RepositoryInfo对象,其实是对reference.Named对象的封装,添加了镜像成员和官方标示
+	//(s *DefaultService) ResolveRepository
 	repoInfo, err := imagePullConfig.RegistryService.ResolveRepository(ref)
 	if err != nil {
 		return err

@@ -31,6 +31,8 @@ install_containerd() {
 	echo "Install containerd version $CONTAINERD_COMMIT"
 	git clone https://github.com/docker/containerd.git "$GOPATH/src/github.com/docker/containerd"
 	cd "$GOPATH/src/github.com/docker/containerd"
+
+	echo "yang test .................... @@@@@@@@@@@@@@@@@@@@@@ $GOPATH/src/github.com/docker/containerd"
 	git checkout -q "$CONTAINERD_COMMIT"
 	make $1
 	cp bin/containerd /usr/local/bin/docker-containerd

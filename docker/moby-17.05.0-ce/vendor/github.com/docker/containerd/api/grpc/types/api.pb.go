@@ -183,6 +183,7 @@ func (m *UpdateProcessResponse) String() string            { return proto.Compac
 func (*UpdateProcessResponse) ProtoMessage()               {}
 func (*UpdateProcessResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
 
+//数据来源在dockerd程序中的 libcontainerd\container_unix.go中的(ctr *container) start构造使用该类
 type CreateContainerRequest struct {
 	Id            string   `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
 	BundlePath    string   `protobuf:"bytes,2,opt,name=bundlePath" json:"bundlePath,omitempty"`

@@ -13,7 +13,7 @@ import (
 )
 
 // Store is an interface for creating and accessing images
-type Store interface {
+type Store interface { //imageConfigStore 包含该接口，赋值见 pullImageWithReference->NewImageConfigStoreFromStore
 	Create(config []byte) (ID, error)
 	Get(id ID) (*Image, error)
 	Delete(id ID) ([]layer.Metadata, error)

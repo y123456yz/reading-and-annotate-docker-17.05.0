@@ -128,6 +128,7 @@ type NamedOption interface {
 // NamedListOpts is a ListOpts with a configuration name.
 // This struct is useful to keep reference to the assigned
 // field name in the internal configuration struct.
+//NewNamedListOptsRef 中构造使用
 type NamedListOpts struct {
 	name string
 	ListOpts

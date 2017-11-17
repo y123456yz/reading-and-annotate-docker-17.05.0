@@ -20,7 +20,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-// (clnt *client) newContainer中构造使用该结构
+//libcontainerd\client_unix.go 中的 (clnt *client) newContainer中构造使用该结构
 type container struct {
 	containerCommon
 
@@ -165,7 +165,7 @@ func (ctr *container) start(checkpoint string, checkpointDir string, attachStdio
 		return err
 	}
 
-	//(c *aPIClient) CreateContainer
+	//(c *aPIClient) CreateContainer   对应的服务端rpc接口为containerd函数中的 apiServer 中的(s *apiServer) CreateContainer
 	resp, err := ctr.client.remote.apiClient.CreateContainer(context.Background(), r)
 	if err != nil {
 		ctr.closeFifos(iopipe)

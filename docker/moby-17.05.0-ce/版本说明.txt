@@ -4,8 +4,49 @@ v17.05.0-ce
 
 https://download.docker.com/linux/    docker  rpm下载
 docker run --security-opt seccomp=unconfined -v /usr/local/var:/usr/local/var:shared -td --privileged --name yyz fb47fe6aa16c /sbin/init  启动容器
+docker exec -it c5d67ec4ea45 sh 进入容器
+
 deboam 9
 
+/*
+RUNC编译
+# pkg-config --cflags libseccomp libseccomp
+Package libseccomp was not found in the pkg-config search path.
+Perhaps you should add the directory containing `libseccomp.pc'
+to the PKG_CONFIG_PATH environment variable
+No package 'libseccomp' found
+Package libseccomp was not found in the pkg-config search path.
+Perhaps you should add the directory containing `libseccomp.pc'
+to the PKG_CONFIG_PATH environment variable
+No package 'libseccomp' found
+
+yum install -y libseccomp-devel 后解决
+
+
+//runc编译过程
+install_runc() {
+	echo "Install runc version $RUNC_COMMIT"
+	git clone https://github.com/docker/runc.git "$GOPATH/src/github.com/opencontainers/runc"
+	cd "$GOPATH/src/github.com/opencontainers/runc"
+	git checkout -q "$RUNC_COMMIT"
+	make BUILDTAGS="$RUNC_BUILDTAGS" $1
+	cp runc /usr/local/bin/docker-runc
+}
+
+//containerd编译过程
+install_containerd() {
+	echo "Install containerd version $CONTAINERD_COMMIT"
+	git clone https://github.com/docker/containerd.git "$GOPATH/src/github.com/docker/containerd"
+	cd "$GOPATH/src/github.com/docker/containerd"
+
+	echo "yang test .................... @@@@@@@@@@@@@@@@@@@@@@ $GOPATH/src/github.com/docker/containerd"
+	git checkout -q "$CONTAINERD_COMMIT"
+	make $1
+	cp bin/containerd /usr/local/bin/docker-containerd
+	cp bin/containerd-shim /usr/local/bin/docker-containerd-shim
+	cp bin/ctr /usr/local/bin/docker-containerd-ctr
+}
+*/
 
 SRIOV 虚拟化解决方案b
 
@@ -19,6 +60,7 @@ docker镜像理解:
 
 image存储过程参考:https://segmentfault.com/a/1190000009730986  这个比较好
 
+grpc参考 http://lameleg.com/tech/rpc-protobuf.html
 为什么需要镜像的digest？
 
 对于某些image来说，可能在发布之后还会做一些更新，比如安全方面的，这时虽然镜像的内容变了，但镜像的名称和tag没有变，所以会造成

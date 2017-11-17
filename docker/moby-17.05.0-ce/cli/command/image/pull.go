@@ -13,7 +13,9 @@ import (
 	"golang.org/x/net/context"
 )
 
+//NewPullCommand 中构造该结构
 type pullOptions struct {
+	//docker pull xxx 中的xxx
 	remote string
 	all    bool
 }
@@ -40,6 +42,7 @@ func NewPullCommand(dockerCli *command.DockerCli) *cobra.Command {
 	return cmd
 }
 
+//docker pull [OPTIONS] NAME[:TAG|@DIGEST]
 func runPull(dockerCli *command.DockerCli, opts pullOptions) error {
 	distributionRef, err := reference.ParseNormalizedNamed(opts.remote)
 	if err != nil {

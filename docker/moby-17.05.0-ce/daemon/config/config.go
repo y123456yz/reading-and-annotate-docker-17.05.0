@@ -172,6 +172,8 @@ type CommonConfig struct { //包含在config\config_unix.go中的 Config 结构�
 	//进行log driver的配置，默认的log driver 是json-file， 在deamon/logger 目录下是各种log driver，包括： fluentd,syslogd,journald, gelf等
 	LogConfig
 	BridgeConfig // bridgeConfig holds bridge network specific configuration.
+	//registry地址赋值参考 InstallCliFlags，通过命令行的  registry-mirrors 配置仓库镜像地址，
+	// 赋值为 DefaultService 结构，见registry.NewService
 	registry.ServiceOptions
 
 	sync.Mutex

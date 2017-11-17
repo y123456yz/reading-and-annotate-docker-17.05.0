@@ -6,13 +6,15 @@ import (
 )
 
 // imageRouter is a router to talk with the image controller
+//NewRouter 中构造该类， initRouter->NewRouter 中对这些成员进行填充
 type imageRouter struct {
-	backend Backend
-	decoder httputils.ContainerDecoder
-	routes  []router.Route
+	backend Backend  //daemon.Daemon 类型，赋值见 initRouter
+	decoder httputils.ContainerDecoder //runconfig.ContainerDecoder 类型，赋值见initRouter
+	routes  []router.Route //赋值见下面的 NewRouter
 }
 
 // NewRouter initializes a new image router
+//initRouter 中调用
 func NewRouter(backend Backend, decoder httputils.ContainerDecoder) router.Router {
 	r := &imageRouter{
 		backend: backend,
@@ -40,7 +42,8 @@ func (r *imageRouter) initRoutes() { //Docker镜像存储相关数据结构 见h
 		// POST
 		router.NewPostRoute("/commit", r.postCommit),
 		router.NewPostRoute("/images/load", r.postImagesLoad),
-		router.Cancellable(router.NewPostRoute("/images/create", r.postImagesCreate)),  //例如客户端docker pull对应的就是这里，daemon会发送create到数据仓库
+		//docker pull走到这里     客户端 (cli *Client) ImagePull 和 服务端  r.postImagesCreate) 对应
+		router.Cancellable(router.NewPostRoute("/images/create", r.postImagesCreate)),
 		router.Cancellable(router.NewPostRoute("/images/{name:.*}/push", r.postImagesPush)),
 		router.NewPostRoute("/images/{name:.*}/tag", r.postImagesTag),
 		router.NewPostRoute("/images/prune", r.postImagesPrune),

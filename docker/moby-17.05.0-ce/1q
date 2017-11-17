@@ -241,7 +241,6 @@ func (container *Container) SetupWorkingDirectory(rootUID, rootGID int) error {
 	if err != nil {
 		return err
 	}
-	logrus.Debug("SetupWorkingDirectory WorkingDir %s pth %s \n", container.Config.WorkingDir, pth)
 	if err := idtools.MkdirAllNewAs(pth, 0755, rootUID, rootGID); err != nil {
 		pthInfo, err2 := os.Stat(pth)
 		if err2 == nil && pthInfo != nil && !pthInfo.IsDir() {

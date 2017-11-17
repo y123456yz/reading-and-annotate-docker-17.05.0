@@ -11,7 +11,8 @@ type processCommon struct {
 
 	// friendlyName is an identifier for the process (or `InitFriendlyName`
 	// for the first process)
-	friendlyName string
+	//InitFriendlyName = "init"
+	friendlyName string //InitFriendlyName
 
 	// systemPid is the PID of the main container process
 	systemPid uint32

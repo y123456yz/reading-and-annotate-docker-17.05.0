@@ -17,8 +17,9 @@ import (
 )
 
 // ServiceOptions holds command line options.
+// config\config.go中的 CommonConfig.registry.ServiceOptions 中包含该结构
 type ServiceOptions struct {
-	//docker registry镜像地址
+	//docker registry镜像地址, 参考 InstallCliFlags
 	Mirrors            []string `json:"registry-mirrors,omitempty"`
 	InsecureRegistries []string `json:"insecure-registries,omitempty"`
 
@@ -28,7 +29,7 @@ type ServiceOptions struct {
 }
 
 // serviceConfig holds daemon configuration for the registry service.
-type serviceConfig struct { //newServiceConfig中使用
+type serviceConfig struct { //newServiceConfig 中使用
 	registrytypes.ServiceConfig
 	V2Only bool
 }
@@ -75,7 +76,10 @@ var lookupIP = net.LookupIP
 // InstallCliFlags adds command-line options to the top-level flag parser for
 // the current process.
 func (options *ServiceOptions) InstallCliFlags(flags *pflag.FlagSet) {
+	//镜像地址，例如/etc/docker/daemon.json  {"registry-mirrors": ["http://a9e61d46.m.daocloud.io"]} 可以利用daocloud来提速，下载镜像更快
 	mirrors := opts.NewNamedListOptsRef("registry-mirrors", &options.Mirrors, ValidateMirror)
+	//如果私人仓库用的的是http，则需要加上该配置，因为docker push使用的是https
+	//可以参考https://www.cnblogs.com/hodge01/p/6101752.html
 	insecureRegistries := opts.NewNamedListOptsRef("insecure-registries", &options.InsecureRegistries, ValidateIndexName)
 
 	flags.Var(mirrors, "registry-mirror", "Preferred Docker registry mirror")
@@ -96,6 +100,7 @@ func newServiceConfig(options ServiceOptions) *serviceConfig {
 		V2Only: options.V2Only,
 	}
 
+	//newServiceConfig->LoadMirrors
 	config.LoadMirrors(options.Mirrors)
 	config.LoadInsecureRegistries(options.InsecureRegistries)
 
@@ -326,6 +331,7 @@ func validateHostPort(s string) error {
 }
 
 // newIndexInfo returns IndexInfo configuration from indexName
+//name为harbor.intra.XXX.com/XXX/centos:20150101 中的 harbor.intra.XXX.com
 func newIndexInfo(config *serviceConfig, indexName string) (*registrytypes.IndexInfo, error) {
 	var err error
 	indexName, err = ValidateIndexName(indexName)
@@ -334,15 +340,16 @@ func newIndexInfo(config *serviceConfig, indexName string) (*registrytypes.Index
 	}
 
 	//config是在上面NewService函数中通过传入的ServiceOptions选项生成的
-	//serviceConfig，在docker\registry\config.go的InstallCliFlags被初始化
+	//serviceConfig，在docker\registry\config.go的 InstallCliFlags 被初始化
 	//index其实就是镜像的仓库地址,或仓库的镜像地址
 	// Return any configured index info, first.
-	if index, ok := config.IndexConfigs[indexName]; ok {
+	if index, ok := config.IndexConfigs[indexName]; ok { //有配置仓库地址，则直接返回
 		return index, nil
 	}
 
 	// Construct a non-configured index info.
-	index := &registrytypes.IndexInfo{
+	//重新构造一个仓库地址结构
+	index := &registrytypes.IndexInfo {
 		Name:     indexName,
 		Mirrors:  make([]string, 0),
 		Official: false,
@@ -361,11 +368,20 @@ func GetAuthConfigKey(index *registrytypes.IndexInfo) string {
 }
 
 // newRepositoryInfo validates and breaks down a repository name into a RepositoryInfo
+//docker pull  mysql@sha256:8d9cc6ff6a7ac9916c3384e864fb04b8ee9415b572f872a2a4c5b909dbbca81b name对应 docker.io/library/mysql@sha256:8d9cc6ff6a7ac9916c3384e864fb04b8ee9415b572f872a2a4c5b909dbbca81b
+//docker pull harbor.intra.XXX.com/XXX/centos:20150101 name对应 harbor.intra.XXX.com/XXX/centos:20150101
 func newRepositoryInfo(config *serviceConfig, name reference.Named) (*RepositoryInfo, error) {
+	//返回 IndexInfo 结构类型
 	index, err := newIndexInfo(config, reference.Domain(name))
 	if err != nil {
 		return nil, err
 	}
+
+	////reference.FamiliarName(name)为harbor.intra.XXX.com/XXX/centos:20150101 中的 harbor.intra.XXX.com/XXX/centos
+	/*
+	//表示是否官方的地址,实际上只要拉取镜像时只传入镜像的信息
+    //而没有仓库的信息,就会使用官方默认的仓库地址,这时Official成员就是true
+	*/
 	official := !strings.ContainsRune(reference.FamiliarName(name), '/')
 
 	return &RepositoryInfo{
