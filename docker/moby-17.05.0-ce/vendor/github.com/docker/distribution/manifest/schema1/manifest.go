@@ -36,6 +36,7 @@ func init() {
 			return nil, distribution.Descriptor{}, err
 		}
 
+        fmt.Printf("yang test schema1Func ")
 		desc := distribution.Descriptor{
 			Digest:    digest.FromBytes(sm.Canonical),
 			Size:      int64(len(sm.Canonical)),

@@ -105,6 +105,7 @@ func UnmarshalManifest(ctHeader string, p []byte) (Manifest, Descriptor, error) 
 		if err != nil {
 			return nil, Descriptor{}, err
 		}
+		fmt.Printf("yang test UnmarshalManifest, mediatype:%s\n\n", mediaType)
 	}
 
 	//对应 schema1Func 或者 schema2Func 或者 manifestListFunc

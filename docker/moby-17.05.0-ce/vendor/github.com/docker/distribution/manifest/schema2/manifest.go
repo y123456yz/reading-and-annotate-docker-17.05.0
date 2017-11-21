@@ -50,7 +50,7 @@ func init() {
 		if err != nil {
 			return nil, distribution.Descriptor{}, err
 		}
-
+        fmt.Printf("yang test schema2Func")
 		dgst := digest.FromBytes(b)
 		return m, distribution.Descriptor{Digest: dgst, Size: int64(len(b)), MediaType: MediaTypeManifest}, err
 	}

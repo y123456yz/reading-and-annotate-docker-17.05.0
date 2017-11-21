@@ -96,6 +96,7 @@ func (p *v2Puller) pullV2Repository(ctx context.Context, ref reference.Named) (e
 	var layersDownloaded bool
 	if !reference.IsNameOnly(ref) {
 		//pullV2Tag才是真正的最后的下载环节
+		fmt.Printf("yang test pullV2Repository  1111\n\n")
 		layersDownloaded, err = p.pullV2Tag(ctx, ref)
 		if err != nil {
 			return err
@@ -114,6 +115,7 @@ func (p *v2Puller) pullV2Repository(ctx context.Context, ref reference.Named) (e
 		p.confirmedV2 = true
 
 		for _, tag := range tags {
+		    fmt.Printf("yang test pullV2Repository  2222  tag:%s\n\n", tag)
 			tagRef, err := reference.WithTag(ref, tag)
 			if err != nil {
 				return err
@@ -367,12 +369,14 @@ func (p *v2Puller) pullV2Tag(ctx context.Context, ref reference.Named) (tagUpdat
 	if tagged, isTagged := ref.(reference.NamedTagged); isTagged { //是否带tag
 		//例如 docker pull mysql:21201010
 		//(r *repository) Get
+		fmt.Printf("yang test  pullV2tag 1111 \n\n")
 		manifest, err = manSvc.Get(ctx, "", distribution.WithTag(tagged.Tag()))
 		if err != nil {
 			return false, allowV1Fallback(err)
 		}
 		tagOrDigest = tagged.Tag()
 	} else if digested, isDigested := ref.(reference.Canonical); isDigested { //是否请求通过的是digeste方式
+	    fmt.Printf("yang test  pullV2tag 222 \n\n")
 		//例如docker pull mysql@sha256:89cc6ff6a7ac9916c3384e864fb04b8ee9415b572f872a2a4cf5b909dbbca81b
 		manifest, err = manSvc.Get(ctx, digested.Digest())
 		if err != nil {
@@ -408,7 +412,7 @@ func (p *v2Puller) pullV2Tag(ctx context.Context, ref reference.Named) (tagUpdat
 	// the other side speaks the v2 protocol.
 	p.confirmedV2 = true
 
-	logrus.Debugf("Pulling ref from V2 registry: %s", reference.FamiliarString(ref))
+	logrus.Debugf("Pulling ref from V2 registry: %s�� repo.named:%s", reference.FamiliarString(ref), p.repo.Named())
 	progress.Message(p.config.ProgressOutput, tagOrDigest, "Pulling from "+reference.FamiliarName(p.repo.Named()))
 
 	var (
@@ -421,16 +425,19 @@ func (p *v2Puller) pullV2Tag(ctx context.Context, ref reference.Named) (tagUpdat
 		if p.config.RequireSchema2 {
 			return false, fmt.Errorf("invalid manifest: not schema2")
 		}
+		fmt.Printf("yang test .. pullV2Tag.SignedManifest.\n\n")
 		id, manifestDigest, err = p.pullSchema1(ctx, ref, v)
 		if err != nil {
 			return false, err
 		}
 	case *schema2.DeserializedManifest:
+	    fmt.Printf("yang test .. pullV2Tag.DeserializedManifest.\n\n")
 		id, manifestDigest, err = p.pullSchema2(ctx, ref, v)
 		if err != nil {
 			return false, err
 		}
 	case *manifestlist.DeserializedManifestList:
+	    fmt.Printf("yang test .. pullV2Tag.DeserializedManifestList.\n\n")
 		id, manifestDigest, err = p.pullManifestList(ctx, ref, v)
 		if err != nil {
 			return false, err
