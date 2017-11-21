@@ -9,6 +9,7 @@ import (
 
 // routerSwapper is an http.Handler that allows you to swap
 // mux routers.
+//(s *Server) InitRouter 中构造使用
 type routerSwapper struct {
 	mu     sync.Mutex
 	router *mux.Router

@@ -49,20 +49,23 @@ func (e ImageConfigPullError) Error() string {
 	return "error pulling image configuration: " + e.Err.Error()
 }
 
+//newPuller 中构造使用
 type v2Puller struct {
 	V2MetadataService metadata.V2MetadataService
 	endpoint          registry.APIEndpoint
 	config            *ImagePullConfig
 	repoInfo          *registry.RepositoryInfo
+	//赋值见(p *v2Puller) Pull  //registry\client\repository.go   repository 结构
 	repo              distribution.Repository
 	// confirmedV2 is set to true if we confirm we're talking to a v2
 	// registry. This is used to limit fallbacks to the v1 protocol.
-	confirmedV2 bool
+	confirmedV2 bool //是否支持V2  赋值见(p *v2Puller) Pull
 }
 
 //V2版本的Puller
 func (p *v2Puller) Pull(ctx context.Context, ref reference.Named) (err error) {
 	// TODO(tiborvass): was ReceiveTimeout
+	//registry\client\repository.go  返回 repository 结构  获取V2仓库信息
 	p.repo, p.confirmedV2, err = NewV2Repository(ctx, p.repoInfo, p.endpoint, p.config.MetaHeaders, p.config.AuthConfig, "pull")
 	if err != nil {
 		logrus.Warnf("Error getting v2 registry: %v", err)
@@ -88,10 +91,11 @@ func (p *v2Puller) Pull(ctx context.Context, ref reference.Named) (err error) {
 // 这个基础镜像上，增加一些新的内容（实际上就是增加一个新的读写层，写入东西进去）就会形成新的镜像，比如：ubuntu:12.12是一个镜像，那么
 // ubuntu:14.01是在前者基础上进行若干修改操作而形成的新的镜像；所以要下载ubuntu:14.01这个镜像的话，必须要将其父镜像完全下载下来，这样下载之后的镜像才是完整的；
 
-//新建一个V2版本的仓库赋值给p.repo，调用pullV2Respository函数
+//新建一个V2版本的仓库赋值给p.repo，调用pullV2Respository函数,
 func (p *v2Puller) pullV2Repository(ctx context.Context, ref reference.Named) (err error) {
 	var layersDownloaded bool
 	if !reference.IsNameOnly(ref) {
+		//pullV2Tag才是真正的最后的下载环节
 		layersDownloaded, err = p.pullV2Tag(ctx, ref)
 		if err != nil {
 			return err
@@ -328,8 +332,28 @@ func (ld *v2LayerDescriptor) Registered(diffID layer.DiffID) {
 	ld.V2MetadataService.Add(diffID, metadata.V2Metadata{Digest: ld.digest, SourceRepository: ld.repoInfo.Name.Name()})
 }
 
+/*
+DEBU[2829] Trying to pull nginx from http://a9e61d46.m.daocloud.io/ v2
+DEBU[2830] Pulling ref from V2 registry: nginx:latest
+DEBU[2830] docker.io/library/nginx:latest resolved to a manifestList object with 6 entries; looking for a os/arch match
+DEBU[2830] found match for linux/amd64 with media type application/vnd.docker.distribution.manifest.v2+json, digest sha256:278fefc722ffe1c36f6dd64052758258d441dcdb5e1bbbed0670485af2413c9f
+DEBU[2830] pulling blob "sha256:a21d9ee25fc3dcef76028536e7191e44554a8088250d4c3ec884af23cef4f02a"
+DEBU[2830] pulling blob "sha256:bc95e04b23c06ba1b9bf092d07d1493177b218e0340bd2ed49dac351c1e34313"
+DEBU[2830] pulling blob "sha256:9bda7d5afd399f51550422c49172f8c9169fc3ffdef2748b13cfbf6467661ac5"
+DEBU[2830] Downloaded 9bda7d5afd39 to tempfile /var/lib/docker/tmp/GetImageBlob443166429
+DEBU[2833] Downloaded a21d9ee25fc3 to tempfile /var/lib/docker/tmp/GetImageBlob798345779
+DEBU[2833] Downloaded bc95e04b23c0 to tempfile /var/lib/docker/tmp/GetImageBlob345344502
+DEBU[2833] Start untar layer
+DEBU[2834] Untar time: 0.8172344880000001s
+DEBU[2834] Applied tar sha256:cec7521cdf36a6d4ad8f2e92e41e3ac1b6fa6e05be07fa53cc84a63503bc5700 to 10275c2bd04bccf79c656e845a7c8338b55c0199206e4cd9acb0b4a143d6e7bb, size: 55248856
+DEBU[2835] Applied tar sha256:bba7659ae2e77090e21f86e69d199aff4fcf9c71204fa3f3d5c89463c43eae7e to d84edcc88d62d2cc3cbc2fbd6a51017f65d931ea3e7642737a0f2ec6790425cb, size: 53113283
+DEBU[2835] Applied tar sha256:f4cc3366d6a98b6cf5d047ad113ba76f67e4f5d20d12e37cd9a1f34ce0b421b9 to e5ffb3609c528569dc948de7026ec24d72c6bb4782e4770af730a59b0646666d, size: 0
+*/
+
 //有tag的话，遍历tag，每个tag调用pullV2Tag，没有的话直接调用pullV2Tag
 func (p *v2Puller) pullV2Tag(ctx context.Context, ref reference.Named) (tagUpdated bool, err error) {
+	//获取 manifest 属性，根据属性的类型做不同的处理
+	// (r *repository) Manifests 中构造 manifests 结构
 	manSvc, err := p.repo.Manifests(ctx) //获取首选项的mainfest服务
 	if err != nil {
 		return false, err
@@ -339,13 +363,17 @@ func (p *v2Puller) pullV2Tag(ctx context.Context, ref reference.Named) (tagUpdat
 		manifest    distribution.Manifest
 		tagOrDigest string // Used for logging/progress only
 	)
-	if tagged, isTagged := ref.(reference.NamedTagged); isTagged {
+
+	if tagged, isTagged := ref.(reference.NamedTagged); isTagged { //是否带tag
+		//例如 docker pull mysql:21201010
+		//(r *repository) Get
 		manifest, err = manSvc.Get(ctx, "", distribution.WithTag(tagged.Tag()))
 		if err != nil {
 			return false, allowV1Fallback(err)
 		}
 		tagOrDigest = tagged.Tag()
-	} else if digested, isDigested := ref.(reference.Canonical); isDigested {
+	} else if digested, isDigested := ref.(reference.Canonical); isDigested { //是否请求通过的是digeste方式
+		//例如docker pull mysql@sha256:89cc6ff6a7ac9916c3384e864fb04b8ee9415b572f872a2a4cf5b909dbbca81b
 		manifest, err = manSvc.Get(ctx, digested.Digest())
 		if err != nil {
 			return false, err
@@ -439,6 +467,7 @@ func (p *v2Puller) pullV2Tag(ctx context.Context, ref reference.Named) (tagUpdat
 	return true, nil
 }
 
+//下载镜像
 func (p *v2Puller) pullSchema1(ctx context.Context, ref reference.Named, unverifiedManifest *schema1.SignedManifest) (id digest.Digest, manifestDigest digest.Digest, err error) {
 	var verifiedManifest *schema1.Manifest
 	verifiedManifest, err = verifySchema1Manifest(unverifiedManifest, ref)
@@ -491,6 +520,7 @@ func (p *v2Puller) pullSchema1(ctx context.Context, ref reference.Named, unverif
 		descriptors = append(descriptors, layerDescriptor)
 	}
 
+	//下载镜像 (ldm *LayerDownloadManager) Download
 	resultRootFS, release, err := p.config.DownloadManager.Download(ctx, *rootFS, descriptors, p.config.ProgressOutput)
 	if err != nil {
 		return "", "", err
@@ -512,6 +542,7 @@ func (p *v2Puller) pullSchema1(ctx context.Context, ref reference.Named, unverif
 	return imageID, manifestDigest, nil
 }
 
+//下载镜像
 func (p *v2Puller) pullSchema2(ctx context.Context, ref reference.Named, mfst *schema2.DeserializedManifest) (id digest.Digest, manifestDigest digest.Digest, err error) {
 	manifestDigest, err = schema2ManifestDigest(ref, mfst)
 	if err != nil {
@@ -593,6 +624,7 @@ func (p *v2Puller) pullSchema2(ctx context.Context, ref reference.Named, mfst *s
 				rootFS image.RootFS
 			)
 			downloadRootFS := *image.NewRootFS()
+			//下载镜像 (ldm *LayerDownloadManager) Download
 			rootFS, release, err = p.config.DownloadManager.Download(ctx, downloadRootFS, descriptors, p.config.ProgressOutput)
 			if err != nil {
 				// Intentionally do not cancel the config download here
@@ -675,6 +707,8 @@ func receiveConfig(s ImageConfigStore, configChan <-chan []byte, errChan <-chan 
 
 // pullManifestList handles "manifest lists" which point to various
 // platform-specific manifests.
+
+//pullManifestList 最终调用 pullSchema1或者pullSchema2
 func (p *v2Puller) pullManifestList(ctx context.Context, ref reference.Named, mfstList *manifestlist.DeserializedManifestList) (id digest.Digest, manifestListDigest digest.Digest, err error) {
 	manifestListDigest, err = schema2ManifestDigest(ref, mfstList)
 	if err != nil {
@@ -715,6 +749,7 @@ func (p *v2Puller) pullManifestList(ctx context.Context, ref reference.Named, mf
 		return "", "", err
 	}
 
+	//下载镜像  V2  或者 V1 方式下载 //下载镜像 (ldm *LayerDownloadManager) Download
 	switch v := manifest.(type) {
 	case *schema1.SignedManifest:
 		id, _, err = p.pullSchema1(ctx, manifestRef, v)

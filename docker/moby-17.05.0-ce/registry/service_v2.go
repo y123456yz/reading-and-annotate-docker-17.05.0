@@ -7,8 +7,23 @@ import (
 	"github.com/docker/go-connections/tlsconfig"
 )
 
+/*
+[root@newnamespace ~]# cat /etc/docker/daemon.json
+{"registry-mirrors": ["http://a9e61d46.m.daocloud.io"]}
+
+例如:docker pull abcdef:456456   如果没有指定url，则默认优先使用daemon.json中的配置registry-mirrors，如果该地址连不上或者无镜像，则从默认的registry-1.docker.io获取，并且都是V2
+Trying to pull abcdef from http://a9e61d46.m.daocloud.io/ v2
+Trying to pull abcdef from https://registry-1.docker.io v2
+
+例如： docker pull abc.com/xx/abcdef:456456  如果指定有url，则可以通过V2和V1从指定的url获取镜像
+Trying to pull abc.com/xx/abcdef from https://abc.com v2
+Trying to pull abc.com/xx/abcdef from https://abc.com v1
+*/
+
+// hostname为//docker pull harbor.intra.XXX.com/XXX/centos:20150101 hostname对应 harbor.intra.XXX.com
 func (s *DefaultService) lookupV2Endpoints(hostname string) (endpoints []APIEndpoint, err error) {
 	tlsConfig := tlsconfig.ServerDefault()
+	//如果是官方的 docker.io 或者 index.docker.io
 	if hostname == DefaultNamespace || hostname == IndexHostname {
 		// v2 mirrors
 		for _, mirror := range s.config.Mirrors {
@@ -41,7 +56,7 @@ func (s *DefaultService) lookupV2Endpoints(hostname string) (endpoints []APIEndp
 			TLSConfig:    tlsConfig,
 		})
 
-		return endpoints, nil
+		return endpoints, nil  //这里返回
 	}
 
 	tlsConfig, err = s.tlsConfig(hostname)
@@ -49,7 +64,7 @@ func (s *DefaultService) lookupV2Endpoints(hostname string) (endpoints []APIEndp
 		return nil, err
 	}
 
-	endpoints = []APIEndpoint{
+	endpoints = []APIEndpoint{ //hostname的https v2请求
 		{
 			URL: &url.URL{
 				Scheme: "https",
@@ -61,8 +76,8 @@ func (s *DefaultService) lookupV2Endpoints(hostname string) (endpoints []APIEndp
 		},
 	}
 
-	if tlsConfig.InsecureSkipVerify {
-		endpoints = append(endpoints, APIEndpoint{
+	if tlsConfig.InsecureSkipVerify { //加上这个配置这允许 http方式访问
+		endpoints = append(endpoints, APIEndpoint{  //hostname的http v2请求
 			URL: &url.URL{
 				Scheme: "http",
 				Host:   hostname,

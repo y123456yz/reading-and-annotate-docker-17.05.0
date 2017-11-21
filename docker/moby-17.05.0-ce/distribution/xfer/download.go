@@ -21,6 +21,7 @@ const maxDownloadAttempts = 5
 // LayerDownloadManager figures out which layers need to be downloaded, then
 // registers and downloads those, taking into account dependencies between
 // layers.
+//NewLayerDownloadManager 中构造使用
 type LayerDownloadManager struct {
 	layerStore   layer.Store
 	tm           TransferManager

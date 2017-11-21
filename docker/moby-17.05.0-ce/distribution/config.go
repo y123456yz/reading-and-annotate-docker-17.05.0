@@ -26,6 +26,7 @@ import (
 //ImagePullConfig 包含该结构，构造和赋值见 (daemon *Daemon) pullImageWithReference
 type Config struct {
 	// MetaHeaders stores HTTP headers with metadata about the image
+	//DockerHeaders 中生效使用
 	MetaHeaders map[string][]string
 	// AuthConfig holds authentication credentials for authenticating with
 	// the registry.
@@ -36,17 +37,19 @@ type Config struct {
 	// RegistryService is the registry service to use for TLS configuration
 	// and endpoint lookup.
 	// 实际上为daemon.RegistryService， 见 pullImageWithReference   registry-mirrors 配置仓库镜像地址
-	// 赋值为 DefaultService 结构，见registry.NewService
+	// 赋值为 DefaultService 结构，见 registry.NewService
 	RegistryService registry.Service
 	// ImageEventLogger notifies events for a given image
 	ImageEventLogger func(id, name, action string)
 	// MetadataStore is the storage backend for distribution-specific
-	// metadata.
+	// metadata.  被赋值为daemon.distributionMetadataStore, NewPusher中赋值给 v2Pusher.v2MetadataService
 	MetadataStore metadata.Store
 	// ImageStore manages images.
+	//赋值为distribution.NewImageConfigStoreFromStore(daemon.imageStore)
 	ImageStore ImageConfigStore
 	// ReferenceStore manages tags. This value is optional, when excluded
 	// content will not be tagged.
+	//赋值为daemon.referenceStore
 	ReferenceStore refstore.Store
 	// RequireSchema2 ensures that only schema2 manifests are used.
 	RequireSchema2 bool
@@ -59,14 +62,16 @@ type ImagePullConfig struct { //包含了很多拉取镜像时要用到的信息
 	Config
 
 	// DownloadManager manages concurrent pulls.
-	//赋值见pullImageWithReference
+	//赋值见pullImageWithReference  赋值为daemon.downloadManager
+	//被赋值为 LayerDownloadManager 结构
 	DownloadManager RootFSDownloadManager
 	// Schema2Types is the valid schema2 configuration types allowed
 	// by the pull operation.
-	Schema2Types []string
+	Schema2Types []string  //distribution.ImageTypes
 }
 
 // ImagePushConfig stores push configuration.
+// v2Pusher中包含该结构
 type ImagePushConfig struct {
 	Config
 

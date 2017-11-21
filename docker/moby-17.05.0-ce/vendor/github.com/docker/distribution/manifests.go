@@ -10,6 +10,7 @@ import (
 
 // Manifest represents a registry object specifying a set of
 // references and an optional target
+//distribution\manifest\schema2\manifest.go 中的 type Manifest struct 结构 中实现这些接口
 type Manifest interface {
 	// References returns a list of objects which make up this manifest.
 	// A reference is anything which can be represented by a
@@ -87,10 +88,13 @@ func ManifestMediaTypes() (mediaTypes []string) {
 // UnmarshalFunc implements manifest unmarshalling a given MediaType
 type UnmarshalFunc func([]byte) (Manifest, Descriptor, error)
 
+//RegisterManifestSchema 中注册填充   func:对应 schema1Func 或者 schema2Func 或者 manifestListFunc，
+// 这些func在 UnmarshalManifest 中执行
 var mappings = make(map[string]UnmarshalFunc, 0)
 
 // UnmarshalManifest looks up manifest unmarshal functions based on
 // MediaType
+//(ms *manifests) Get 中调用执行，把仓库获取的manifest内容反序列化存储到Manifest结构
 func UnmarshalManifest(ctHeader string, p []byte) (Manifest, Descriptor, error) {
 	// Need to look up by the actual media type, not the raw contents of
 	// the header. Strip semicolons and anything following them.
@@ -103,6 +107,7 @@ func UnmarshalManifest(ctHeader string, p []byte) (Manifest, Descriptor, error) 
 		}
 	}
 
+	//对应 schema1Func 或者 schema2Func 或者 manifestListFunc
 	unmarshalFunc, ok := mappings[mediaType]
 	if !ok {
 		unmarshalFunc, ok = mappings[""]
@@ -116,6 +121,7 @@ func UnmarshalManifest(ctHeader string, p []byte) (Manifest, Descriptor, error) 
 
 // RegisterManifestSchema registers an UnmarshalFunc for a given schema type.  This
 // should be called from specific
+//u 对应 schema1Func 或者 schema2Func
 func RegisterManifestSchema(mediaType string, u UnmarshalFunc) error {
 	if _, ok := mappings[mediaType]; ok {
 		return fmt.Errorf("manifest media type registration would overwrite existing: %s", mediaType)

@@ -27,6 +27,7 @@ type Puller interface {
 // whether a v1 or v2 puller will be created. The other parameters are passed
 // through to the underlying puller implementation for use during the actual
 // pull operation.
+//distribution\pull.go中的 Pull 接口调用该函数
 //NewPuller会根据endpoint的形式（endpoint应该遵循restful api的设计，url中含有版本号），决定采用version1还是version2版本，我主要分析v2的版本，在graph/pull_v2.go中
 func newPuller(endpoint registry.APIEndpoint, repoInfo *registry.RepositoryInfo, imagePullConfig *ImagePullConfig) (Puller, error) {
 	switch endpoint.Version {
@@ -62,9 +63,9 @@ func Pull(ctx context.Context, ref reference.Named, imagePullConfig *ImagePullCo
 	//这里的imagePullConfig.RegistryService 为daemon.RegistryService，也即是docker\registry\service.go的DefaultService
 	//初始化时,会将insecure-registry选项和registry-mirrors存入ServiceOptions,在NewService函数被调用时,作为参入传入
 
-	//repoInfo为RepositoryInfo对象,其实是对reference.Named对象的封装,添加了镜像成员和官方标示
+	//repoInfo为 RepositoryInfo 对象,其实是对reference.Named对象的封装,添加了镜像成员和官方标示
 	//(s *DefaultService) ResolveRepository
-	repoInfo, err := imagePullConfig.RegistryService.ResolveRepository(ref)
+	repoInfo, err := imagePullConfig.RegistryService.ResolveRepository(ref) //构造仓库地址信息
 	if err != nil {
 		return err
 	}
@@ -83,6 +84,7 @@ func Pull(ctx context.Context, ref reference.Named, imagePullConfig *ImagePullCo
 	// 否则就是私有地址的两种类型:http和https
 
 	//V2的接口具体代码在Zdocker\registry\service_v2.go的函数lookupV2Endpoints
+	//(s *DefaultService) LookupPullEndpoints     reference.Domain(repoInfo.Name) docker pull abc.com/xx/abcdef:456456 中的 abc.com
 	endpoints, err := imagePullConfig.RegistryService.LookupPullEndpoints(reference.Domain(repoInfo.Name)) //通过repositoryInfo找到下载镜像的endpoint
 	if err != nil {
 		return err
@@ -112,6 +114,7 @@ func Pull(ctx context.Context, ref reference.Named, imagePullConfig *ImagePullCo
 	)
 	//如果设置了镜像服务器地址,且使用了官方默认的镜像仓库,则endpoints包含官方仓库地址和镜像服务器地址,否则就是私有仓库地址的http和https形式
 	for _, endpoint := range endpoints { //找到endpoints, 然后puller.Pull
+
 		if imagePullConfig.RequireSchema2 && endpoint.Version == registry.APIVersion1 {
 			continue
 		}
@@ -128,6 +131,19 @@ func Pull(ctx context.Context, ref reference.Named, imagePullConfig *ImagePullCo
 			}
 		}
 
+		/*
+		[root@newnamespace ~]# cat /etc/docker/daemon.json
+		{"registry-mirrors": ["http://a9e61d46.m.daocloud.io"]}
+
+		例如:docker pull abcdef:456456   如果没有指定url，则默认优先使用daemon.json中的配置registry-mirrors，如果该地址连不上或者无镜像，则从默认的registry-1.docker.io获取，并且都是V2
+		Trying to pull abcdef from http://a9e61d46.m.daocloud.io/ v2
+		Trying to pull abcdef from https://registry-1.docker.io v2
+
+		例如： docker pull abc.com/xx/abcdef:456456  如果指定有url，则可以通过V2和V1从指定的url获取镜像
+		Trying to pull abc.com/xx/abcdef from https://abc.com v2
+		Trying to pull abc.com/xx/abcdef from https://abc.com v1
+		*/
+
 		logrus.Debugf("Trying to pull %s from %s %s", reference.FamiliarName(repoInfo.Name), endpoint.URL, endpoint.Version)
 		//针对每一个endpoint，建立一个Puller,newPuller会根据endpoint的形式（endpoint应该遵循restful api的设计，url中含有版本号），
 		// 决定采用version1还是version2版本
@@ -138,6 +154,7 @@ func Pull(ctx context.Context, ref reference.Named, imagePullConfig *ImagePullCo
 			continue
 		}
 
+		// (p *v2Puller) Pull 或者  (p *v1Puller) Pull
 		//pullRepository 或者 pullV2Repository
 		if err := puller.Pull(ctx, ref); err != nil {
 			// Was this pull cancelled? If so, don't try to fall

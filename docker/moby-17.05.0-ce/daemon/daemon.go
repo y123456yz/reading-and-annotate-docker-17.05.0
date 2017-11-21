@@ -81,11 +81,12 @@ type Daemon struct { //赋值见NewDaemon 见 NewDaemon
 	containers                container.Store
 	//docker容器所执行的命令
 	execCommands              *exec.Store
-	//存储docker容器仓库名和镜像ID的映射
+	//存储docker容器仓库名和镜像ID的映射  (daemon *Daemon) pullImageWithReference 中赋值给 distribution.Config.ReferenceStore
 	referenceStore            refstore.Store
+	// 被赋值为 LayerDownloadManager 结构，赋值见 NewLayerDownloadManager, (daemon *Daemon) pullImageWithReference 中赋值给 ImagePullConfig.DownloadManager
 	downloadManager           *xfer.LayerDownloadManager
 	uploadManager             *xfer.LayerUploadManager
-	//V2版registry相关的元数据存储
+	//V2版registry相关的元数据存储    (daemon *Daemon) pullImageWithReference 中赋值给 distribution.Config.MetadataStore
 	distributionMetadataStore dmetadata.Store
 	//可信任证书
 	trustKey                  libtrust.PrivateKey
@@ -119,6 +120,7 @@ type Daemon struct { //赋值见NewDaemon 见 NewDaemon
 	//layerStore 存储相关的接口方法，结构，源头都在这里
 	layerStore                layer.Store
 	//Store 存储相关的接口方法，结构，源头都在这里
+	// (daemon *Daemon) pullImageWithReference 中赋值给 distribution.Config.ImageStore
 	imageStore                image.Store   //赋值见 NewDaemon  Daemon.imageStore
 	PluginStore               *plugin.Store // todo: remove
 	pluginManager             *plugin.Manager

@@ -30,8 +30,9 @@ func (h headerModifier) ModifyRequest(req *http.Request) error {
 
 // NewTransport creates a new transport which will apply modifiers to
 // the request on a RoundTrip call.
+//NewV2Repository  v2AuthHTTPClient 中调用执行
 func NewTransport(base http.RoundTripper, modifiers ...RequestModifier) http.RoundTripper {
-	return &transport{
+	return &transport {
 		Modifiers: modifiers,
 		Base:      base,
 	}
@@ -39,6 +40,7 @@ func NewTransport(base http.RoundTripper, modifiers ...RequestModifier) http.Rou
 
 // transport is an http.RoundTripper that makes HTTP requests after
 // copying and modifying the request
+//NewTransport 中构造使用
 type transport struct {
 	Modifiers []RequestModifier
 	Base      http.RoundTripper

@@ -7,11 +7,13 @@ import (
 )
 
 // V1IDService maps v1 IDs to layers on disk.
+//NewV1IDService 中构造使用
 type V1IDService struct {
 	store Store
 }
 
 // NewV1IDService creates a new V1 ID mapping service.
+//NewPusher 中调用
 func NewV1IDService(store Store) *V1IDService {
 	return &V1IDService{
 		store: store,

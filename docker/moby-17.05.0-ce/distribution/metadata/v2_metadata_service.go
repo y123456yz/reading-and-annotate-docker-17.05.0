@@ -23,6 +23,7 @@ type V2MetadataService interface {
 }
 
 // v2MetadataService implements V2MetadataService
+//NewV2MetadataService 中构造使用该类
 type v2MetadataService struct {
 	store Store
 }
@@ -102,6 +103,7 @@ type authConfigKeyInput struct {
 const maxMetadata = 50
 
 // NewV2MetadataService creates a new diff ID to v2 metadata mapping service.
+//NewPusher 中调用
 func NewV2MetadataService(store Store) V2MetadataService {
 	return &v2MetadataService{
 		store: store,

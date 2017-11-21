@@ -11,6 +11,7 @@ type ServiceConfig struct {
 	InsecureRegistryCIDRs []*NetIPNet           `json:"InsecureRegistryCIDRs"`
 	////newServiceConfig->LoadMirrors 中从配置文件加载 registry-mirrors 仓库镜像地址信息
 	IndexConfigs          map[string]*IndexInfo `json:"IndexConfigs"`
+	//[root@newnamespace ~]# cat /etc/docker/daemon.json  {"registry-mirrors": ["http://a9e61d46.m.daocloud.io"]}
 	Mirrors               []string
 }
 
@@ -69,7 +70,8 @@ func (ipnet *NetIPNet) UnmarshalJSON(b []byte) (err error) {
 //   "CanonicalName" : "127.0.0.1:5000/user/repo",
 //   "Official" : false,
 // }
-// newIndexInfo 中构造使用
+// newIndexInfo 中构造使用，
+// RepositoryInfo中包含该结构
 type IndexInfo struct { //RepositoryInfo 结构包含该结构  ServiceConfig 包含该结构的hash表
 
 	// Name is the name of the registry, such as "docker.io"

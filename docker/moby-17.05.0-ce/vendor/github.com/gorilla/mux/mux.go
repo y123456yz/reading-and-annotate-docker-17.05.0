@@ -15,6 +15,7 @@ import (
 )
 
 // NewRouter returns a new router instance.
+//(s *Server) createMux 中构造使用
 func NewRouter() *Router {
 	return &Router{namedRoutes: make(map[string]*Route), KeepContext: false}
 }

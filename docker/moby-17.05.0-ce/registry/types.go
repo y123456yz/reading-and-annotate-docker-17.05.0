@@ -43,13 +43,38 @@ func (av APIVersion) String() string {
 	return apiVersions[av]
 }
 
+/*
+[root@newnamespace ~]# cat /etc/docker/daemon.json
+{"registry-mirrors": ["http://a9e61d46.m.daocloud.io"]}
+
+例如:docker pull abcdef:456456   如果没有指定url，则默认优先使用daemon.json中的配置registry-mirrors，如果该地址连不上或者无镜像，则从默认的registry-1.docker.io获取，并且都是V2
+Trying to pull abcdef from http://a9e61d46.m.daocloud.io/ v2
+Trying to pull abcdef from https://registry-1.docker.io v2
+
+例如： docker pull abc.com/xx/abcdef:456456  如果指定有url，则可以通过V2和V1从指定的url获取镜像
+Trying to pull abc.com/xx/abcdef from https://abc.com v2
+Trying to pull abc.com/xx/abcdef from https://abc.com v1
+*/
 // API Version identifiers.
+//https://www.csdn.net/article/2015-09-09/2825651  V2和V1的区别
 const (
 	_                      = iota
 	APIVersion1 APIVersion = iota
 	APIVersion2
 )
 
+/*
+[root@newnamespace ~]# cat /etc/docker/daemon.json
+{"registry-mirrors": ["http://a9e61d46.m.daocloud.io"]}
+
+例如:docker pull abcdef:456456   如果没有指定url，则默认优先使用daemon.json中的配置registry-mirrors，如果该地址连不上或者无镜像，则从默认的registry-1.docker.io获取，并且都是V2
+Trying to pull abcdef from http://a9e61d46.m.daocloud.io/ v2
+Trying to pull abcdef from https://registry-1.docker.io v2
+
+例如： docker pull abc.com/xx/abcdef:456456  如果指定有url，则可以通过V2和V1从指定的url获取镜像
+Trying to pull abc.com/xx/abcdef from https://abc.com v2
+Trying to pull abc.com/xx/abcdef from https://abc.com v1
+*/
 var apiVersions = map[APIVersion]string{
 	APIVersion1: "v1",
 	APIVersion2: "v2",
@@ -87,7 +112,9 @@ var apiVersions = map[APIVersion]string{
 // RepositoryInfo describes a repository  RepositoryInfo其实是就是包含了所有可用仓库地址(仓库镜像地址也算)的结构.
 
 //newRepositoryInfo 中构造该类，该结构成员值可以参考上面的注释
+// v2Pusher 中包含该结构
 type RepositoryInfo struct { //RegistryService实际上是DefaultService.看下imagePullConfig.RegistryService.ResolveRepository(ref),实现在docker\registry\service.go:
+	//例如docker pull harbor.intra.XXX.com/XXX/centos:20150101 name对应 harbor.intra.XXX.com/XXX/centos:20150101
 	Name reference.Named
 		// Index points to registry information
 	//Index来源于config.IndexConfigs.那config.IndexConfigs是什么呢?容易发现config.IndexConfigs来源于DefaultService的config。

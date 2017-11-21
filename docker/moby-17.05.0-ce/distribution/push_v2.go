@@ -33,8 +33,10 @@ const (
 	middleLayerMaximumSize = 10 * (1 << 20)  // 10MB
 )
 
+//NewPusher 中构造该结构
 type v2Pusher struct {
 	v2MetadataService metadata.V2MetadataService
+	//例如abc.com/xx/abcdef:456456
 	ref               reference.Named
 	endpoint          registry.APIEndpoint
 	repoInfo          *registry.RepositoryInfo

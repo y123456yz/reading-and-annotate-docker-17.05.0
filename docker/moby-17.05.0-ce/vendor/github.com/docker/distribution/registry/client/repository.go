@@ -133,6 +133,7 @@ func (r *registry) Repositories(ctx context.Context, entries []string, last stri
 }
 
 // NewRepository creates a new Repository for the given repository name and base URL.
+//NewV2Repository 中调用执行
 func NewRepository(ctx context.Context, name reference.Named, baseURL string, transport http.RoundTripper) (distribution.Repository, error) {
 	ub, err := v2.NewURLBuilderFromString(baseURL, false)
 	if err != nil {
@@ -153,6 +154,7 @@ func NewRepository(ctx context.Context, name reference.Named, baseURL string, tr
 	}, nil
 }
 
+//NewRepository 中使用该类  registry\client\repository.go
 type repository struct {
 	client  *http.Client
 	ub      *v2.URLBuilder
@@ -370,6 +372,8 @@ docker得到 manifest 后，读取里面image配置文件的digest(sha256)，这
 注意： 对于layer来说，config文件中diffid是layer的tar包的sha256，而manifest文件中的digest依赖于media type，比如media type是tar+gzip，
 那digest就是layer的tar包经过gzip压缩后的内容的sha256，如果media type就是tar的话，diffid和digest就会一样。
 */
+
+//(r *repository) Manifests 中构造使用
 type manifests struct {
 	name   reference.Named
 	ub     *v2.URLBuilder
@@ -432,6 +436,7 @@ func (o contentDigestOption) Apply(ms distribution.ManifestService) error {
 	return nil
 }
 
+//获取manifests 文件
 func (ms *manifests) Get(ctx context.Context, dgst digest.Digest, options ...distribution.ManifestServiceOption) (distribution.Manifest, error) {
 	var (
 		digestOrTag string

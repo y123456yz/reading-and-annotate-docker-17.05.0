@@ -180,6 +180,7 @@ func loginV2(authConfig *types.AuthConfig, endpoint APIEndpoint, userAgent strin
 }
 
 func v2AuthHTTPClient(endpoint *url.URL, authTransport http.RoundTripper, modifiers []transport.RequestModifier, creds auth.CredentialStore, scopes []auth.Scope) (*http.Client, bool, error) {
+	//检查仓库是否支持 registry V2  ，返回 simpleManager 结构
 	challengeManager, foundV2, err := PingV2Registry(endpoint, authTransport)
 	if err != nil {
 		if !foundV2 {
@@ -256,6 +257,9 @@ func (err PingResponseError) Error() string {
 // challenge manager for the supported authentication types and
 // whether v2 was confirmed by the response. If a response is received but
 // cannot be interpreted a PingResponseError will be returned.
+
+//检查仓库是否支持 registry V2， 返回 simpleManager 结构
+// NewV2Repository 中执行
 func PingV2Registry(endpoint *url.URL, transport http.RoundTripper) (challenge.Manager, bool, error) {
 	var (
 		foundV2   = false
@@ -292,6 +296,7 @@ func PingV2Registry(endpoint *url.URL, transport http.RoundTripper) (challenge.M
 		}
 	}
 
+	//返回 simpleManager 结构
 	challengeManager := challenge.NewSimpleManager()
 	if err := challengeManager.AddResponse(resp); err != nil {
 		return nil, foundV2, PingResponseError{

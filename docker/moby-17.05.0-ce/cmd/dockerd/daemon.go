@@ -498,7 +498,7 @@ func initRouter(s *apiserver.Server, d *daemon.Daemon, c *cluster.Cluster) {
 	pull命令对应的restful api是"/images/create"， 会调用 imageRouter 的postImagesCreate 函数，函数位于image包的image_routes.go
 
 	所有的client端的请求都使用api/client/请求名称.go文件来定义，在daemon端，所有请求的处理过程也放在daemon/请求名称.go文件中来定义。
-	*/
+	*/ //该routers 被赋值给 ，见(s *Server) InitRouter, 各种回调生效赋值见(s *Server) createMux
 	routers := []router.Router{ //各种不同的docker xxx请求会有不同的 NewRouter 实现
 		// we need to add the checkpoint router before the container router or the DELETE gets masked
 		checkpointrouter.NewRouter(d, decoder),    //NewRouter中的initRoutes会定义各个客户端post请求的相应回调
@@ -525,9 +525,11 @@ func initRouter(s *apiserver.Server, d *daemon.Daemon, c *cluster.Cluster) {
 		}
 	}
 
+	//dockerd\daemon.go 中的 func initRouter 中执行，注册各种客户端请求的http回调
 	s.InitRouter(debug.IsEnabled(), routers...)
 }
 
+//(cli *DaemonCli) start 中执行
 func (cli *DaemonCli) initMiddlewares(s *apiserver.Server, cfg *apiserver.Config, pluginStore *plugin.Store) error {
 	v := cfg.Version
 

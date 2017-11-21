@@ -42,15 +42,17 @@ type Manager interface {
 // based on the responses which have been added the
 // manager. The simple manager will make no attempt to
 // perform requests on the endpoints or cache the responses
-// to a backend.
+// to a backend.  PingV2Registry 中调用执行
 func NewSimpleManager() Manager {
 	return &simpleManager{
 		Challanges: make(map[string][]Challenge),
 	}
 }
 
+//NewSimpleManager 中构建使用
 type simpleManager struct {
 	sync.RWMutex
+	//赋值见(m *simpleManager) AddResponse
 	Challanges map[string][]Challenge
 }
 

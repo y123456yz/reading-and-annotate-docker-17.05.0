@@ -38,14 +38,16 @@ type Service interface {
 
 // DefaultService is a registry service. It tracks configuration data such as a list
 // of mirrors.
-type DefaultService struct { //也就是endpoint，见lookupEndpoints  new见ResolveRepository newRepositoryInfo
+//registry/service.go 中的 NewService 构造使用该结构，
+type DefaultService struct { //也就是endpoint，见lookupEndpoints  new见 ResolveRepository newRepositoryInfo
+	//赋值见NewService，赋值为 newServiceConfig 的返回值
 	config *serviceConfig
 	mu     sync.Mutex
 }
 
 // NewService returns a new instance of DefaultService ready to be
 // installed into an engine.
-// registry/service.go 新建一个default的registryserver
+// registry/service.go 新建一个default的 registryserver
 func NewService(options ServiceOptions) *DefaultService {
 	return &DefaultService{
 		config: newServiceConfig(options),
@@ -231,6 +233,7 @@ func (s *DefaultService) Search(ctx context.Context, term string, limit int, aut
 // and configuration of the associated registry.
 //docker pull  mysql@sha256:8d9cc6ff6a7ac9916c3384e864fb04b8ee9415b572f872a2a4c5b909dbbca81b name对应 docker.io/library/mysql@sha256:8d9cc6ff6a7ac9916c3384e864fb04b8ee9415b572f872a2a4c5b909dbbca81b
 //docker pull harbor.intra.XXX.com/XXX/centos:20150101 name对应 harbor.intra.XXX.com/XXX/centos:20150101
+//构造仓库地址信息
 func (s *DefaultService) ResolveRepository(name reference.Named) (*RepositoryInfo, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -238,10 +241,14 @@ func (s *DefaultService) ResolveRepository(name reference.Named) (*RepositoryInf
 }
 
 // APIEndpoint represents a remote API endpoint
+//(s *DefaultService) LookupPullEndpoints lookupV2Endpoints 中构造该结构，
+// v2Pusher中包含该结构
 type APIEndpoint struct {
 	Mirror       bool
 	URL          *url.URL
+	//APIVersion1 或者 APIVersion2
 	Version      APIVersion
+	//官方的 docker.io 或者 index.docker.io
 	Official     bool
 	TrimHostname bool
 	TLSConfig    *tls.Config
@@ -272,7 +279,7 @@ func (s *DefaultService) tlsConfigForMirror(mirrorURL *url.URL) (*tls.Config, er
 // LookupPullEndpoints creates a list of endpoints to try to pull from, in order of preference.
 // It gives preference to v2 endpoints over v1, mirrors over the actual
 // registry, and HTTPS over plain HTTP.
-// 通过repositoryInfo找到下载镜像的endpoint
+// 通过repositoryInfo找到下载镜像的endpoint   hostname为//docker pull harbor.intra.XXX.com/XXX/centos:20150101 hostname对应 harbor.intra.XXX.com
 func (s *DefaultService) LookupPullEndpoints(hostname string) (endpoints []APIEndpoint, err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -298,6 +305,19 @@ func (s *DefaultService) LookupPushEndpoints(hostname string) (endpoints []APIEn
 	return endpoints, err
 }
 
+/*
+[root@newnamespace ~]# cat /etc/docker/daemon.json
+{"registry-mirrors": ["http://a9e61d46.m.daocloud.io"]}
+
+例如:docker pull abcdef:456456   如果没有指定url，则默认优先使用daemon.json中的配置registry-mirrors，如果该地址连不上或者无镜像，则从默认的registry-1.docker.io获取，并且都是V2
+Trying to pull abcdef from http://a9e61d46.m.daocloud.io/ v2
+Trying to pull abcdef from https://registry-1.docker.io v2
+
+例如： docker pull abc.com/xx/abcdef:456456  如果指定有url，则可以通过V2和V1从指定的url获取镜像
+Trying to pull abc.com/xx/abcdef from https://abc.com v2
+Trying to pull abc.com/xx/abcdef from https://abc.com v1
+*/
+// hostname为//docker pull harbor.intra.XXX.com/XXX/centos:20150101 hostname对应 harbor.intra.XXX.com
 func (s *DefaultService) lookupEndpoints(hostname string) (endpoints []APIEndpoint, err error) {
 	endpoints, err = s.lookupV2Endpoints(hostname)
 	if err != nil {

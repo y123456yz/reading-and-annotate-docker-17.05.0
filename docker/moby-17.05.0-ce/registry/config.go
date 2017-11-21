@@ -25,12 +25,13 @@ type ServiceOptions struct {
 
 	// V2Only controls access to legacy registries.  If it is set to true via the
 	// command line flag the daemon will not attempt to contact v1 legacy registries
-	V2Only bool `json:"disable-legacy-registry,omitempty"`
+	V2Only bool `json:"disable-legacy-registry,omitempty"`  //只允许V2方式访问
 }
 
 // serviceConfig holds daemon configuration for the registry service.
 type serviceConfig struct { //newServiceConfig 中使用
 	registrytypes.ServiceConfig
+	//是否只信息 V2方式访问，disable-legacy-registry 配置
 	V2Only bool
 }
 
@@ -52,6 +53,7 @@ var (
 	NotaryServer = "https://notary.docker.io"
 
 	// DefaultV2Registry is the URI of the default v2 registry
+	//构造使用见lookupV2Endpoints
 	DefaultV2Registry = &url.URL{
 		Scheme: "https",
 		Host:   "registry-1.docker.io",
@@ -332,6 +334,7 @@ func validateHostPort(s string) error {
 
 // newIndexInfo returns IndexInfo configuration from indexName
 //name为harbor.intra.XXX.com/XXX/centos:20150101 中的 harbor.intra.XXX.com
+//构造仓库地址信息 IndexInfo
 func newIndexInfo(config *serviceConfig, indexName string) (*registrytypes.IndexInfo, error) {
 	var err error
 	indexName, err = ValidateIndexName(indexName)
@@ -368,6 +371,36 @@ func GetAuthConfigKey(index *registrytypes.IndexInfo) string {
 }
 
 // newRepositoryInfo validates and breaks down a repository name into a RepositoryInfo
+
+// RepositoryInfo Examples:
+// {
+//   "Index" : {
+//     "Name" : "docker.io",
+//     "Mirrors" : ["https://registry-2.docker.io/v1/", "https://registry-3.docker.io/v1/"],
+//     "Secure" : true,
+//     "Official" : true,
+//   },
+//   "RemoteName" : "library/debian",
+//   "LocalName" : "debian",
+//   "CanonicalName" : "docker.io/debian"
+//   "Official" : true,
+// }
+//
+// {
+//   "Index" : {
+//     "Name" : "127.0.0.1:5000",
+//     "Mirrors" : [],
+//     "Secure" : false,
+//     "Official" : false,
+//   },
+//   "RemoteName" : "user/repo",
+//   "LocalName" : "127.0.0.1:5000/user/repo",
+//   "CanonicalName" : "127.0.0.1:5000/user/repo",
+//   "Official" : false,
+// }
+// newIndexInfo 中构造使用，
+// RepositoryInfo中包含IndexInfo结构
+
 //docker pull  mysql@sha256:8d9cc6ff6a7ac9916c3384e864fb04b8ee9415b572f872a2a4c5b909dbbca81b name对应 docker.io/library/mysql@sha256:8d9cc6ff6a7ac9916c3384e864fb04b8ee9415b572f872a2a4c5b909dbbca81b
 //docker pull harbor.intra.XXX.com/XXX/centos:20150101 name对应 harbor.intra.XXX.com/XXX/centos:20150101
 func newRepositoryInfo(config *serviceConfig, name reference.Named) (*RepositoryInfo, error) {

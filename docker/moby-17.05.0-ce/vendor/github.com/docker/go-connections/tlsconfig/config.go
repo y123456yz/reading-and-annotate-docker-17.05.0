@@ -27,7 +27,12 @@ type Options struct {
 	CertFile string
 	KeyFile  string
 
-	// client-only option
+	// client-only option  加上 如下配置，则允许http方式访问，见lookupEndpoints
+	/*
+	"TLSConfig": {
+	    "InsecureSkipVerify": ture,
+	  }
+	*/
 	InsecureSkipVerify bool
 	// server-only option
 	ClientAuth tls.ClientAuthType

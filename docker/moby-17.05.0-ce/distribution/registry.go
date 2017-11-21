@@ -56,7 +56,7 @@ func init() {
 // providing timeout settings and authentication support, and also verifies the
 // remote API version.
 
-//NewV2Repository函数来创建一个提供身份验证的http传输通道，并返回repository接口
+//NewV2Repository函数来创建一个提供身份验证的http传输通道，并返回repository接口 获取V2仓库信息
 func NewV2Repository(ctx context.Context, repoInfo *registry.RepositoryInfo, endpoint registry.APIEndpoint, metaHeaders http.Header, authConfig *types.AuthConfig, actions ...string) (repo distribution.Repository, foundVersion bool, err error) {
 	repoName := repoInfo.Name.Name()
 	// If endpoint does not support CanonicalName, use the RemoteName instead
@@ -85,9 +85,11 @@ func NewV2Repository(ctx context.Context, repoInfo *registry.RepositoryInfo, end
 		base.Dial = proxyDialer.Dial
 	}
 
+	//构造HTTP头部信息
 	modifiers := registry.DockerHeaders(dockerversion.DockerUserAgent(ctx), metaHeaders)
 	authTransport := transport.NewTransport(base, modifiers...)
 
+	//检查URL指定的仓库地址是否支持 registry V2， 返回 simpleManager 结构
 	challengeManager, foundVersion, err := registry.PingV2Registry(endpoint.URL, authTransport)
 	if err != nil {
 		transportOK := false
@@ -134,6 +136,7 @@ func NewV2Repository(ctx context.Context, repoInfo *registry.RepositoryInfo, end
 		}
 	}
 
+	//返回 repository 结构  registry\client\repository.go
 	repo, err = client.NewRepository(ctx, repoNameRef, endpoint.URL.String(), tr)
 	if err != nil {
 		err = fallbackError{

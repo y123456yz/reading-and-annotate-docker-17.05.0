@@ -43,6 +43,7 @@ var (
 )
 
 func init() {
+	//把b中的内容反序列化存储到m中返回，该函数执行在  UnmarshalManifest 中执行
 	schema2Func := func(b []byte) (distribution.Manifest, distribution.Descriptor, error) {
 		m := new(DeserializedManifest)
 		err := m.UnmarshalJSON(b)
@@ -59,6 +60,9 @@ func init() {
 	}
 }
 
+//schema2Func := func(b []byte) (distribution.Manifest, distribution.Descriptor, error) 或者
+//schema1Func := func(b []byte) (distribution.Manifest, distribution.Descriptor, error)
+//中把从仓库中下周的manifest内容反序列化存储到该结构中   distribution\manifest\schema2\manifest.go 中的 type Manifest struct 结构
 // Manifest defines a schema2 manifest.
 type Manifest struct {
 	manifest.Versioned
@@ -86,6 +90,7 @@ func (m Manifest) Target() distribution.Descriptor {
 
 // DeserializedManifest wraps Manifest with a copy of the original JSON.
 // It satisfies the distribution.Manifest interface.
+//init 中构造使用
 type DeserializedManifest struct {
 	Manifest
 

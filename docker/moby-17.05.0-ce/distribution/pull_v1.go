@@ -27,6 +27,7 @@ import (
 	"golang.org/x/net/context"
 )
 
+//newPuller 中构造使用
 type v1Puller struct {
 	v1IDService *metadata.V1IDService
 	endpoint    registry.APIEndpoint
