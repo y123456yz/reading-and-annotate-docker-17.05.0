@@ -24,6 +24,7 @@ const maxDownloadAttempts = 5
 //NewLayerDownloadManager 中构造使用
 type LayerDownloadManager struct {
 	layerStore   layer.Store
+	//被赋值为 transferManager 结构，赋值见NewLayerDownloadManager
 	tm           TransferManager
 	waitDuration time.Duration
 }
@@ -46,6 +47,7 @@ func NewLayerDownloadManager(layerStore layer.Store, concurrencyLimit int, optio
 	return &manager
 }
 
+//
 type downloadTransfer struct {
 	Transfer
 
@@ -153,13 +155,16 @@ func (ldm *LayerDownloadManager) Download(ctx context.Context, initialRootFS ima
 
 		var xferFunc DoFunc
 		if topDownload != nil {
+			//调用makeDownloadFunc创建下载函数xferFunc，xferFunc函数内部初始化一个downloadTransfer 并返回
 			xferFunc = ldm.makeDownloadFunc(descriptor, "", topDownload)
 			defer topDownload.Transfer.Release(watcher)
 		} else {
 			xferFunc = ldm.makeDownloadFunc(descriptor, rootFS.ChainID(), nil)
 		}
+
+		//Transfer函数位于/distribution/xfer/transfer.go，调用xferFunc创建 downloadTransfer并把通道信息传给xferFunc创建的协程，返回Transfer, Watcher
 		topDownloadUncasted, watcher = ldm.tm.Transfer(transferKey, xferFunc, progressOutput)
-		topDownload = topDownloadUncasted.(*downloadTransfer)
+		topDownload = topDownloadUncasted.(*downloadTransfer) //接口是不是downloadTransfer 类型
 		downloadsByKey[key] = topDownload
 	}
 
@@ -213,6 +218,9 @@ func (ldm *LayerDownloadManager) Download(ctx context.Context, initialRootFS ima
 // complete before the registration step, and registers the downloaded data
 // on top of parentDownload's resulting layer. Otherwise, it registers the
 // layer on top of the ChainID given by parentLayer.
+//返回这个函数
+//xferFunc内部创建一个协程处理progressChan通道，调用descriptor.Download(..) , 这个是pull_v2.go内部初始化的v2LayerDescriptor，返回 io.ReadCloser，
+//再通过io.ReadCloser 创建 reader解压数据，利用 downloadTransfer 处理数据。
 func (ldm *LayerDownloadManager) makeDownloadFunc(descriptor DownloadDescriptor, parentLayer layer.ChainID, parentDownload *downloadTransfer) DoFunc {
 	return func(progressChan chan<- progress.Progress, start <-chan struct{}, inactive chan<- struct{}) Transfer {
 		d := &downloadTransfer{

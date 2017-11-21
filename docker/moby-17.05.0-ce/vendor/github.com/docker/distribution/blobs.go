@@ -57,12 +57,35 @@ func (err ErrBlobMounted) Error() string {
 // store, a descriptor can be used to fetch, store and target any kind of
 // blob. The struct also describes the wire protocol format. Fields should
 // only be added but never changed.
+/*
+"layers": [
+	{
+	 "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+	 "size": 22492350,
+	 "digest": "sha256:bc95e04b23c06ba1b9bf092d07d1493177b218e0340bd2ed49dac351c1e34313"
+	},
+	{
+	 "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+	 "size": 21913353,
+	 "digest": "sha256:a21d9ee25fc3dcef76028536e7191e44554a8088250d4c3ec884af23cef4f02a"
+	},
+	{
+	 "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+	 "size": 202,
+	 "digest": "sha256:9bda7d5afd399f51550422c49172f8c9169fc3ffdef2748b13cfbf6467661ac5"
+	}
+]
+*/
+////schema2\manifest.go 中的 init()->schema2Func 中构造该类
+//代表manifest内容中的一层，就是上面注释中的layers中的一小个
 type Descriptor struct {
 	// MediaType describe the type of the content. All text based formats are
 	// encoded as utf-8.
+	//V2 对应 MediaTypeManifest   V1对应为"application/json"  他们都是通过解析HTTP请求中的 Content-Type 字段来判断是V1还是V2
 	MediaType string `json:"mediaType,omitempty"`
 
 	// Size in bytes of content.
+	//manifest http 请求包体内容大小，见schema2Func := func(b []byte)
 	Size int64 `json:"size,omitempty"`
 
 	// Digest uniquely identifies the content. A byte stream can be verified

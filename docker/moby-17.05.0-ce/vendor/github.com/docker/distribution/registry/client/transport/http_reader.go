@@ -29,6 +29,7 @@ type ReadSeekCloser interface {
 // request. When seeking and starting a read from a non-zero offset
 // the a "Range" header will be added which sets the offset.
 // TODO(dmcgowan): Move this into a separate utility package
+//(bs *blobs) Open 中调用执行
 func NewHTTPReadSeeker(client *http.Client, url string, errorHandler func(*http.Response) error) ReadSeekCloser {
 	return &httpReadSeeker{
 		client:       client,

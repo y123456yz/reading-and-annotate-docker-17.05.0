@@ -45,7 +45,7 @@ type imageMeta struct { //(is *store) restore()中使用该类
 //StoreBackend 是/var/lib/docker/image/{driver}/imagedb 目录中相关文件操作的接口， 该目录下面的文件内容存储在 store 结构中。  docker images看到的就是imagedb/content/xxx中的文件夹
 ///var/lib/docker/image/{driver}/imagedb/content/sha256/下面的文件和/var/lib/docker/image/devicemapper/layerdb/sha256下面的文件通过(is *store) restore()关联起来
 
-type store struct { //初始化赋值见 NewImageStore   该结构类型源头数据存入 Daemon.imageStore
+type store struct { //初始化赋值见 NewImageStore   该结构类型源头数据存入 Daemon.imageStore   image\store.go
 	sync.Mutex
 	//ls类型为LayerGetReleaser接口，初始化时将ls初始化为 layerStore。
 	ls        LayerGetReleaser

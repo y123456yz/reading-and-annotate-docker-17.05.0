@@ -119,7 +119,7 @@ type Daemon struct { //赋值见NewDaemon 见 NewDaemon
 	//赋值见 NewDaemon   通过NewStoreFromOptions返回  实际上为 layerStore 类型，实现有type Store interface {}中包含的函数
 	//layerStore 存储相关的接口方法，结构，源头都在这里
 	layerStore                layer.Store
-	//Store 存储相关的接口方法，结构，源头都在这里
+	//Store 存储相关的接口方法，结构，源头都在这里  type store struct
 	// (daemon *Daemon) pullImageWithReference 中赋值给 distribution.Config.ImageStore
 	imageStore                image.Store   //赋值见 NewDaemon  Daemon.imageStore
 	PluginStore               *plugin.Store // todo: remove

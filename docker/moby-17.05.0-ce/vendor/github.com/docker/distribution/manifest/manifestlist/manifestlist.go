@@ -28,7 +28,6 @@ func init() {
 			return nil, distribution.Descriptor{}, err
 		}
 
-        fmt.Printf("yang test manifestListFunc")
 		dgst := digest.FromBytes(b)
 		return m, distribution.Descriptor{Digest: dgst, Size: int64(len(b)), MediaType: MediaTypeManifestList}, err
 	}
@@ -75,6 +74,12 @@ type ManifestDescriptor struct {
 }
 
 // ManifestList references manifests for various platforms.
+/*
+如果HTTP ctHeader 头部中的resp.Header.Get("Content-Type")为"application/json",则执行 schema1Func，返回 SignedManifest，Descriptor
+如果头部字段Content-Type内容为"application/vnd.docker.distribution.manifest.v2+json"对应V2，则执行 schema2Func，返回 DeserializedManifest，Descriptor
+如果头部字段Content-Type内容为"application/vnd.docker.distribution.manifest.list.v2+json"则对应 manifestlist，则执行 manifestListFunc，返回 DeserializedManifestList，Descriptor
+*/
+//DeserializedManifestList 包含该类
 type ManifestList struct {
 	manifest.Versioned
 
@@ -95,6 +100,12 @@ func (m ManifestList) References() []distribution.Descriptor {
 
 // DeserializedManifestList wraps ManifestList with a copy of the original
 // JSON.
+/*
+如果HTTP ctHeader 头部中的resp.Header.Get("Content-Type")为"application/json",则执行 schema1Func，返回 SignedManifest，Descriptor
+如果头部字段Content-Type内容为"application/vnd.docker.distribution.manifest.v2+json"对应V2，则执行 schema2Func，返回 DeserializedManifest，Descriptor
+如果头部字段Content-Type内容为"application/vnd.docker.distribution.manifest.list.v2+json"则对应 manifestlist，则执行 manifestListFunc，返回 DeserializedManifestList，Descriptor
+*/
+//manifestListFunc 中构造使用
 type DeserializedManifestList struct {
 	ManifestList
 

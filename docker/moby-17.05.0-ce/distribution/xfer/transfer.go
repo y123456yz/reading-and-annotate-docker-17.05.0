@@ -35,6 +35,7 @@ type Watcher struct {
 }
 
 // Transfer represents an in-progress transfer.
+//downloadTransfer 会实现该接口
 type Transfer interface {
 	Watch(progressOutput progress.Output) *Watcher
 	Release(*Watcher)

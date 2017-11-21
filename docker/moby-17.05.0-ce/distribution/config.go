@@ -66,7 +66,7 @@ type ImagePullConfig struct { //包含了很多拉取镜像时要用到的信息
 	//被赋值为 LayerDownloadManager 结构
 	DownloadManager RootFSDownloadManager
 	// Schema2Types is the valid schema2 configuration types allowed
-	// by the pull operation.
+	// by the pull operation.  ImageTypes 变量
 	Schema2Types []string  //distribution.ImageTypes
 }
 
@@ -115,6 +115,7 @@ type PushLayer interface {
 
 // RootFSDownloadManager handles downloading of the rootfs
 //ImagePullConfig 中包含该结构，赋值见pullImageWithReference
+//LayerDownloadManager 中实现该接口
 type RootFSDownloadManager interface {
 	// Download downloads the layers into the given initial rootfs and
 	// returns the final rootfs.

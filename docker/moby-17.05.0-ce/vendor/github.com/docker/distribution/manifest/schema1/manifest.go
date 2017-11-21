@@ -36,7 +36,6 @@ func init() {
 			return nil, distribution.Descriptor{}, err
 		}
 
-        fmt.Printf("yang test schema1Func ")
 		desc := distribution.Descriptor{
 			Digest:    digest.FromBytes(sm.Canonical),
 			Size:      int64(len(sm.Canonical)),
@@ -72,6 +71,12 @@ type History struct {
 
 // Manifest provides the base accessible fields for working with V2 image
 // format in the registry.
+/*
+如果HTTP ctHeader 头部中的resp.Header.Get("Content-Type")为"application/json",则执行 schema1Func，返回 SignedManifest，Descriptor
+如果头部字段Content-Type内容为"application/vnd.docker.distribution.manifest.v2+json"对应V2，则执行 schema2Func，返回 DeserializedManifest，Descriptor
+如果头部字段Content-Type内容为"application/vnd.docker.distribution.manifest.list.v2+json"则对应 manifestlist，则执行 manifestListFunc，返回 DeserializedManifestList，Descriptor
+*/
+//SignedManifest 包含该类
 type Manifest struct {
 	manifest.Versioned
 
@@ -94,6 +99,13 @@ type Manifest struct {
 
 // SignedManifest provides an envelope for a signed image manifest, including
 // the format sensitive raw bytes.
+
+/*
+如果HTTP ctHeader 头部中的resp.Header.Get("Content-Type")为"application/json",则执行 schema1Func，返回 SignedManifest，Descriptor
+如果头部字段Content-Type内容为"application/vnd.docker.distribution.manifest.v2+json"对应V2，则执行 schema2Func，返回 DeserializedManifest，Descriptor
+如果头部字段Content-Type内容为"application/vnd.docker.distribution.manifest.list.v2+json"则对应 manifestlist，则执行 manifestListFunc，返回 DeserializedManifestList，Descriptor
+*/
+//schema1Func 中构造使用
 type SignedManifest struct {
 	Manifest
 

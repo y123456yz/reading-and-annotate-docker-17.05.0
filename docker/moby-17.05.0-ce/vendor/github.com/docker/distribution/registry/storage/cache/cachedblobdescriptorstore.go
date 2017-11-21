@@ -32,6 +32,7 @@ type cachedBlobStatter struct {
 
 // NewCachedBlobStatter creates a new statter which prefers a cache and
 // falls back to a backend.
+//(r *repository) Blobs 中使用
 func NewCachedBlobStatter(cache distribution.BlobDescriptorService, backend distribution.BlobDescriptorService) distribution.BlobDescriptorService {
 	return &cachedBlobStatter{
 		cache:   cache,

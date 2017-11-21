@@ -11,6 +11,12 @@ import (
 // Manifest represents a registry object specifying a set of
 // references and an optional target
 //distribution\manifest\schema2\manifest.go 中的 type Manifest struct 结构 中实现这些接口
+/*
+如果HTTP ctHeader 头部中的resp.Header.Get("Content-Type")为"application/json",则执行 schema1Func，返回 SignedManifest，Descriptor
+如果头部字段Content-Type内容为"application/vnd.docker.distribution.manifest.v2+json"对应V2，则执行 schema2Func，返回 DeserializedManifest，Descriptor
+如果头部字段Content-Type内容为"application/vnd.docker.distribution.manifest.list.v2+json"则对应manifestlist，则执行 manifestListFunc，返回 DeserializedManifestList，Descriptor
+*/
+//SignedManifest DeserializedManifest DeserializedManifestList 三个结构都会实现该接口
 type Manifest interface {
 	// References returns a list of objects which make up this manifest.
 	// A reference is anything which can be represented by a
@@ -49,6 +55,7 @@ type ManifestBuilder interface {
 }
 
 // ManifestService describes operations on image manifests.
+//type manifests struct 实现这些接口
 type ManifestService interface {
 	// Exists returns true if the manifest exists.
 	Exists(ctx context.Context, dgst digest.Digest) (bool, error)
@@ -90,11 +97,23 @@ type UnmarshalFunc func([]byte) (Manifest, Descriptor, error)
 
 //RegisterManifestSchema 中注册填充   func:对应 schema1Func 或者 schema2Func 或者 manifestListFunc，
 // 这些func在 UnmarshalManifest 中执行
+//V1 RegisterManifestSchema("application/json", schema1Func)   V2  RegisterManifestSchema(MediaTypeManifest, schema2Func)
+//RegisterManifestSchema(MediaTypeManifestList, manifestListFunc)  MediaTypeManifestList = "application/vnd.docker.distribution.manifest.list.v2+json"
+
+// MediaTypeManifest = "application/vnd.docker.distribution.manifest.v2+json"  map中的string对应的就是HTTP头部中的resp.Header.Get("Content-Type")
+//如果头部字段Content-Type内容为"application/vnd.docker.distribution.manifest.v2+json"对应V2，"application/json"对应V1
+//如果头部字段Content-Type内容为"application/vnd.docker.distribution.manifest.list.v2+json"则对应manifestlist
 var mappings = make(map[string]UnmarshalFunc, 0)
 
 // UnmarshalManifest looks up manifest unmarshal functions based on
 // MediaType
-//(ms *manifests) Get 中调用执行，把仓库获取的manifest内容反序列化存储到Manifest结构
+//ctHeader 来源为 mt := resp.Header.Get("Content-Type")，即包体内容type，如html txt等等  p为HTTP包体内容
+
+/*
+如果HTTP ctHeader 头部中的resp.Header.Get("Content-Type")为"application/json",则执行 schema1Func，返回 SignedManifest，Descriptor
+如果头部字段Content-Type内容为"application/vnd.docker.distribution.manifest.v2+json"对应V2，则执行 schema2Func，返回 DeserializedManifest，Descriptor
+如果头部字段Content-Type内容为"application/vnd.docker.distribution.manifest.list.v2+json"则对应manifestlist，则执行 manifestListFunc，返回 DeserializedManifestList，Descriptor
+*/ //(ms *manifests) Get 中调用执行，把仓库获取的manifest内容反序列化存储到Manifest结构
 func UnmarshalManifest(ctHeader string, p []byte) (Manifest, Descriptor, error) {
 	// Need to look up by the actual media type, not the raw contents of
 	// the header. Strip semicolons and anything following them.
@@ -105,7 +124,6 @@ func UnmarshalManifest(ctHeader string, p []byte) (Manifest, Descriptor, error) 
 		if err != nil {
 			return nil, Descriptor{}, err
 		}
-		fmt.Printf("yang test UnmarshalManifest, mediatype:%s\n\n", mediaType)
 	}
 
 	//对应 schema1Func 或者 schema2Func 或者 manifestListFunc
@@ -117,12 +135,21 @@ func UnmarshalManifest(ctHeader string, p []byte) (Manifest, Descriptor, error) 
 		}
 	}
 
+//
+//func:对应 schema1Func 或者 schema2Func 或者 manifestListFunc， 执行func,这几个函数只能全文搜索才能搜索到
+/*
+如果HTTP ctHeader 头部中的resp.Header.Get("Content-Type")为"application/json",则执行 schema1Func，返回 SignedManifest，Descriptor
+如果头部字段Content-Type内容为"application/vnd.docker.distribution.manifest.v2+json"对应V2，则执行 schema2Func，返回 DeserializedManifest，Descriptor
+如果头部字段Content-Type内容为"application/vnd.docker.distribution.manifest.list.v2+json"则对应manifestlist，则执行 manifestListFunc，返回 DeserializedManifestList，Descriptor
+*/
 	return unmarshalFunc(p)
 }
 
 // RegisterManifestSchema registers an UnmarshalFunc for a given schema type.  This
 // should be called from specific
-//u 对应 schema1Func 或者 schema2Func
+//u 对应 schema1Func 或者 schema2Func 或者 manifestListFunc，
+//V1 RegisterManifestSchema("application/json", schema1Func)   V2  RegisterManifestSchema(MediaTypeManifest, schema2Func) MediaTypeManifest = "application/vnd.docker.distribution.manifest.v2+json"
+//RegisterManifestSchema(MediaTypeManifestList, manifestListFunc)  MediaTypeManifestList = "application/vnd.docker.distribution.manifest.list.v2+json"
 func RegisterManifestSchema(mediaType string, u UnmarshalFunc) error {
 	if _, ok := mappings[mediaType]; ok {
 		return fmt.Errorf("manifest media type registration would overwrite existing: %s", mediaType)

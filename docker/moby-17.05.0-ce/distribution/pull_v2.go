@@ -96,7 +96,6 @@ func (p *v2Puller) pullV2Repository(ctx context.Context, ref reference.Named) (e
 	var layersDownloaded bool
 	if !reference.IsNameOnly(ref) {
 		//pullV2Tag才是真正的最后的下载环节
-		fmt.Printf("yang test pullV2Repository  1111\n\n")
 		layersDownloaded, err = p.pullV2Tag(ctx, ref)
 		if err != nil {
 			return err
@@ -115,7 +114,6 @@ func (p *v2Puller) pullV2Repository(ctx context.Context, ref reference.Named) (e
 		p.confirmedV2 = true
 
 		for _, tag := range tags {
-		    fmt.Printf("yang test pullV2Repository  2222  tag:%s\n\n", tag)
 			tagRef, err := reference.WithTag(ref, tag)
 			if err != nil {
 				return err
@@ -143,13 +141,47 @@ func (p *v2Puller) pullV2Repository(ctx context.Context, ref reference.Named) (e
 	return nil
 }
 
+/*
+{
+   "schemaVersion": 2,
+   "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+   "config": {
+      "mediaType": "application/vnd.docker.container.image.v1+json",
+      "size": 5836,
+      "digest": "sha256:40960efd7b8f44ed5cafee61c189a8f4db39838848d41861898f56c29565266e"
+   },
+   "layers": [
+      {
+         "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+         "size": 22492350,
+         "digest": "sha256:bc95e04b23c06ba1b9bf092d07d1493177b218e0340bd2ed49dac351c1e34313"
+      },
+      {
+         "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+         "size": 21913353,
+         "digest": "sha256:a21d9ee25fc3dcef76028536e7191e44554a8088250d4c3ec884af23cef4f02a"
+      },
+      {
+         "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+         "size": 202,
+         "digest": "sha256:9bda7d5afd399f51550422c49172f8c9169fc3ffdef2748b13cfbf6467661ac5"
+      }
+   ]
+}
+*/
+//(p *v2Puller) pullSchema2 中构造使用
 type v2LayerDescriptor struct {
+	//manifest内容中的 layers 层中的digest   上面注释中 layers 中的digest
 	digest            digest.Digest
+	//v2Puller.repoInfo
 	repoInfo          *registry.RepositoryInfo
+	//v2Puller.repo
 	repo              distribution.Repository
+	//v2Puller.V2MetadataService
 	V2MetadataService metadata.V2MetadataService
 	tmpFile           *os.File
 	verifier          digest.Verifier
+	//代表上面注释中的manifest中的一小个内容
 	src               distribution.Descriptor
 }
 
@@ -368,16 +400,15 @@ func (p *v2Puller) pullV2Tag(ctx context.Context, ref reference.Named) (tagUpdat
 
 	if tagged, isTagged := ref.(reference.NamedTagged); isTagged { //是否带tag
 		//例如 docker pull mysql:21201010
-		//(r *repository) Get
-		fmt.Printf("yang test  pullV2tag 1111 \n\n")
+		//(r *manifests) Get  //获取manifests 文件内容，然后反序列化存入  Manifest 结构
 		manifest, err = manSvc.Get(ctx, "", distribution.WithTag(tagged.Tag()))
 		if err != nil {
 			return false, allowV1Fallback(err)
 		}
 		tagOrDigest = tagged.Tag()
 	} else if digested, isDigested := ref.(reference.Canonical); isDigested { //是否请求通过的是digeste方式
-	    fmt.Printf("yang test  pullV2tag 222 \n\n")
 		//例如docker pull mysql@sha256:89cc6ff6a7ac9916c3384e864fb04b8ee9415b572f872a2a4cf5b909dbbca81b
+		//(r *manifests) Get  //获取manifests 文件内容，然后反序列化存入  Manifest 结构
 		manifest, err = manSvc.Get(ctx, digested.Digest())
 		if err != nil {
 			return false, err
@@ -391,6 +422,7 @@ func (p *v2Puller) pullV2Tag(ctx context.Context, ref reference.Named) (tagUpdat
 		return false, fmt.Errorf("image manifest does not exist for tag or digest %q", tagOrDigest)
 	}
 
+	//manifest 对应的是schema2  V2
 	if m, ok := manifest.(*schema2.DeserializedManifest); ok {
 		var allowedMediatype bool
 		for _, t := range p.config.Schema2Types {
@@ -412,7 +444,7 @@ func (p *v2Puller) pullV2Tag(ctx context.Context, ref reference.Named) (tagUpdat
 	// the other side speaks the v2 protocol.
 	p.confirmedV2 = true
 
-	logrus.Debugf("Pulling ref from V2 registry: %s�� repo.named:%s", reference.FamiliarString(ref), p.repo.Named())
+	logrus.Debugf("Pulling ref from V2 registry: %s， repo.named:%s", reference.FamiliarString(ref), p.repo.Named())
 	progress.Message(p.config.ProgressOutput, tagOrDigest, "Pulling from "+reference.FamiliarName(p.repo.Named()))
 
 	var (
@@ -425,19 +457,16 @@ func (p *v2Puller) pullV2Tag(ctx context.Context, ref reference.Named) (tagUpdat
 		if p.config.RequireSchema2 {
 			return false, fmt.Errorf("invalid manifest: not schema2")
 		}
-		fmt.Printf("yang test .. pullV2Tag.SignedManifest.\n\n")
 		id, manifestDigest, err = p.pullSchema1(ctx, ref, v)
 		if err != nil {
 			return false, err
 		}
 	case *schema2.DeserializedManifest:
-	    fmt.Printf("yang test .. pullV2Tag.DeserializedManifest.\n\n")
 		id, manifestDigest, err = p.pullSchema2(ctx, ref, v)
 		if err != nil {
 			return false, err
 		}
 	case *manifestlist.DeserializedManifestList:
-	    fmt.Printf("yang test .. pullV2Tag.DeserializedManifestList.\n\n")
 		id, manifestDigest, err = p.pullManifestList(ctx, ref, v)
 		if err != nil {
 			return false, err
@@ -474,7 +503,7 @@ func (p *v2Puller) pullV2Tag(ctx context.Context, ref reference.Named) (tagUpdat
 	return true, nil
 }
 
-//下载镜像
+//下载镜像  (p *v2Puller) pullV2Tag 中执行
 func (p *v2Puller) pullSchema1(ctx context.Context, ref reference.Named, unverifiedManifest *schema1.SignedManifest) (id digest.Digest, manifestDigest digest.Digest, err error) {
 	var verifiedManifest *schema1.Manifest
 	verifiedManifest, err = verifySchema1Manifest(unverifiedManifest, ref)
@@ -549,14 +578,33 @@ func (p *v2Puller) pullSchema1(ctx context.Context, ref reference.Named, unverif
 	return imageID, manifestDigest, nil
 }
 
-//下载镜像
+//下载镜像 (p *v2Puller) pullV2Tag 中执行
 func (p *v2Puller) pullSchema2(ctx context.Context, ref reference.Named, mfst *schema2.DeserializedManifest) (id digest.Digest, manifestDigest digest.Digest, err error) {
+	//返回HTTP请求的 manifest 包体内容
 	manifestDigest, err = schema2ManifestDigest(ref, mfst)
 	if err != nil {
 		return "", "", err
 	}
 
-	target := mfst.Target()
+	//schema2\manifest.go 中的 (m Manifest) Target()
+	//获取manifest中的Config信息
+	target := mfst.Target() //获取 DeserializedManifest.Manifest.Config 内容
+
+	/*  manifest文件内容 (ms *manifests) Get 函数获取manifest文件，并打印内容
+	{
+	   ......
+	   "config": {
+	      "mediaType": "application/vnd.docker.container.image.v1+json",
+	      "size": 5836,
+	      "digest": "sha256:40960efd7b8f44ed5cafee61c189a8f4db39838848d41861898f56c29565266e"
+	   },
+	   "layers": [
+	      ....
+	   ]
+	}
+	*/
+	//查询镜像配置，如果 digest 已经存在直接返回  (is *store) Get
+	// 检查/var/lib/docker/image/devicemapper/imagedb/content/sha256目录是否有该digest存在
 	if _, err := p.config.ImageStore.Get(target.Digest); err == nil {
 		// If the image already exists locally, no need to pull
 		// anything.
@@ -567,8 +615,31 @@ func (p *v2Puller) pullSchema2(ctx context.Context, ref reference.Named, mfst *s
 
 	// Note that the order of this loop is in the direction of bottom-most
 	// to top-most, so that the downloads slice gets ordered correctly.
+	/*  manifest文件内容 (ms *manifests) Get 函数获取manifest文件，并打印内容
+	{
+	   ......
+	   "layers": [
+	      {
+		 "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+		 "size": 22492350,
+		 "digest": "sha256:bc95e04b23c06ba1b9bf092d07d1493177b218e0340bd2ed49dac351c1e34313"
+	      },
+	      {
+		 "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+		 "size": 21913353,
+		 "digest": "sha256:a21d9ee25fc3dcef76028536e7191e44554a8088250d4c3ec884af23cef4f02a"
+	      },
+	      {
+		 "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+		 "size": 202,
+		 "digest": "sha256:9bda7d5afd399f51550422c49172f8c9169fc3ffdef2748b13cfbf6467661ac5"
+	      }
+	   ]
+	}
+	*/
 	for _, d := range mfst.Layers {
 		layerDescriptor := &v2LayerDescriptor{
+			//manifest内容中的 layers 层中的digest
 			digest:            d.Digest,
 			repo:              p.repo,
 			repoInfo:          p.repoInfo,
@@ -576,6 +647,7 @@ func (p *v2Puller) pullSchema2(ctx context.Context, ref reference.Named, mfst *s
 			src:               d,
 		}
 
+		//所有的layers信息存入 descriptors
 		descriptors = append(descriptors, layerDescriptor)
 	}
 
@@ -776,7 +848,10 @@ func (p *v2Puller) pullManifestList(ctx context.Context, ref reference.Named, mf
 }
 
 func (p *v2Puller) pullSchema2Config(ctx context.Context, dgst digest.Digest) (configJSON []byte, err error) {
+	//(r *repository) Blobs
 	blobs := p.repo.Blobs(ctx)
+	//读取digest对应文件内容  /var/lib/docker/image/devicemapper/imagedb/content/sha256/image 文件内容
+	////从仓库地址通过HTTP获取digest配置信息   (bs *blobs) Get
 	configJSON, err = blobs.Get(ctx, dgst)
 	if err != nil {
 		return nil, err
@@ -798,8 +873,10 @@ func (p *v2Puller) pullSchema2Config(ctx context.Context, dgst digest.Digest) (c
 
 // schema2ManifestDigest computes the manifest digest, and, if pulling by
 // digest, ensures that it matches the requested digest.
+//mfst对应 DeserializedManifest 结构, //返回HTTP请求的 manifest 包体内容
 func schema2ManifestDigest(ref reference.Named, mfst distribution.Manifest) (digest.Digest, error) {
-	_, canonical, err := mfst.Payload()
+	//(m DeserializedManifest) Payload()
+	_, canonical, err := mfst.Payload() //返回http请求的 manifest 包体内容中的mediatype和整个manifest内容
 	if err != nil {
 		return "", err
 	}
@@ -818,6 +895,39 @@ func schema2ManifestDigest(ref reference.Named, mfst distribution.Manifest) (dig
 		return digested.Digest(), nil
 	}
 
+	/*
+	DEBU[0090] Trying to pull nginx from http://a9e61d46.m.daocloud.io/ v2
+	yang test pullV2Repository  1111
+	yang test  pullV2tag 1111
+	yang test ... manifests.get url:http://a9e61d46.m.daocloud.io/v2/library/nginx/manifests/latest
+	{
+	   "schemaVersion": 2,
+	   "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+	   "config": {
+	      "mediaType": "application/vnd.docker.container.image.v1+json",
+	      "size": 5836,
+	      "digest": "sha256:40960efd7b8f44ed5cafee61c189a8f4db39838848d41861898f56c29565266e"
+	   },
+	   "layers": [
+	      {
+		 "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+		 "size": 22492350,
+		 "digest": "sha256:bc95e04b23c06ba1b9bf092d07d1493177b218e0340bd2ed49dac351c1e34313"
+	      },
+	      {
+		 "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+		 "size": 21913353,
+		 "digest": "sha256:a21d9ee25fc3dcef76028536e7191e44554a8088250d4c3ec884af23cef4f02a"
+	      },
+	      {
+		 "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+		 "size": 202,
+		 "digest": "sha256:9bda7d5afd399f51550422c49172f8c9169fc3ffdef2748b13cfbf6467661ac5"
+	      }
+	   ]
+	}
+	*/
+	//返回 manifest 包体内容
 	return digest.FromBytes(canonical), nil
 }
 

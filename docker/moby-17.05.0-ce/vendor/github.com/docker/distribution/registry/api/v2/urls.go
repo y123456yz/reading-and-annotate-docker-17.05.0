@@ -166,6 +166,7 @@ func (ub *URLBuilder) BuildTagsURL(name reference.Named) (string, error) {
 
 // BuildManifestURL constructs a url for the manifest identified by name and
 // reference. The argument reference may be either a tag or digest.
+//根据url获取manifest url
 func (ub *URLBuilder) BuildManifestURL(ref reference.Named) (string, error) {
 	route := ub.cloneRoute(RouteNameManifest)
 

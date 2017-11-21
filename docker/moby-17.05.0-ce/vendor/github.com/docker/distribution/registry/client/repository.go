@@ -436,7 +436,8 @@ func (o contentDigestOption) Apply(ms distribution.ManifestService) error {
 	return nil
 }
 
-//获取manifests 文件
+//获取manifests 文件内容，然后反序列化存入  Manifest 结构，并返回  (p *v2Puller) pullV2Tag 中执行
+//从镜像地址获取 manifest 信息
 func (ms *manifests) Get(ctx context.Context, dgst digest.Digest, options ...distribution.ManifestServiceOption) (distribution.Manifest, error) {
 	var (
 		digestOrTag string
@@ -470,12 +471,16 @@ func (ms *manifests) Get(ctx context.Context, dgst digest.Digest, options ...dis
 		}
 	}
 
+	////根据url获取manifest url
 	u, err := ms.ub.BuildManifestURL(ref)
 	if err != nil {
 		return nil, err
 	}
 
-    fmt.Printf("yang test ... manifests.get url:%s\n\n", u)
+	/*
+	    yang test ... manifests.get url:http://a9e61d46.m.daocloud.io/v2/library/nginx/manifests/latest
+	    fmt.Printf("yang test ... manifests.get url:%s\n\n", u)
+	*/
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		return nil, err
@@ -505,13 +510,49 @@ func (ms *manifests) Get(ctx context.Context, dgst digest.Digest, options ...dis
 			}
 		}
 		mt := resp.Header.Get("Content-Type")
+
+		//读取http包体内容
 		body, err := ioutil.ReadAll(resp.Body)
 
 		if err != nil {
 			return nil, err
 		}
 
-		fmt.Println(string(body)) //yang test
+		/* http报文体中携带的manifest内容信息   docker pull nginx  (ms *manifests) Get 函数获取manifest文件，并打印内容
+		{
+		   "schemaVersion": 2,
+		   "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+		   "config": {
+		      "mediaType": "application/vnd.docker.container.image.v1+json",
+		      "size": 5836,
+		      "digest": "sha256:40960efd7b8f44ed5cafee61c189a8f4db39838848d41861898f56c29565266e"
+		   },
+		   "layers": [
+		      {
+			 "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+			 "size": 22492350,
+			 "digest": "sha256:bc95e04b23c06ba1b9bf092d07d1493177b218e0340bd2ed49dac351c1e34313"
+		      },
+		      {
+			 "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+			 "size": 21913353,
+			 "digest": "sha256:a21d9ee25fc3dcef76028536e7191e44554a8088250d4c3ec884af23cef4f02a"
+		      },
+		      {
+			 "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+			 "size": 202,
+			 "digest": "sha256:9bda7d5afd399f51550422c49172f8c9169fc3ffdef2748b13cfbf6467661ac5"
+		      }
+		   ]
+		}
+		*/
+		//fmt.Println(string(body)) 打印HTTP包体内容
+
+	/*
+	如果HTTP ctHeader 头部中的resp.Header.Get("Content-Type")为"application/json",则执行 schema1Func，返回 SignedManifest，Descriptor
+	如果头部字段Content-Type内容为"application/vnd.docker.distribution.manifest.v2+json"对应V2，则执行 schema2Func，返回 DeserializedManifest，Descriptor
+	如果头部字段Content-Type内容为"application/vnd.docker.distribution.manifest.list.v2+json"则对应 manifestlist，则执行 manifestListFunc，返回 DeserializedManifestList，Descriptor
+	*/
 		m, _, err := distribution.UnmarshalManifest(mt, body)
 		if err != nil {
 			return nil, err
@@ -621,6 +662,7 @@ func (ms *manifests) Delete(ctx context.Context, dgst digest.Digest) error {
 	panic("not supported")
 }*/
 
+//(r *repository) Blobs 中构造使用
 type blobs struct {
 	name   reference.Named
 	ub     *v2.URLBuilder
@@ -649,16 +691,20 @@ func (bs *blobs) Stat(ctx context.Context, dgst digest.Digest) (distribution.Des
 
 }
 
+//从仓库地址通过HTTP获取digest配置信息
 func (bs *blobs) Get(ctx context.Context, dgst digest.Digest) ([]byte, error) {
+	// 构造一个httpReadSeeker 结构
 	reader, err := bs.Open(ctx, dgst)
 	if err != nil {
 		return nil, err
 	}
 	defer reader.Close()
 
+	//通过HTTP请求从远端获取reader指定的内容
 	return ioutil.ReadAll(reader)
 }
 
+// 构造一个httpReadSeeker 结构
 func (bs *blobs) Open(ctx context.Context, dgst digest.Digest) (distribution.ReadSeekCloser, error) {
 	ref, err := reference.WithDigest(bs.name, dgst)
 	if err != nil {
@@ -669,7 +715,6 @@ func (bs *blobs) Open(ctx context.Context, dgst digest.Digest) (distribution.Rea
 		return nil, err
 	}
 
-    fmt.Printf("yang test .... blobs.open, blobURL:%s\n", blobURL)
 	return transport.NewHTTPReadSeeker(bs.client, blobURL,
 		func(resp *http.Response) error {
 			if resp.StatusCode == http.StatusNotFound {
@@ -790,6 +835,7 @@ func (bs *blobs) Delete(ctx context.Context, dgst digest.Digest) error {
 	return bs.statter.Clear(ctx, dgst)
 }
 
+//(r *repository) Blobs 中构造使用
 type blobStatter struct {
 	name   reference.Named
 	ub     *v2.URLBuilder

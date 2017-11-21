@@ -106,7 +106,7 @@ func (f *Field) UnmarshalText(p []byte) error {
 }
 
 // Named is an object with a full name
-type Named interface { //RepositoryInfo结构包含该结构
+type Named interface { //RepositoryInfo 结构包含该结构
 	Reference
 	Name() string
 }
