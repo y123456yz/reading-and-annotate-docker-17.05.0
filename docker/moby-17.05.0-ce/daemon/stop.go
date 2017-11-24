@@ -78,6 +78,8 @@ func (daemon *Daemon) containerStop(container *container.Container, seconds int)
 		}
 	}
 
+    fmt.Printf("yang test ....containerStop...\n");
 	daemon.LogContainerEvent(container, "stop")
+	fmt.Printf("yang test ..222..containerStop...\n");
 	return nil
 }

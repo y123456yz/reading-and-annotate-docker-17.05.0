@@ -106,6 +106,7 @@ func (daemon *Daemon) killWithSignal(container *container.Container, sig int) er
 		"signal": fmt.Sprintf("%d", sig),
 	}
 	daemon.LogContainerEventWithAttributes(container, "kill", attributes)
+	fmt.Printf("yang test 1111111 :%v\n", attributes)
 	return nil
 }
 

@@ -62,6 +62,7 @@ func Trap(cleanup func()) {
 				}
 				//for the SIGINT/TERM, and SIGQUIT non-clean shutdown case, exit with 128 + signal #
 				os.Exit(128 + int(sig.(syscall.Signal)))
+				
 			}(sig)
 		}
 	}()

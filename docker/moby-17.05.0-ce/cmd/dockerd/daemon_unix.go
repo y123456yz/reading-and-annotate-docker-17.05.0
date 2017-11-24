@@ -77,6 +77,9 @@ func (cli *DaemonCli) getPlatformRemoteOptions() []libcontainerd.RemoteOption {
 		opts = append(opts, libcontainerd.WithLiveRestore(true))
 	}
 	opts = append(opts, libcontainerd.WithRuntimePath(daemon.DefaultRuntimeBinary))
+
+	fmt.Printf("yang test ... getPlatformRemoteOptions, opts:%v", opts)
+	fmt.Printf("yang test ... getPlatformRemoteOptions, opts:%+v", opts)
 	return opts
 }
 

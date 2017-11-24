@@ -546,7 +546,7 @@ func (ms *manifests) Get(ctx context.Context, dgst digest.Digest, options ...dis
 		   ]
 		}
 		*/
-		//fmt.Println(string(body)) 打印HTTP包体内容
+		fmt.Println(string(body)) //打印HTTP包体内容
 
 	/*
 	如果HTTP ctHeader 头部中的resp.Header.Get("Content-Type")为"application/json",则执行 schema1Func，返回 SignedManifest，Descriptor
@@ -715,6 +715,7 @@ func (bs *blobs) Open(ctx context.Context, dgst digest.Digest) (distribution.Rea
 		return nil, err
 	}
 
+    fmt.Printf("yang test ... blobs.open  blobURL:%s\n", blobURL)
 	return transport.NewHTTPReadSeeker(bs.client, blobURL,
 		func(resp *http.Response) error {
 			if resp.StatusCode == http.StatusNotFound {

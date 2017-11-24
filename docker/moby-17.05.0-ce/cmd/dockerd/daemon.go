@@ -343,6 +343,7 @@ func (cli *DaemonCli) start(opts daemonOptions) (err error) {
 	// Wait for serve API to complete
 	errAPI := <-serveAPIWait //前面的go api.Wait(serveAPIWait)处理Url请求，如果server异常，则会走到这里，最终结束服务
 	c.Cleanup()// 关闭cluster
+	fmt.Printf("yang test...... shutdowndaemon\n");
 	shutdownDaemon(d)// 关闭daemon
 	containerdRemote.Cleanup()// 关闭 container
 	if errAPI != nil {

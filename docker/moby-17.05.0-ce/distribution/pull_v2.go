@@ -667,6 +667,8 @@ func (p *v2Puller) pullSchema2(ctx context.Context, ref reference.Named, mfst *s
 			cancel()
 			return
 		}
+		fmt.Printf("yang test 11111111111111\n");
+        fmt.Println(string(configJSON)) //yang test
 		configChan <- configJSON
 	}()
 
@@ -691,6 +693,7 @@ func (p *v2Puller) pullSchema2(ctx context.Context, ref reference.Named, mfst *s
 			return "", "", err
 		}
 
+        
 		if configRootFS == nil {
 			return "", "", errRootFSInvalid
 		}
@@ -868,6 +871,7 @@ func (p *v2Puller) pullSchema2Config(ctx context.Context, dgst digest.Digest) (c
 		return nil, err
 	}
 
+    
 	return configJSON, nil
 }
 
@@ -927,6 +931,8 @@ func schema2ManifestDigest(ref reference.Named, mfst distribution.Manifest) (dig
 	   ]
 	}
 	*/
+
+	
 	//返回 manifest 包体内容
 	return digest.FromBytes(canonical), nil
 }

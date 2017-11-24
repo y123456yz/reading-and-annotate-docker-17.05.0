@@ -112,12 +112,16 @@ func (ldm *LayerDownloadManager) Download(ctx context.Context, initialRootFS ima
 		key := descriptor.Key()
 		transferKey += key
 
+        fmt.Printf("LayerDownloadManager.download key:%s, transferKey:%s, descriptorID:%s\n", 
+            key, transferKey, descriptor.ID());
 		if !missingLayer {
 			missingLayer = true
 			diffID, err := descriptor.DiffID()
+			fmt.Printf("LayerDownloadManager.download DiffID:%s\n", diffID)
 			if err == nil {
 				getRootFS := rootFS
 				getRootFS.Append(diffID)
+				fmt.Printf("LayerDownloadManager.download ChainID:%s\n", getRootFS.ChainID())
 				l, err := ldm.layerStore.Get(getRootFS.ChainID())
 				if err == nil {
 					// Layer already exists.

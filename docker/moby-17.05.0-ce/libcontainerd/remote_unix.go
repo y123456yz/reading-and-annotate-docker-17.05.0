@@ -74,6 +74,7 @@ type remote struct { //func New （libcontainerd\remote_unix.go中的 New中构�
 //runContainerdDaemon 在该函数中运行
 //func (cli *DaemonCli) start(opts daemonOptions) (err error) 中调用libcontainerd.New()执行该函数
 func New(stateDir string, options ...RemoteOption) (_ Remote, err error) {
+    yangyazhoutest()
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("Failed to connect to containerd. Please make sure containerd is installed in your PATH or you have specified the correct address. Got error: %v", err)
@@ -100,6 +101,7 @@ func New(stateDir string, options ...RemoteOption) (_ Remote, err error) {
 
 	if r.startDaemon {
 		//run container daemon
+		fmt.Printf("yang test ..... newdaemon...........")
 		if err := r.runContainerdDaemon(); err != nil {
 			return nil, err
 		}
