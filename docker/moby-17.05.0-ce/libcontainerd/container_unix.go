@@ -11,7 +11,6 @@ import (
 	"sync"
 	"syscall"
 	"time"
-	"fmt"
 
 	"github.com/Sirupsen/logrus"
 	containerd "github.com/docker/containerd/api/grpc/types"
@@ -175,13 +174,6 @@ func (ctr *container) start(checkpoint string, checkpointDir string, attachStdio
 	ctr.systemPid = systemPid(resp.Container)
 	close(ready)
 
-	si := StateInfo{
-		CommonStateInfo: CommonStateInfo{
-			State: StateStart,
-			Pid:   ctr.systemPid, // Not sure this is needed? Double-check monitor.go in daemon BUGBUG @jhowardmsft
-		}}
-
-    fmt.Printf("yang test  libcontainerd: start() completed OK, %+v\n", si)
 	return ctr.client.backend.StateChanged(ctr.containerID, StateInfo{
 		CommonStateInfo: CommonStateInfo{
 			State: StateStart,

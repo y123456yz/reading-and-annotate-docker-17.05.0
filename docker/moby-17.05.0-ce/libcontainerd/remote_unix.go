@@ -40,11 +40,15 @@ const (
 	containerdPidFilename        = "docker-containerd.pid"
 	containerdSockFilename       = "docker-containerd.sock"
 	containerdStateDir           = "containerd"
+	//run/docker/libcontainerd/event.ts
 	eventTimestampFilename       = "event.ts"
 )
 
 //dockerd和docker-containerd之间的rpc通信用  对应的服务端RPC为containerd程序中的 apiServer 中实现的相关接口
+//参数赋值可以参考 getPlatformRemoteOptions   和remote_unix.go中的New，配合阅读
+//client_linux.go中包含 remote 结构成员， (r *remote) Client 中remote被赋值个client.remote c
 type remote struct { //func New （libcontainerd\remote_unix.go中的 New中构造该结构）
+	//例如 (r *remote) Client->r.Lock()就会用到该锁
 	sync.RWMutex
 	//dockerd和docker-containerd之间的rpc client结构   对应的服务端RPC为containerd程序中的 apiServer, 例如dockerd create 容器对应的是 (s *apiServer) CreateContainer
 	apiClient            containerd.APIClient
@@ -53,18 +57,30 @@ type remote struct { //func New （libcontainerd\remote_unix.go中的 New中构�
 	//getLibcontainerdRoot   /run/docker/libcontainerd/
 	stateDir             string
 	rpcAddr              string //域套接字docker-containerd.sock
+	//默认ture
 	startDaemon          bool
 	closeManually        bool
+	//是否启用containerd的debug
 	debugLog             bool
 	//dockerd和docker-containerd之间的rpc链接
 	rpcConn              *grpc.ClientConn
+	//获取grpc的client结构，见(r *remote) Client
 	clients              []*client
+	//run/docker/libcontainerd/event.ts
 	eventTsPath          string
 	runtime              string
 	runtimeArgs          []string
-	//赋值见runContainerdDaemon，和handleConnectionChange配合阅读
+	//赋值见runContainerdDaemon，和 handleConnectionChange 配合阅读，等待containerd进程执行结束，及等待cmd.wait
 	daemonWaitCh         chan struct{}
+	/*
+	docker 1.12增加了--live-restore的选项，去掉了docker 进程的依赖，就是说在节点，如果service docker stop或者docker服务进程异常退出，
+	在原来的docker版本，那么所有开启的docker container都会挂掉，惨了，相当于很多个container就失效了；也造成了单机的docker是单点的；
+	那么1.12来了，解决了这个实际运用的问题，就是dockerd服务怎样关闭，容器照样运行，服务恢复后，容器也可以再被服务抓到并可管理。
+	参考 http://blog.sina.com.cn/s/blog_67fbe4650102x2po.html
+	*/
+	//(r *remote) Client 赋值给 client.liveRestore
 	liveRestore          bool
+	// --oom-score-adjust int                  Set the oom_score_adj for the daemon (default -500)
 	oomScore             int
 	restoreFromTimestamp *timestamp.Timestamp
 }
@@ -73,8 +89,8 @@ type remote struct { //func New （libcontainerd\remote_unix.go中的 New中构�
 //  /var/run/docker路径 ，创建 containerd Remote，container相关处理启动grpc的client api，事件监控等
 //runContainerdDaemon 在该函数中运行
 //func (cli *DaemonCli) start(opts daemonOptions) (err error) 中调用libcontainerd.New()执行该函数
+//用来构造和docker-containerd通信的相关remote类，并启动 docker-containerd 进程
 func New(stateDir string, options ...RemoteOption) (_ Remote, err error) {
-    yangyazhoutest()
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("Failed to connect to containerd. Please make sure containerd is installed in your PATH or you have specified the correct address. Got error: %v", err)
@@ -85,7 +101,9 @@ func New(stateDir string, options ...RemoteOption) (_ Remote, err error) {
 		daemonPid:   -1,
 		eventTsPath: filepath.Join(stateDir, eventTimestampFilename),
 	}
-	for _, option := range options {
+
+	//获取 Remote 配置信息
+	for _, option := range options { //options来源 getPlatformRemoteOptions
 		if err := option.Apply(r); err != nil {
 			return nil, err
 		}
@@ -101,7 +119,6 @@ func New(stateDir string, options ...RemoteOption) (_ Remote, err error) {
 
 	if r.startDaemon {
 		//run container daemon
-		fmt.Printf("yang test ..... newdaemon...........")
 		if err := r.runContainerdDaemon(); err != nil {
 			return nil, err
 		}
@@ -124,12 +141,14 @@ func New(stateDir string, options ...RemoteOption) (_ Remote, err error) {
 
 	// Get the timestamp to restore from
 	t := r.getLastEventTimestamp()
+	//转换/run/docker/libcontainerd$ cat event.ts     2017-11-16T08:02:40.39566466Z 为timestamp
 	tsp, err := ptypes.TimestampProto(t)
 	if err != nil {
 		logrus.Errorf("libcontainerd: failed to convert timestamp: %q", err)
 	}
 	r.restoreFromTimestamp = tsp
 
+	//500ms一次进行保活检查
 	go r.handleConnectionChange()
 
 	if err := r.startEventsMonitor(); err != nil {
@@ -139,6 +158,7 @@ func New(stateDir string, options ...RemoteOption) (_ Remote, err error) {
 	return r, nil
 }
 
+//reloadLiveRestore 中 加载到 "live-restore" 执行
 func (r *remote) UpdateOptions(options ...RemoteOption) error {
 	for _, option := range options {
 		if err := option.Apply(r); err != nil {
@@ -148,11 +168,14 @@ func (r *remote) UpdateOptions(options ...RemoteOption) error {
 	return nil
 }
 
+//用于containerd和dockerd的保活，见dockerd的handleConnectionChange，和containerd的 containerd\main.go 中的 startServer
+//500ms一次进行保活检查
 func (r *remote) handleConnectionChange() {
 	var transientFailureCount = 0
 
 	ticker := time.NewTicker(500 * time.Millisecond)
 	defer ticker.Stop()
+	//返回 healthClient 结构
 	healthClient := grpc_health_v1.NewHealthClient(r.rpcConn)
 
 	for {
@@ -160,20 +183,21 @@ func (r *remote) handleConnectionChange() {
 		ctx, cancel := context.WithTimeout(context.Background(), containerdHealthCheckTimeout)
 		_, err := healthClient.Check(ctx, &grpc_health_v1.HealthCheckRequest{})
 		cancel()
-		if err == nil {
+		if err == nil { //正常，则继续下一个定时保活
 			continue
 		}
 
 		logrus.Debugf("libcontainerd: containerd health check returned error: %v", err)
 
 		if r.daemonPid != -1 {
-			if strings.Contains(err.Error(), "is closing") {
+			if strings.Contains(err.Error(), "is closing") { //是我们主动stop 容器的
 				// Well, we asked for it to stop, just return
 				return
 			}
 			// all other errors are transient
 			// Reset state to be notified of next failure
 			transientFailureCount++
+			//多次保护活失败，，说明docker-containerd异常了，则需要重启容器docker-containerd
 			if transientFailureCount >= maxConnectionRetryCount {
 				transientFailureCount = 0
 				if system.IsProcessAlive(r.daemonPid) {
@@ -189,6 +213,8 @@ func (r *remote) handleConnectionChange() {
 	}
 }
 
+//(cli *DaemonCli) start 中执行，当dockerd api server异常的时候才会走到这里
+//dockerd api server异常，则需要Kill  docker-container进程
 func (r *remote) Cleanup() {
 	if r.daemonPid == -1 {
 		return
@@ -216,6 +242,7 @@ func (r *remote) Cleanup() {
 	os.Remove(filepath.Join(r.stateDir, containerdSockFilename))
 }
 
+//NewDaemon 中调用执行  b对应Daemon
 func (r *remote) Client(b Backend) (Client, error) {
 	c := &client{
 		clientCommon: clientCommon{
@@ -225,6 +252,12 @@ func (r *remote) Client(b Backend) (Client, error) {
 		},
 		remote:        r,
 		exitNotifiers: make(map[string]*exitNotifier),
+		/*
+		docker 1.12增加了--live-restore的选项，去掉了docker 进程的依赖，就是说在节点，如果service docker stop或者docker服务进程异常退出，
+		在原来的docker版本，那么所有开启的docker container都会挂掉，惨了，相当于很多个container就失效了；也造成了单机的docker是单点的；
+		那么1.12来了，解决了这个实际运用的问题，就是dockerd服务怎样关闭，容器照样运行，服务恢复后，容器也可以再被服务抓到并可管理。
+		参考 http://blog.sina.com.cn/s/blog_67fbe4650102x2po.html
+		*/
 		liveRestore:   r.liveRestore,
 	}
 
@@ -234,6 +267,7 @@ func (r *remote) Client(b Backend) (Client, error) {
 	return c, nil
 }
 
+//本文件中的 handleEventStream 调用执行
 func (r *remote) updateEventTimestamp(t time.Time) {
 	f, err := os.OpenFile(r.eventTsPath, syscall.O_CREAT|syscall.O_WRONLY|syscall.O_TRUNC, 0600)
 	if err != nil {
@@ -256,6 +290,7 @@ func (r *remote) updateEventTimestamp(t time.Time) {
 	}
 }
 
+//从//run/docker/libcontainerd/event.ts文件中读出最近一次event时间
 func (r *remote) getLastEventTimestamp() time.Time {
 	t := time.Now()
 
@@ -283,6 +318,8 @@ func (r *remote) getLastEventTimestamp() time.Time {
 	return t
 }
 
+//记录 StateStart  StatePause 等事件
+//记录 StateStart  StatePause 等事件，可以参考(ctr *container) start 记录事件过程
 func (r *remote) startEventsMonitor() error {
 	// First, get past events
 	t := r.getLastEventTimestamp()
@@ -293,14 +330,18 @@ func (r *remote) startEventsMonitor() error {
 	er := &containerd.EventsRequest{
 		Timestamp: tsp,
 	}
+
 	events, err := r.apiClient.Events(context.Background(), er, grpc.FailFast(false))
 	if err != nil {
 		return err
 	}
+
+	//记录 StateStart  StatePause 等事件
 	go r.handleEventStream(events)
 	return nil
 }
 
+//记录 StateStart  StatePause 等事件，可以参考(ctr *container) start 记录事件过程
 func (r *remote) handleEventStream(events containerd.API_EventsClient) {
 	for {
 		e, err := events.Recv()
@@ -314,7 +355,10 @@ func (r *remote) handleEventStream(events containerd.API_EventsClient) {
 			go r.startEventsMonitor()
 			return
 		}
-
+		/* 例如  StateStart  StatePause
+		libcontainerd: received containerd event: &types.Event{Type:"start-container", Id:"7a6dd7a4d9fa953ea895d549f5b0a66f1d7c400ac7342b0182ec673b33f7233c", Status:0x0, Pid:"", Timestamp:(*timestamp.Timestamp)(0xc420996820)}
+		libcontainerd: received containerd event: &types.Event{Type:"exit", Id:"7a6dd7a4d9fa953ea895d549f5b0a66f1d7c400ac7342b0182ec673b33f7233c", Status:0x0, Pid:"init", Timestamp:(*timestamp.Timestamp)(0xc420b101f0)}
+		*/
 		logrus.Debugf("libcontainerd: received containerd event: %#v", e)
 
 		var container *container
@@ -363,7 +407,7 @@ func (r *remote) runContainerdDaemon() error {
 		return err
 	}
 
-	if n > 0 { //说明该进程以及存在了
+	if n > 0 { //说明该进程已经存在了
 		pid, err := strconv.ParseUint(string(b[:n]), 10, 64)
 		if err != nil {
 			return err
@@ -452,7 +496,8 @@ func (r *remote) runContainerdDaemon() error {
 	}
 
 	r.daemonWaitCh = make(chan struct{})
-	go func() {
+	go func() { //专门起一个携程来wait containerd进程结束
+		//只有docker-containerd程序执行完毕退出，cmd.wait才会返回
 		cmd.Wait()
 		close(r.daemonWaitCh)
 	}() // Reap our child when needed
@@ -461,12 +506,13 @@ func (r *remote) runContainerdDaemon() error {
 }
 
 // WithRemoteAddr sets the external containerd socket to connect to.
+//getPlatformRemoteOptions 调用执行
 func WithRemoteAddr(addr string) RemoteOption {
 	return rpcAddr(addr)
 }
 
+//remote相关的配置解析相关
 type rpcAddr string
-
 func (a rpcAddr) Apply(r Remote) error {
 	if remote, ok := r.(*remote); ok {
 		remote.rpcAddr = string(a)
@@ -477,12 +523,11 @@ func (a rpcAddr) Apply(r Remote) error {
 
 // WithRuntimePath sets the path of the runtime to be used as the
 // default by containerd
+//remote相关的配置解析相关
 func WithRuntimePath(rt string) RemoteOption {
 	return runtimePath(rt)
 }
-
 type runtimePath string
-
 func (rt runtimePath) Apply(r Remote) error {
 	if remote, ok := r.(*remote); ok {
 		remote.runtime = string(rt)
@@ -496,8 +541,7 @@ func WithRuntimeArgs(args []string) RemoteOption {
 	return runtimeArgs(args)
 }
 
-type runtimeArgs []string
-
+type runtimeArgs []string  //Apply对remote指定参数赋值
 func (rt runtimeArgs) Apply(r Remote) error {
 	if remote, ok := r.(*remote); ok {
 		remote.runtimeArgs = rt

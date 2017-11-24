@@ -103,7 +103,7 @@ func init() {
 //schema1Func := func(b []byte) (distribution.Manifest, distribution.Descriptor, error)
 //中把从仓库中下周的manifest内容反序列化存储到该结构中   distribution\manifest\schema2\manifest.go 中的 type Manifest struct 结构
 // Manifest defines a schema2 manifest.
-//DeserializedManifest 包含该类
+//DeserializedManifest 包含该类   manifest内容在(p *v2Puller) pullV2Tag中获取
 type Manifest struct {
 	manifest.Versioned
 

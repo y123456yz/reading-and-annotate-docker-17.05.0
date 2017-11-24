@@ -86,6 +86,7 @@ docker得到 manifest 后，读取里面image配置文件的digest(sha256)，这
 
 
 /* http报文体中携带的manifest内容信息   docker pull nginx    (ms *manifests) Get 函数获取manifest文件，并打印内容
+manifest内容在(p *v2Puller) pullV2Tag中获取
 {
    "schemaVersion": 2,
    "mediaType": "application/vnd.docker.distribution.manifest.v2+json",

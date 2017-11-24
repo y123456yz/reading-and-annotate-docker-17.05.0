@@ -64,6 +64,26 @@ type cmdProbe struct {
 
 // exec the healthcheck command in the container.
 // Returns the exit code and probe output (if any)
+/*
+HEALTHCHECK
+HEALTHCHECK指令是在Docker 1.12版本加入，此指令有两种格式：
+HEALTHCHECK [OPTIONS] CMD command                   #在容器内运行一个命令检测容器健康
+HEALTHCHECK NONE                                                         #禁止从基础镜像集成任何健康检测
+描述
+HEALTHCHECK 指令告诉docker如何去检测容器仍然在工作，例如你的web容器因为一个无限循环卡住无法创建新的连接它可以告诉容器不再健康，即使现在进程依然在运行。
+容器的初始状态是‘starting’,如果健康检测容器正常他的状态会是'healthy'状态码为“0”, 如果健康检测出现连续失败会出现'unhealthy' 状态码为“1”，如果因为非健康执行退出则为“reserved”状态码为“2”。
+参数介绍：
+可以出现在CMD的参数：
+    --interval=DURATION          #默认间隔30s
+    --timeout=DURATION          #默认超时时间30s
+    --retries=N          #默认重试3次
+
+HEALTHCHECK --interval=5m --timeout=3s \CMD curl -f http://localhost/|| exit 1
+
+上面三个参数连贯起来就是，健康检测默认间隔5分钟运行一次，如果超过3秒则认为超时，如果尝试三次一直失败则认为容器不再健康执行"exit 1"。
+假如说在Dockerfile里面多次出现这个参数，将会采用最后一个HEALTHCHECK 指令，这个是和CMD指令一样的。
+如果你想获取容器现在的状态可以使用“docker inspect [CONTAINER ID ]”获取当前容器的health_status
+*/
 func (p *cmdProbe) run(ctx context.Context, d *Daemon, container *container.Container) (*types.HealthcheckResult, error) {
 
 	cmdSlice := strslice.StrSlice(container.Config.Healthcheck.Test)[1:]

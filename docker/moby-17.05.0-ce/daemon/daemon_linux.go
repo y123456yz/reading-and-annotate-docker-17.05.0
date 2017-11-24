@@ -20,6 +20,7 @@ func getPluginExecRoot(root string) string {
 	return "/run/docker/plugins"
 }
 
+///proc/self/mountinfo 包含了docker中所有容器的mounts信息，然后unmount这些设备
 func (daemon *Daemon) cleanupMountsByID(id string) error {
 	logrus.Debugf("Cleaning up old mountid %s: start.", id)
 	f, err := os.Open("/proc/self/mountinfo")
@@ -31,6 +32,7 @@ func (daemon *Daemon) cleanupMountsByID(id string) error {
 	return daemon.cleanupMountsFromReaderByID(f, id, mount.Unmount)
 }
 
+//unmount 所有容器的磁盘信息
 func (daemon *Daemon) cleanupMountsFromReaderByID(reader io.Reader, id string, unmount func(target string) error) error {
 	if daemon.root == "" {
 		return nil

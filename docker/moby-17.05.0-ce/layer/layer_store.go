@@ -413,6 +413,8 @@ func (ls *layerStore) Get(l ChainID) (Layer, error) {
 	ls.layerL.Lock()
 	defer ls.layerL.Unlock()
 
+	//ls.layerMap[layer] 被根据/var/lib/docker/image/devicemapper/imagedb/content/sha256/$ID文件内容中的diff_ids列表
+	// 算出来的ChainID，被/var/lib/docker/image/devicemapper/imagedb/content/sha256/$ID引用
 	layer := ls.getWithoutLock(l)
 	if layer == nil {
 		return nil, ErrLayerDoesNotExist

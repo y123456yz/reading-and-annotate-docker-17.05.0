@@ -23,6 +23,8 @@ const maxDownloadAttempts = 5
 // layers.
 //NewLayerDownloadManager 中构造使用
 type LayerDownloadManager struct {
+	//对应 Daemon.layerStore ,也就是 type layerStore struct 结构
+	//主要是/var/lib/docker/image/devicemapper/layerdb/相关目录的操作
 	layerStore   layer.Store
 	//被赋值为 transferManager 结构，赋值见NewLayerDownloadManager
 	tm           TransferManager
@@ -63,7 +65,8 @@ func (d *downloadTransfer) result() (layer.Layer, error) {
 }
 
 // A DownloadDescriptor references a layer that may need to be downloaded.
-type DownloadDescriptor interface {
+//v2LayerDescriptor 结构实现该接口方法，参考 (p *v2Puller) pullSchema2       DownloadDescriptorWithRegistered 包含该接口
+type DownloadDescriptor interface { v2LayerDescriptor
 	// Key returns the key used to deduplicate downloads.
 	Key() string
 	// ID returns the ID for display purposes.
@@ -85,9 +88,10 @@ type DownloadDescriptor interface {
 // registered. This allows the user of the download manager to know the DiffID
 // of each registered layer. This method is called if a cast to
 // DownloadDescriptorWithRegistered is successful.
+//使用参考 (ldm *LayerDownloadManager) makeDownloadFuncFromDownload
 type DownloadDescriptorWithRegistered interface {
 	DownloadDescriptor
-	Registered(diffID layer.DiffID)
+	Registered(diffID layer.DiffID) //v2LayerDescriptor 实现该函数
 }
 
 // Download is a blocking function which ensures the requested layers are
@@ -97,6 +101,9 @@ type DownloadDescriptorWithRegistered interface {
 // Download method is called to get the layer tar data. Layers are then
 // registered in the appropriate order.  The caller must call the returned
 // release function once it is done with the returned RootFS object.
+//RootFS
+// (p *v2Puller) pullSchema2 中执行
+//initialRootFS 对应一个新的RootFS结构，layers 对应manifest内容中的"layers"相关的layer信息(v2LayerDescriptor 结构存储)， ImagePullConfig.Config.ProgressOutput
 func (ldm *LayerDownloadManager) Download(ctx context.Context, initialRootFS image.RootFS, layers []DownloadDescriptor, progressOutput progress.Output) (image.RootFS, func(), error) {
 	var (
 		topLayer       layer.Layer
@@ -108,21 +115,52 @@ func (ldm *LayerDownloadManager) Download(ctx context.Context, initialRootFS ima
 	)
 
 	rootFS := initialRootFS
-	for _, descriptor := range layers {
+	/*  manifest文件内容 (ms *manifests) Get 函数获取manifest文件，并打印内容
+	{
+	   ......
+	   "layers": [
+	      {
+		 "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+		 "size": 22492350,
+		 "digest": "sha256:bc95e04b23c06ba1b9bf092d07d1493177b218e0340bd2ed49dac351c1e34313"
+	      },
+	      {
+		 "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+		 "size": 21913353,
+		 "digest": "sha256:a21d9ee25fc3dcef76028536e7191e44554a8088250d4c3ec884af23cef4f02a"
+	      },
+	      {
+		 "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+		 "size": 202,
+		 "digest": "sha256:9bda7d5afd399f51550422c49172f8c9169fc3ffdef2748b13cfbf6467661ac5"
+	      }
+	   ]
+	}
+	*/
+	//下载个层 tar 包镜像文件
+	//遍历manifest中的layer信息
+	for _, descriptor := range layers { //descriptor 为 v2LayerDescriptor 结构，也就是上面的layers信息
+/*
+LayerDownloadManager.download key:v2:sha256:bc95e04b23c06ba1b9bf092d07d1493177b218e0340bd2ed49dac351c1e34313, transferKey:v2:sha256:bc95e04b23c06ba1b9bf092d07d1493177b218e0340bd2ed49dac351c1e34313, descriptorID:bc95e04b23c0
+LayerDownloadManager.download DiffID:sha256:cec7521cdf36a6d4ad8f2e92e41e3ac1b6fa6e05be07fa53cc84a63503bc5700
+LayerDownloadManager.download key:v2:sha256:a21d9ee25fc3dcef76028536e7191e44554a8088250d4c3ec884af23cef4f02a, transferKey:v2:sha256:bc95e04b23c06ba1b9bf092d07d1493177b218e0340bd2ed49dac351c1e34313v2:sha256:a21d9ee25fc3dcef76028536e7191e44554a8088250d4c3ec884af23cef4f02a, descriptorID:a21d9ee25fc3
+*/
 		key := descriptor.Key()
-		transferKey += key
+		transferKey += key //所有的key放到transferKey中通过 ： 分割
 
-        fmt.Printf("LayerDownloadManager.download key:%s, transferKey:%s, descriptorID:%s\n", 
-            key, transferKey, descriptor.ID());
 		if !missingLayer {
 			missingLayer = true
-			diffID, err := descriptor.DiffID()
-			fmt.Printf("LayerDownloadManager.download DiffID:%s\n", diffID)
+			// (ld *v2LayerDescriptor) DiffID()
+			//根据manifest中的digest算出对应的diffid
+			diffID, err := descriptor.DiffID() //
 			if err == nil {
 				getRootFS := rootFS
+				//添加到RootFS.DiffIDs数组
 				getRootFS.Append(diffID)
-				fmt.Printf("LayerDownloadManager.download ChainID:%s\n", getRootFS.ChainID())
-				l, err := ldm.layerStore.Get(getRootFS.ChainID())
+				//(ls *layerStore) Get
+				//var/lib/docker/image/devicemapper/imagedb/content/sha256/$ChainID是否存在
+				//从这里可以看出上层的chainID是下层几个diffID算出来的，因为getRootFS是下面几层的diffID放一起的，所以这里计算包括了下面的几层diffID
+				l, err := ldm.layerStore.Get(getRootFS.ChainID()) //(r *RootFS) ChainID()
 				if err == nil {
 					// Layer already exists.
 					logrus.Debugf("Layer already exists: %s", descriptor.ID())
@@ -131,11 +169,14 @@ func (ldm *LayerDownloadManager) Download(ctx context.Context, initialRootFS ima
 						layer.ReleaseAndLog(ldm.layerStore, topLayer)
 					}
 					topLayer = l
+					//置位false说明本层chainID已经存在，继续检查上层chainID是否存在
 					missingLayer = false
+					//如果diffID层已经存在，则加入到rootFS中
 					rootFS.Append(diffID)
 					// Register this repository as a source of this layer.
 					withRegistered, hasRegistered := descriptor.(DownloadDescriptorWithRegistered)
 					if hasRegistered {
+						//(ld *v2LayerDescriptor) Registered
 						withRegistered.Registered(diffID)
 					}
 					continue
@@ -160,13 +201,14 @@ func (ldm *LayerDownloadManager) Download(ctx context.Context, initialRootFS ima
 		var xferFunc DoFunc
 		if topDownload != nil {
 			//调用makeDownloadFunc创建下载函数xferFunc，xferFunc函数内部初始化一个downloadTransfer 并返回
-			xferFunc = ldm.makeDownloadFunc(descriptor, "", topDownload)
+			xferFunc = ldm.makeDownloadFunc(descriptor, "", topDownload) //(ldm *LayerDownloadManager) makeDownloadFunc
 			defer topDownload.Transfer.Release(watcher)
 		} else {
 			xferFunc = ldm.makeDownloadFunc(descriptor, rootFS.ChainID(), nil)
 		}
 
 		//Transfer函数位于/distribution/xfer/transfer.go，调用xferFunc创建 downloadTransfer并把通道信息传给xferFunc创建的协程，返回Transfer, Watcher
+		//(tm *transferManager) Transfer
 		topDownloadUncasted, watcher = ldm.tm.Transfer(transferKey, xferFunc, progressOutput)
 		topDownload = topDownloadUncasted.(*downloadTransfer) //接口是不是downloadTransfer 类型
 		downloadsByKey[key] = topDownload
@@ -270,6 +312,7 @@ func (ldm *LayerDownloadManager) makeDownloadFunc(descriptor DownloadDescriptor,
 			defer descriptor.Close()
 
 			for {
+				//(ld *v2LayerDescriptor) Download  下载
 				downloadReader, size, err = descriptor.Download(d.Transfer.Context(), progressOutput)
 				if err == nil {
 					break

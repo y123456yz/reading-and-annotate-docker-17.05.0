@@ -17,6 +17,7 @@ type Verifier interface {
 	Verified() bool
 }
 
+//(d Digest) Verifier() 中构造使用
 type hashVerifier struct {
 	digest Digest
 	hash   hash.Hash

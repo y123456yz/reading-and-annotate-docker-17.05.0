@@ -147,6 +147,7 @@ type healthClient struct {
 	cc *grpc.ClientConn
 }
 
+//handleConnectionChange 中调用执行
 func NewHealthClient(cc *grpc.ClientConn) HealthClient {
 	return &healthClient{cc}
 }

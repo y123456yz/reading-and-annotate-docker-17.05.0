@@ -18,6 +18,8 @@ import (
 	"golang.org/x/net/context"
 )
 
+//Daemon.containerd中包含 client 结构，client 结构中包含remote结构
+//(r *remote) Client 中构造使用
 type client struct { //初始化结构实例见 (r *remote) Client(libcontainerd/remote_unix.go)
 	clientCommon  //启动起来的容器存在这里面
 
@@ -25,10 +27,18 @@ type client struct { //初始化结构实例见 (r *remote) Client(libcontainerd
 	remote        *remote
 	q             queue
 	exitNotifiers map[string]*exitNotifier
+	/*
+	docker 1.12增加了--live-restore的选项，去掉了docker 进程的依赖，就是说在节点，如果service docker stop或者docker服务进程异常退出，
+	在原来的docker版本，那么所有开启的docker container都会挂掉，惨了，相当于很多个container就失效了；也造成了单机的docker是单点的；
+	那么1.12来了，解决了这个实际运用的问题，就是dockerd服务怎样关闭，容器照样运行，服务恢复后，容器也可以再被服务抓到并可管理。
+	参考 http://blog.sina.com.cn/s/blog_67fbe4650102x2po.html
+	*/
+	//来源为 remote.liveRestore, 见(r *remote) Client
 	liveRestore   bool
 }
 
 // GetServerVersion returns the connected server version information
+
 func (clnt *client) GetServerVersion(ctx context.Context) (*ServerVersion, error) {
 	resp, err := clnt.remote.apiClient.GetServerVersion(ctx, &containerd.GetServerVersionRequest{})
 	if err != nil {
@@ -231,6 +241,7 @@ func (clnt *client) cleanupOldRootfs(containerID string) {
 	}
 }
 
+//例如dockerd 退出，对应(clnt *client) setExited
 func (clnt *client) setExited(containerID string, exitCode uint32) error {
 	clnt.lock(containerID)
 	defer clnt.unlock(containerID)
@@ -315,6 +326,12 @@ func (clnt *client) getOrCreateExitNotifier(containerID string) *exitNotifier {
 	return w
 }
 
+/*
+docker 1.12增加了--live-restore的选项，去掉了docker 进程的依赖，就是说在节点，如果service docker stop或者docker服务进程异常退出，
+在原来的docker版本，那么所有开启的docker container都会挂掉，惨了，相当于很多个container就失效了；也造成了单机的docker是单点的；
+那么1.12来了，解决了这个实际运用的问题，就是dockerd服务怎样关闭，容器照样运行，服务恢复后，容器也可以再被服务抓到并可管理。
+参考 http://blog.sina.com.cn/s/blog_67fbe4650102x2po.html
+*/
 func (clnt *client) restore(cont *containerd.Container, lastEvent *containerd.Event, attachStdio StdioCallback, options ...CreateOption) (err error) {
 	clnt.lock(cont.Id)
 	defer clnt.unlock(cont.Id)
@@ -450,6 +467,7 @@ func (clnt *client) getContainerLastEvent(id string) (*containerd.Event, error) 
 	return ev, err
 }
 
+//(daemon *Daemon) restore() -> daemon.containerd.Restore 执行该函数
 func (clnt *client) Restore(containerID string, attachStdio StdioCallback, options ...CreateOption) error {
 	// Synchronize with live events
 	clnt.remote.Lock()
@@ -503,6 +521,12 @@ func (clnt *client) Restore(containerID string, attachStdio StdioCallback, optio
 	}
 
 	// container is still alive
+	/*
+	docker 1.12增加了--live-restore的选项，去掉了docker 进程的依赖，就是说在节点，如果service docker stop或者docker服务进程异常退出，
+	在原来的docker版本，那么所有开启的docker container都会挂掉，惨了，相当于很多个container就失效了；也造成了单机的docker是单点的；
+	那么1.12来了，解决了这个实际运用的问题，就是dockerd服务怎样关闭，容器照样运行，服务恢复后，容器也可以再被服务抓到并可管理。
+	参考 http://blog.sina.com.cn/s/blog_67fbe4650102x2po.html
+	*/
 	if clnt.liveRestore {
 		if err := clnt.restore(cont, ev, attachStdio, options...); err != nil {
 			logrus.Errorf("libcontainerd: error restoring %s: %v", containerID, err)

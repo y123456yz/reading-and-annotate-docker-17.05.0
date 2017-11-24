@@ -9,7 +9,9 @@ import (
 	"github.com/opencontainers/runc/libcontainer/system"
 )
 
+//设置进程的oom_score_adj
 func setOOMScore(pid, score int) error {
+	//设置进程的oom_score_adj
 	oomScoreAdjPath := fmt.Sprintf("/proc/%d/oom_score_adj", pid)
 	f, err := os.OpenFile(oomScoreAdjPath, os.O_WRONLY, 0)
 	if err != nil {

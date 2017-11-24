@@ -10,9 +10,13 @@ import (
 
 // CommonUnixConfig defines configuration of a docker daemon that is
 // common across Unix platforms.
+//包含在config\config_unix.go中的 Config 结构中
+// Config 包含 CommonConfig(unix  windos都包含的共用配置)  CommonUnixConfig(unix系统特有的配置)
 type CommonUnixConfig struct {
 	//默认/run/docker/libcontainerd
+	//--exec-root string                      Root directory for execution state files (default "/var/run/docker")
 	ExecRoot          string                   `json:"exec-root,omitempty"`
+	//--containerd string                     Path to containerd socket
 	ContainerdAddr    string                   `json:"containerd,omitempty"`
 	//runc成员赋值见 verifyDaemonSettings
 	Runtimes          map[string]types.Runtime `json:"runtimes,omitempty"`

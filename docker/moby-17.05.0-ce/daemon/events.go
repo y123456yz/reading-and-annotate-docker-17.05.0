@@ -96,6 +96,7 @@ func (daemon *Daemon) LogNetworkEventWithAttributes(nw libnetwork.Network, actio
 }
 
 // LogDaemonEventWithAttributes generates an event related to the daemon itself with specific given attributes.
+//(daemon *Daemon) Reload 重新加载/etc/docker/daemon.json中的配置后，这里记录log事件
 func (daemon *Daemon) LogDaemonEventWithAttributes(action string, attributes map[string]string) {
 	if daemon.EventsService != nil {
 		if info, err := daemon.SystemInfo(); err == nil && info.Name != "" {

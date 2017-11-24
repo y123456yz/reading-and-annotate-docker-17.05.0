@@ -102,7 +102,10 @@ type Daemon struct { //赋值见NewDaemon 见 NewDaemon
 	//镜像存储服务相关信息  赋值见 NewDaemon   registry-mirrors 配置仓库镜像地址
 	// 赋值为 DefaultService 结构，见registry.NewService
 	RegistryService           registry.Service
-	//事件服务相关信息
+	//事件服务相关信息  记录 ContainerEventType 等事件信息
+	//运行docker events，然后开一个终端  kill -HUP dockerd-pid, docker events的终端就可以获取到重新加载生效的配
+	// 置项内容，见LogDaemonEventWithAttributes
+	//注意 ContainerEventType(daemon.EventsService.Log通知给docker events客户端) 和 StateStart(通过 clnt.backend.StateChanged 设置状态，被记录到events.log文件)等的区别
 	EventsService             *events.Events
 	netController             libnetwork.NetworkController
 	//volume所使用的驱动，默认为local类型
@@ -119,7 +122,8 @@ type Daemon struct { //赋值见NewDaemon 见 NewDaemon
 	//赋值见 NewDaemon   通过NewStoreFromOptions返回  实际上为 layerStore 类型，实现有type Store interface {}中包含的函数
 	//layerStore 存储相关的接口方法，结构，源头都在这里
 	layerStore                layer.Store
-	//Store 存储相关的接口方法，结构，源头都在这里  type store struct
+	//Store 存储相关的接口方法(docker\image\store.go)，结构，源头都在这里
+	// type store struct (imageConfigStore 包含该类) 这两个结构共同实现image.Store接口的相关方法
 	// (daemon *Daemon) pullImageWithReference 中赋值给 distribution.Config.ImageStore
 	imageStore                image.Store   //赋值见 NewDaemon  Daemon.imageStore
 	PluginStore               *plugin.Store // todo: remove
@@ -128,8 +132,11 @@ type Daemon struct { //赋值见NewDaemon 见 NewDaemon
 	nameIndex                 *registrar.Registrar
 	//容器的link目录，记录容器的link关系
 	linkIndex                 *linkIndex
-	//libcontainerd->client_unix.go中的(r *remote) Client 中构造该实例
+	//libcontainerd/client_unix.go中的(r *remote) Client 中构造该实例， client (libcontainerd/client_linux.go)结构
+	//NewDaemon 中的 containerdRemote.Client(d)调用(r *remote) Client
+	//Daemon.containerd中包含 client 结构，client 结构中包含remote结构
 	containerd                libcontainerd.Client  //NewDaemon 中赋值
+	//:remote_unix.go中的 remote 结构
 	containerdRemote          libcontainerd.Remote
 	defaultIsolation          containertypes.Isolation // Default isolation mode on Windows
 	clusterProvider           cluster.Provider
@@ -149,6 +156,9 @@ func (daemon *Daemon) HasExperimental() bool {
 	return false
 }
 
+//从文件列表获取容器信息，把容器信息重新加入到Daemon对象的containers字典里
+// (daemon *Daemon) restore()和(daemon *Daemon) Shutdown() 配合阅读
+//NewDaemon 中执行
 func (daemon *Daemon) restore() error {
 	var (
 		currentDriver = daemon.GraphDriverName()
@@ -226,6 +236,8 @@ func (daemon *Daemon) restore() error {
 
 			if c.IsRunning() || c.IsPaused() {
 				c.RestartManager().Cancel() // manually start containers because some need to wait for swarm networking
+				//(daemon *Daemon) restore() -> daemon.containerd.Restore
+				// (clnt *client) Restore
 				if err := daemon.containerd.Restore(c.ID, c.InitializeStdio); err != nil {
 					logrus.Errorf("Failed to restore %s with containerd: %s", c.ID, err)
 					return
@@ -512,7 +524,7 @@ func (daemon *Daemon) IsSwarmCompatible() error {
 // NewDaemon sets up everything for the daemon to be able to service
 // requests from the webserver.
 //dockerd\daemon.go中start函数和daemon\daemon.go中的NewDaemon是理解的主线
-//dockerd\daemon.go中start  func (cli *DaemonCli) start中执行该函数    各个客户端请求，daemon 对应的处理见 initRouter
+//dockerd\daemon.go中start  func (cli *DaemonCli) start中执行该函数    各个客户端请求，daemon 对应的处理见 initRouter   containerdRemote:remote_unix.go中的 remote 结构
 func NewDaemon(config *config.Config, registryService registry.Service, containerdRemote libcontainerd.Remote, pluginStore *plugin.Store) (daemon *Daemon, err error) {
 	setDefaultMtu(config)//  设置默认MTU 1500
 
@@ -576,7 +588,7 @@ func NewDaemon(config *config.Config, registryService registry.Service, containe
 	d := &Daemon{configStore: config}  //创建个daem 实例
 	// Ensure the daemon is properly shutdown if there is a failure during
 	// initialization
-	defer func() {  // 函数退出时 daemon 关闭
+	defer func() {  //如果该函数有异常， 函数退出时 daemon 关闭
 		if err != nil {
 			if err := d.Shutdown(); err != nil {
 				logrus.Error(err)
@@ -770,6 +782,7 @@ func NewDaemon(config *config.Config, registryService registry.Service, containe
 
 	go d.execCommandGC() // 新建协程清理容器不需要的命令
 
+	//remote_unix.go中的 remote 结构   (r *remote) Client
 	d.containerd, err = containerdRemote.Client(d) //  创建和daemon相关的容器客户端 libcontainerd
 	if err != nil {
 		return nil, err
@@ -796,6 +809,7 @@ func NewDaemon(config *config.Config, registryService registry.Service, containe
 	return d, nil
 }
 
+//shutdownDaemon->(daemon *Daemon) Shutdown(daemon *Daemon) shutdownContainer
 func (daemon *Daemon) shutdownContainer(c *container.Container) error {
 	stopTimeout := c.StopTimeout()
 	// TODO(windows): Handle docker restart with paused containers
@@ -838,6 +852,7 @@ func (daemon *Daemon) shutdownContainer(c *container.Container) error {
 
 // ShutdownTimeout returns the shutdown timeout based on the max stopTimeout of the containers,
 // and is limited by daemon's ShutdownTimeout.
+//<0表示dockerd不需要等待docker-container，直接退出
 func (daemon *Daemon) ShutdownTimeout() int {
 	// By default we use daemon's ShutdownTimeout.
 	shutdownTimeout := daemon.configStore.ShutdownTimeout
@@ -861,11 +876,44 @@ func (daemon *Daemon) ShutdownTimeout() int {
 }
 
 /*
+yang test...... shutdowndaemon
+DEBU[0008] start clean shutdown of all containers with a 15 seconds timeout...
+DEBU[0008] stopping a03ba4be9253da77f51789a45320f32a3c40775c042f9825a95126be8f041009
+DEBU[0008] Sending kill signal 15 to container a03ba4be9253da77f51789a45320f32a3c40775c042f9825a95126be8f041009
+DEBU[0008] containerd: process exited                    id=a03ba4be9253da77f51789a45320f32a3c40775c042f9825a95126be8f041009 pid=init status=0 systemPid=5020
+DEBU[0008] libcontainerd: received containerd event: &types.Event{Type:"exit", Id:"a03ba4be9253da77f51789a45320f32a3c40775c042f9825a95126be8f041009", Status:0x0, Pid:"init", Timestamp:(*timestamp.Timestamp)(0xc420add1e0)}
+DEBU[0008] attach: stdout: end
+DEBU[0008] attach: stdin: end
+DEBU[0008] attach: stderr: end
+DEBU[0008] Closing buffered stdin pipe
+DEBU[0008] Revoking external connectivity on endpoint gifted_kalam (ecb6404d39571e71daf87f15c01fecb62c7b34d35a8cd4fbb21ac7052038a6aa)
+DEBU[0008] DeleteConntrackEntries purged ipv4:0, ipv6:0
+DEBU[0008] Releasing addresses for endpoint gifted_kalam's interface on network bridge
+DEBU[0008] ReleaseAddress(LocalDefault/172.17.0.0/16, 172.17.0.2)
+DEBU[0008] GetMountID id: a03ba4be9253da77f51789a45320f32a3c40775c042f9825a95126be8f041009 -> mountID: c3efd7a946c91f41aea7a3b39f0c1aa5aa467808b3af2eb13f5da1a1520275d7
+DEBU[0008] Cleaning up old mountid c3efd7a946c91f41aea7a3b39f0c1aa5aa467808b3af2eb13f5da1a1520275d7: start.
+DEBU[0008] Cleaning up old mountid c3efd7a946c91f41aea7a3b39f0c1aa5aa467808b3af2eb13f5da1a1520275d7: done.
+DEBU[0008] container stopped a03ba4be9253da77f51789a45320f32a3c40775c042f9825a95126be8f041009
+DEBU[0008] Cleaning up old mountid : start.
+DEBU[0008] Unix socket /run/docker/libnetwork/e0659a882cd5bf52dc86bbf93e59434a2853437597719beaea3fcc2d399426ed.sock doesn't exist. cannot accept client connections
+DEBU[0008] Cleaning up old mountid : done.
+DEBU[0008] Clean shutdown succeeded
+INFO[0008] stopping containerd after receiving terminated
+DEBU[0008] Removing volume reference: driver local, name 9538ead40649c827ba7f218eb3e28c79f796c73e8b524095d0d8d48a2cd30a51
+ERRO[0008] Error removing volume metadata for volume "9538ead40649c827ba7f218eb3e28c79f796c73e8b524095d0d8d48a2cd30a51": database not open
+DEBU[0008] Client context cancelled, stop sending events
+DEBU[0008] libcontainerd: containerd health check returned error: rpc error: code = 9 desc = grpc: the client connection is closing
+yang test ....44444444444444444......... ExecuteC
+*/
+/*
 遍历所有运行中的容器，先使用SIGTERM软杀死容器进程，如果10S内不能完成，则使用SIGKILL强制杀死
 如果netcontroller被初始化过，调用libnetwork/controller.go GC方法进行垃圾回收
 结束运行中的镜像存储驱动进程
 */
+// (daemon *Daemon) restore()和(daemon *Daemon) Shutdown() 配合阅读
 // Shutdown stops the daemon.
+//例如kill  dockerd进程会触发走这里   shutdownDaemon 中调用执行，kill docker-containerd进程，unmount所有容器的设备
+//shutdownDaemon->(daemon *Daemon) Shutdown
 func (daemon *Daemon) Shutdown() error {
 	daemon.shutdown = true
 	// Keep mounts and networking running on daemon shutdown if
@@ -879,6 +927,7 @@ func (daemon *Daemon) Shutdown() error {
 	}
 
 	if daemon.containers != nil {
+		//kill dockerd进程会走这里面退出
 		logrus.Debugf("start clean shutdown of all containers with a %d seconds timeout...", daemon.configStore.ShutdownTimeout)
 		daemon.containers.ApplyAll(func(c *container.Container) {
 			if !c.IsRunning() {

@@ -149,6 +149,7 @@ func (serv *v2MetadataService) GetDiffID(dgst digest.Digest) (layer.DiffID, erro
 	if serv.store == nil {
 		return layer.DiffID(""), errors.New("no metadata storage")
 	}
+	//(store *FSMetadataStore) Get
 	diffIDBytes, err := serv.store.Get(serv.digestNamespace(), serv.digestKey(dgst))
 	if err != nil {
 		return layer.DiffID(""), err

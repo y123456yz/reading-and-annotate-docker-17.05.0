@@ -54,6 +54,8 @@ func (daemon *Daemon) ContainerKill(name string, sig uint64) error {
 // to send the signal. An error is returned if the container is paused
 // or not running, or if there is a problem returned from the
 // underlying kill command.
+//想containerd发送kill信号
+//shutdownDaemon->(daemon *Daemon) Shutdown(daemon *Daemon) shutdownContainer->(daemon *Daemon) containerStop->(daemon *Daemon)killPossiblyDeadProcess->killWithSignal
 func (daemon *Daemon) killWithSignal(container *container.Container, sig int) error {
 	logrus.Debugf("Sending kill signal %d to container %s", sig, container.ID)
 	container.Lock()
@@ -105,8 +107,8 @@ func (daemon *Daemon) killWithSignal(container *container.Container, sig int) er
 	attributes := map[string]string{
 		"signal": fmt.Sprintf("%d", sig),
 	}
+
 	daemon.LogContainerEventWithAttributes(container, "kill", attributes)
-	fmt.Printf("yang test 1111111 :%v\n", attributes)
 	return nil
 }
 
@@ -150,6 +152,7 @@ func (daemon *Daemon) Kill(container *container.Container) error {
 }
 
 // killPossibleDeadProcess is a wrapper around killSig() suppressing "no such process" error.
+//shutdownDaemon->(daemon *Daemon) Shutdown(daemon *Daemon) shutdownContainer->(daemon *Daemon) containerStop->(daemon *Daemon)killPossiblyDeadProcess
 func (daemon *Daemon) killPossiblyDeadProcess(container *container.Container, sig int) error {
 	err := daemon.killWithSignal(container, sig)
 	if err == syscall.ESRCH {
@@ -160,6 +163,8 @@ func (daemon *Daemon) killPossiblyDeadProcess(container *container.Container, si
 	return err
 }
 
+//shutdownDaemon->(daemon *Daemon) Shutdown(daemon *Daemon) shutdownContainer->(daemon *Daemon) containerStop->(daemon *Daemon)killPossiblyDeadProcess->killWithSignal
 func (daemon *Daemon) kill(c *container.Container, sig int) error {
+	//(clnt *client) Signal
 	return daemon.containerd.Signal(c.ID, sig)
 }

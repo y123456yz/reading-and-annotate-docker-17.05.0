@@ -125,6 +125,7 @@ type downloadManager struct {
 	configDigest digest.Digest
 }
 
+///initialRootFS 对应一个新的RootFS结构，layers 对应manifest内容中的"layers"相关的layer信息， ImagePullConfig.Config.ProgressOutput
 func (dm *downloadManager) Download(ctx context.Context, initialRootFS image.RootFS, layers []xfer.DownloadDescriptor, progressOutput progress.Output) (image.RootFS, func(), error) {
 	for _, l := range layers {
 		b, err := dm.blobStore.New()

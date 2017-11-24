@@ -23,6 +23,9 @@ import (
 // - Insecure registries
 // - Registry mirrors
 // - Daemon live restore
+//运行的docker可以从新加载配置信息，例如修改了系统配置可以通过该方式重新加载，设置新的配置信息
+//(cli *DaemonCli) reloadConfig() 中执行
+//重新加载配置信息 (cli *DaemonCli) setupConfigReloadTrap->(cli *DaemonCli) reloadConfig->cli.d.Reload(config)
 func (daemon *Daemon) Reload(conf *config.Config) (err error) {
 	daemon.configStore.Lock()
 	attributes := map[string]string{}
@@ -269,6 +272,7 @@ func (daemon *Daemon) reloadRegistryMirrors(conf *config.Config, attributes map[
 
 // reloadLiveRestore updates configuration with live retore option
 // and updates the passed attributes
+//加载live-restore 配置
 func (daemon *Daemon) reloadLiveRestore(conf *config.Config, attributes map[string]string) error {
 	// update corresponding configuration
 	if conf.IsValueSet("live-restore") {

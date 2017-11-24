@@ -14,6 +14,7 @@ import (
 )
 
 // StateChanged updates daemon state changes from containerd
+//注意 ContainerEventType(daemon.EventsService.Log通知给docker events客户端) 和 StateStart(通过 clnt.backend.StateChanged 设置状态，被记录到events.log文件)等的区别
 func (daemon *Daemon) StateChanged(id string, e libcontainerd.StateInfo) error {
 	c := daemon.containers.Get(id)
 	if c == nil {

@@ -256,7 +256,7 @@ func (cli *DaemonCli) start(opts daemonOptions) (err error) {
 	//libcontainerd: new containerd process, pid:   启动libcontainerd   // libcontainerd/remote_unix.go
 	//  /var/run/docker路径 ，创建 containerd Remote，container相关处理启动grpc的client api，事件监控等
 	//libcontainerd->remote_unix.go中的type remote struct 类型
-	containerdRemote, err := libcontainerd.New(cli.getLibcontainerdRoot(), cli.getPlatformRemoteOptions()...)
+	containerdRemote, err := libcontainerd.New(cli.getLibcontainerdRoot(), cli.getPlatformRemoteOptions()...) //这里有...的原因是 true -500 true docker-runc，表示可变参数
 	if err != nil {
 		return err
 	}
@@ -275,7 +275,7 @@ func (cli *DaemonCli) start(opts daemonOptions) (err error) {
 	if err := cli.initMiddlewares(api, serverConfig, pluginStore); err != nil {
 		logrus.Fatalf("Error creating middlewares: %v", err)
 	}
-	// daemon/daemon.go  新建daemon的所有东西
+	// daemon/daemon.go  新建daemon的所有东西   containerdRemote:remote_unix.go中的 remote 结构
 	d, err := daemon.NewDaemon(cli.Config, registryService, containerdRemote, pluginStore)
 	if err != nil {
 		return fmt.Errorf("Error starting daemon: %v", err)
@@ -328,6 +328,7 @@ func (cli *DaemonCli) start(opts daemonOptions) (err error) {
 	// 注册api消息处理函数,daemon命令的处理可以在这里面查
 	initRouter(api, d, c)
 
+	//重新信号处理，受到指定信号，加载/etc/docker/daemon.json 配置到内存
 	cli.setupConfigReloadTrap()  //  设置一个系统调用重新加载配置
 
 	// The serve API routine never exits unless an error occurs
@@ -341,10 +342,12 @@ func (cli *DaemonCli) start(opts daemonOptions) (err error) {
 
 	// Daemon is fully initialized and handling API traffic
 	// Wait for serve API to complete
+	//这里等待  上面的api.Wait->(s *Server) Wait 如果异常，这会继续往下走
+	//kill  dockerd进程(signal.Trap 处理后，api server异常)，也会走这里面后续的流程
 	errAPI := <-serveAPIWait //前面的go api.Wait(serveAPIWait)处理Url请求，如果server异常，则会走到这里，最终结束服务
 	c.Cleanup()// 关闭cluster
-	fmt.Printf("yang test...... shutdowndaemon\n");
 	shutdownDaemon(d)// 关闭daemon
+	//(r *remote) Cleanup()
 	containerdRemote.Cleanup()// 关闭 container
 	if errAPI != nil {
 		return fmt.Errorf("Shutting down due to ServeAPI error: %v", errAPI)
@@ -353,6 +356,7 @@ func (cli *DaemonCli) start(opts daemonOptions) (err error) {
 	return nil
 }
 
+//重新加载配置信息 (cli *DaemonCli) setupConfigReloadTrap->(cli *DaemonCli) reloadConfig->cli.d.Reload(config)
 func (cli *DaemonCli) reloadConfig() {
 	reload := func(config *config.Config) {
 
@@ -394,11 +398,13 @@ func (cli *DaemonCli) stop() {
 // shutdownDaemon just wraps daemon.Shutdown() to handle a timeout in case
 // d.Shutdown() is waiting too long to kill container or worst it's
 // blocked there
+////kill  dockerd进程(signal.Trap 处理后，api server异常)，也会走这里面后续的流程
+//(cli *DaemonCli) start 中执行
 func shutdownDaemon(d *daemon.Daemon) {
 	/*
 	创建并设置一个channel,使用select监听数据。在正确完成关闭daemon工作后将该channel关闭，标识该工作的完成；否则在超时后(15S)报错
-	*/
-	shutdownTimeout := d.ShutdownTimeout()
+	*/ //<0表示dockerd不需要等待docker-container，直接退出
+	shutdownTimeout := d.ShutdownTimeout() //dockerd等待docker-container退出的时间
 	ch := make(chan struct{})
 	go func() {
 		d.Shutdown()
@@ -412,7 +418,7 @@ func shutdownDaemon(d *daemon.Daemon) {
 	select {
 	case <-ch:
 		logrus.Debug("Clean shutdown succeeded")
-	case <-time.After(time.Duration(shutdownTimeout) * time.Second):
+	case <-time.After(time.Duration(shutdownTimeout) * time.Second): //等了这么多时间docker-containerd还没有退出
 		logrus.Error("Force shutdown daemon")
 	}
 }

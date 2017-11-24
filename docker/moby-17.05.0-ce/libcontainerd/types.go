@@ -9,7 +9,13 @@ import (
 )
 
 // State constants used in state change reporting.
-const (
+/*
+[root@newnamespace containerd]# cat events.log
+{"id":"27b9f372d79e0e140340e25a1c55363e6f13d52f88e16b64d20888118fcd3f5f","type":"start-container","timestamp":"2017-11-24T19:44:36.600766798+08:00"}
+{"id":"27b9f372d79e0e140340e25a1c55363e6f13d52f88e16b64d20888118fcd3f5f","type":"exit","timestamp":"2017-11-24T19:44:55.409894524+08:00","pid":"init"}
+*/
+const ( //参考 startEventsMonitor
+	//注意 ContainerEventType(daemon.EventsService.Log通知给docker events客户端) 和 StateStart(通过 clnt.backend.StateChanged 设置状态，被记录到events.log文件)等的区别
 	StateStart       = "start-container"
 	StatePause       = "pause"
 	StateResume      = "resume"
@@ -28,11 +34,14 @@ type CommonStateInfo struct { // FIXME: event?
 }
 
 // Backend defines callbacks that the client of the library needs to implement.
-type Backend interface {
+//Daemon 结构实现该方法，
+type Backend interface { //(r *remote) Client(b Backend) 赋值
+	// (daemon *Daemon) StateChanged    clnt.backend.StateChanged 调用这里，例如dockerd 退出，对应(clnt *client) setExited
 	StateChanged(containerID string, state StateInfo) error
 }
 
 // Client provides access to containerd features.
+//libcontainerd->client_unix.go 中的 client 中实现这些接口
 type Client interface {
 	GetServerVersion(ctx context.Context) (*ServerVersion, error)
 	Create(containerID string, checkpoint string, checkpointDir string, spec specs.Spec, attachStdio StdioCallback, options ...CreateOption) error

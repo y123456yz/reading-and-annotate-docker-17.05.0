@@ -86,6 +86,8 @@ type CommonTLSOptions struct {
 // common across platforms.
 // It includes json tags to deserialize configuration from a file
 // using the same names that the flags in the command line use.
+// Config 包含 CommonConfig(unix  windos都包含的共用配置)  CommonUnixConfig(unix系统特有的配置)
+// /etc/docker/daemon.json可以在(daemon *Daemon) Reload 中重新加载配置到内存
 type CommonConfig struct { //包含在config\config_unix.go中的 Config 结构中
 	AuthzMiddleware      *authorization.Middleware `json:"-"`
 	AuthorizationPlugins []string                  `json:"authorization-plugins,omitempty"` // AuthorizationPlugins holds list of authorization plugins
@@ -123,7 +125,7 @@ type CommonConfig struct { //包含在config\config_unix.go中的 Config 结构�
 	EnableCors           bool                      `json:"api-enable-cors,omitempty"`
 
 	// LiveRestoreEnabled determines whether we should keep containers
-	// alive upon daemon shutdown/start
+	// alive upon daemon shutdown/start  默认false
 	LiveRestoreEnabled bool `json:"live-restore,omitempty"`
 
 	// ClusterStore is the storage backend used for the cluster information. It is used by both

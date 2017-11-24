@@ -34,6 +34,7 @@ const typeLayersWithBase = "layers+base"
     ]
   }
 */
+//镜像下载生效的地方见 (p *v2Puller) pullSchema2
 //type Image struct {}结构中包含该成员，该成员用来存储/var/lib/docker/image/devicemapper/imagedb/content/sha256/$id 中的rootfs {}这一段json信息
 type RootFS struct {
 	Type    string         `json:"type"`

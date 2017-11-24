@@ -546,7 +546,7 @@ func (ms *manifests) Get(ctx context.Context, dgst digest.Digest, options ...dis
 		   ]
 		}
 		*/
-		fmt.Println(string(body)) //打印HTTP包体内容
+		//fmt.Println(string(body)) 打印HTTP包体内容
 
 	/*
 	如果HTTP ctHeader 头部中的resp.Header.Get("Content-Type")为"application/json",则执行 schema1Func，返回 SignedManifest，Descriptor
@@ -691,7 +691,8 @@ func (bs *blobs) Stat(ctx context.Context, dgst digest.Digest) (distribution.Des
 
 }
 
-//从仓库地址通过HTTP获取digest配置信息
+//从仓库地址通过HTTP获取digest配置信息   pullSchema2Config 中执行
+//返回的也就是 /var/lib/docker/image/devicemapper/imagedb/content/sha256/$imageid中的内容
 func (bs *blobs) Get(ctx context.Context, dgst digest.Digest) ([]byte, error) {
 	// 构造一个httpReadSeeker 结构
 	reader, err := bs.Open(ctx, dgst)
@@ -715,7 +716,15 @@ func (bs *blobs) Open(ctx context.Context, dgst digest.Digest) (distribution.Rea
 		return nil, err
 	}
 
-    fmt.Printf("yang test ... blobs.open  blobURL:%s\n", blobURL)
+	//例如docker pull redis,这里打印为
+	// yang test ... blobs.open  blobURL:http://a9e61d46.m.daocloud.io/v2/library/redis/blobs/sha256:8f2e175b3bd129fd9416df32a0e51f36632e3ab82c5608b4030590ad79f0be12
+	//sha256:8f2e175b3bd129fd9416df32a0e51f36632e3ab82c5608b4030590ad79f0be12为manifest中的digest内容
+	/*"config": {
+	"mediaType": "application/vnd.docker.container.image.v1+json",
+	"size": 5800,
+	"digest": "sha256:8f2e175b3bd129fd9416df32a0e51f36632e3ab82c5608b4030590ad79f0be12"
+	},*/
+	//fmt.Printf("yang test ... blobs.open  blobURL:%s\n", blobURL)
 	return transport.NewHTTPReadSeeker(bs.client, blobURL,
 		func(resp *http.Response) error {
 			if resp.StatusCode == http.StatusNotFound {

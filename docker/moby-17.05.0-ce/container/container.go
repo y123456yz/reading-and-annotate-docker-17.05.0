@@ -444,6 +444,7 @@ func (container *Container) IsDestinationMounted(destination string) bool {
 }
 
 // StopSignal returns the signal used to stop the container.
+//获取kill docker-containerd进程的stop信号，如果没有配置，默认为DefaultStopSignal
 func (container *Container) StopSignal() int {
 	var stopSignal syscall.Signal
 	if container.Config.StopSignal != "" {

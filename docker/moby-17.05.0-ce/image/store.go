@@ -13,7 +13,8 @@ import (
 )
 
 // Store is an interface for creating and accessing images
-type Store interface { //imageConfigStore 包含该接口，赋值见 pullImageWithReference->NewImageConfigStoreFromStore
+//type store struct  image\store.go中实现这些方法， imageConfigStore 中也部分实现
+type Store interface { //imageConfigStore 包含该接口，部分接口在imageConfigStore 中实现， 赋值见 pullImageWithReference->NewImageConfigStoreFromStore
 	Create(config []byte) (ID, error)
 	Get(id ID) (*Image, error)
 	Delete(id ID) ([]layer.Metadata, error)
@@ -50,6 +51,7 @@ type store struct { //初始化赋值见 NewImageStore   该结构类型源头�
 	//ls类型为LayerGetReleaser接口，初始化时将ls初始化为 layerStore。
 	ls        LayerGetReleaser
 	//images就是每一个镜像的信息  赋值见(is *store) restore()
+	//(is *store) Create 下周镜像后，则这里赋值
 	images    map[ID]*imageMeta  ///var/lib/docker/image/{driver}/imagedb/content/sha256目录有几个文件，这里就有几个imageMeta
 	//fs存放了image的原信息，存储的目录位于/var/lib/docker/image/{driver}/imagedb，该目录下主要包含两个目录content和metadata
 	/*
@@ -146,6 +148,8 @@ func (is *store) restore() error {
 	return nil
 }
 
+///var/lib/docker/image/devicemapper/imagedb/content/sha256/$image创建并把相关image config内容写进去
+//(s *imageConfigStore) Put 中创建执行
 func (is *store) Create(config []byte) (ID, error) {
 	var img Image
 	err := json.Unmarshal(config, &img)

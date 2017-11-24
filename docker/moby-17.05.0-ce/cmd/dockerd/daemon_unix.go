@@ -49,8 +49,12 @@ func getDaemonConfDir(_ string) string {
 }
 
 // setupConfigReloadTrap configures the USR2 signal to reload the configuration.
+//重新加载配置文件
 func (cli *DaemonCli) setupConfigReloadTrap() {//  设置一个系统调用重新加载配置
 	c := make(chan os.Signal, 1)
+	//该函数会将进程收到的系统Signal转发给channel c。转发哪些信号由该函数的可变参数决定，如果你没有传入sig参数，
+	// 那么Notify会将系统收到的所有信号转发给c。
+	// kill -HUP dockerd-pid 重新加载配置
 	signal.Notify(c, syscall.SIGHUP)
 	go func() {
 		for range c {
@@ -59,6 +63,8 @@ func (cli *DaemonCli) setupConfigReloadTrap() {//  设置一个系统调用重�
 	}()
 }
 
+//// (cli *DaemonCli) start 中执行，实际上就是根据命令行配置参数给 remote_unix.go 中的 remote 结构赋值
+// getPlatformRemoteOptions   和remote_unix.go中的New，配合阅读
 func (cli *DaemonCli) getPlatformRemoteOptions() []libcontainerd.RemoteOption {
 	opts := []libcontainerd.RemoteOption{
 		libcontainerd.WithDebugLog(cli.Config.Debug),
@@ -73,13 +79,16 @@ func (cli *DaemonCli) getPlatformRemoteOptions() []libcontainerd.RemoteOption {
 		args := []string{"--systemd-cgroup=true"}
 		opts = append(opts, libcontainerd.WithRuntimeArgs(args))
 	}
+
 	if cli.Config.LiveRestoreEnabled {
 		opts = append(opts, libcontainerd.WithLiveRestore(true))
 	}
 	opts = append(opts, libcontainerd.WithRuntimePath(daemon.DefaultRuntimeBinary))
 
-	fmt.Printf("yang test ... getPlatformRemoteOptions, opts:%v", opts)
-	fmt.Printf("yang test ... getPlatformRemoteOptions, opts:%+v", opts)
+	//yang test ... getPlatformRemoteOptions, opts:[true -500 true docker-runc]
+	// yang test ... getPlatformRemoteOptions, opts:[true -500 true docker-runc]
+	//fmt.Printf("yang test ... getPlatformRemoteOptions, opts:%v", opts)
+	//fmt.Printf("yang test ... getPlatformRemoteOptions, opts:%+v", opts)
 	return opts
 }
 
@@ -89,6 +98,7 @@ func (cli *DaemonCli) getPlatformRemoteOptions() []libcontainerd.RemoteOption {
 只有当容器在运行的时候，目录/run/docker/libcontainerd/967438113fba0b7a3005bcb6efae6a77055d6be53945f30389888802ea8b0368才
 存在，容器停止执行后该目录会被删除掉，下一次启动的时候会再次被创建。  参考https://segmentfault.com/a/1190000010057763
 */
+// (cli *DaemonCli) start 中执行
 func (cli *DaemonCli) getLibcontainerdRoot() string {
 	return filepath.Join(cli.Config.ExecRoot, "libcontainerd")
 }

@@ -51,6 +51,7 @@ func (e ImageConfigPullError) Error() string {
 
 //newPuller 中构造使用
 type v2Puller struct {
+	//对应 v2MetadataService 结构
 	V2MetadataService metadata.V2MetadataService
 	endpoint          registry.APIEndpoint
 	config            *ImagePullConfig
@@ -177,7 +178,7 @@ type v2LayerDescriptor struct {
 	repoInfo          *registry.RepositoryInfo
 	//v2Puller.repo
 	repo              distribution.Repository
-	//v2Puller.V2MetadataService
+	//v2Puller.V2MetadataService   //对应 v2MetadataService 结构
 	V2MetadataService metadata.V2MetadataService
 	tmpFile           *os.File
 	verifier          digest.Verifier
@@ -193,10 +194,13 @@ func (ld *v2LayerDescriptor) ID() string {
 	return stringid.TruncateID(ld.digest.String())
 }
 
+//根据digest算出diffid
 func (ld *v2LayerDescriptor) DiffID() (layer.DiffID, error) {
+	//(serv *v2MetadataService) GetDiffID
 	return ld.V2MetadataService.GetDiffID(ld.digest)
 }
 
+//(ldm *LayerDownloadManager) makeDownloadFunc 中执行该函数
 func (ld *v2LayerDescriptor) Download(ctx context.Context, progressOutput progress.Output) (io.ReadCloser, int64, error) {
 	logrus.Debugf("pulling blob %q", ld.digest)
 
@@ -363,6 +367,7 @@ func (ld *v2LayerDescriptor) truncateDownloadFile() error {
 
 func (ld *v2LayerDescriptor) Registered(diffID layer.DiffID) {
 	// Cache mapping from this layer's DiffID to the blobsum
+	// (serv *v2MetadataService) Add
 	ld.V2MetadataService.Add(diffID, metadata.V2Metadata{Digest: ld.digest, SourceRepository: ld.repoInfo.Name.Name()})
 }
 
@@ -578,6 +583,24 @@ func (p *v2Puller) pullSchema1(ctx context.Context, ref reference.Named, unverif
 	return imageID, manifestDigest, nil
 }
 
+/*
+docker pull的大概过程
+如果对Image manifest，Image Config和Filesystem Layers等概念不是很了解，请先参考image(镜像)是什么。
+
+取image的大概过程如下：
+
+docker发送image的名称+tag（或者digest）给registry服务器，服务器根据收到的image的名称+tag（或者digest），找到相应image的manifest，然后将manifest返回给docker
+docker得到manifest后，读取里面image配置文件的digest(sha256)，这个sha256码就是image的ID
+根据ID在本地找有没有存在同样ID的image，有的话就不用继续下载了
+如果没有，那么会给registry服务器发请求（里面包含配置文件的sha256和media type），拿到image的配置文件（Image Config）
+根据配置文件中的diff_ids（每个diffid对应一个layer tar包的sha256，tar包相当于layer的原始格式），在本地找对应的layer是否存在
+如果layer不存在，则根据manifest里面layer的sha256和media type去服务器拿相应的layer（相当去拿压缩格式的包）。
+拿到后进行解压，并检查解压后tar包的sha256能否和配置文件（Image Config）中的diff_id对的上，对不上说明有问题，下载失败
+根据docker所用的后台文件系统类型，解压tar包并放到指定的目录
+等所有的layer都下载完成后，整个image下载完成，就可以使用了
+注意： 对于layer来说，config文件中diffid是layer的tar包的sha256，而manifest文件中的digest依赖于media type，比如media type是tar+gzip，
+那digest就是layer的tar包经过gzip压缩后的内容的sha256，如果media type就是tar的话，diffid和digest就会一样。
+*/
 //下载镜像 (p *v2Puller) pullV2Tag 中执行
 func (p *v2Puller) pullSchema2(ctx context.Context, ref reference.Named, mfst *schema2.DeserializedManifest) (id digest.Digest, manifestDigest digest.Digest, err error) {
 	//返回HTTP请求的 manifest 包体内容
@@ -585,10 +608,6 @@ func (p *v2Puller) pullSchema2(ctx context.Context, ref reference.Named, mfst *s
 	if err != nil {
 		return "", "", err
 	}
-
-	//schema2\manifest.go 中的 (m Manifest) Target()
-	//获取manifest中的Config信息
-	target := mfst.Target() //获取 DeserializedManifest.Manifest.Config 内容
 
 	/*  manifest文件内容 (ms *manifests) Get 函数获取manifest文件，并打印内容
 	{
@@ -603,8 +622,13 @@ func (p *v2Puller) pullSchema2(ctx context.Context, ref reference.Named, mfst *s
 	   ]
 	}
 	*/
+	//schema2\manifest.go 中的 (m Manifest) Target()
+	//获取manifest中的Config信息
+	target := mfst.Target() //获取 DeserializedManifest.Manifest.Config 内容
+
 	//查询镜像配置，如果 digest 已经存在直接返回  (is *store) Get
 	// 检查/var/lib/docker/image/devicemapper/imagedb/content/sha256目录是否有该digest存在
+	//docker得到manifest后，读取里面image配置文件的digest(sha256)，这个sha256码就是image的ID,判断该imageID是否已经存在
 	if _, err := p.config.ImageStore.Get(target.Digest); err == nil {
 		// If the image already exists locally, no need to pull
 		// anything.
@@ -647,7 +671,7 @@ func (p *v2Puller) pullSchema2(ctx context.Context, ref reference.Named, mfst *s
 			src:               d,
 		}
 
-		//所有的layers信息存入 descriptors
+		//manifest内容中的"layers"中对应所有的layers信息存入 descriptors
 		descriptors = append(descriptors, layerDescriptor)
 	}
 
@@ -661,14 +685,18 @@ func (p *v2Puller) pullSchema2(ctx context.Context, ref reference.Named, mfst *s
 
 	// Pull the image config
 	go func() {
+		//根据 manifest 文件中的"config" {} 中的digest来获取
+		//给registry服务器发请求（里面包含配置文件的sha256和media type），拿到image的配置文件（Image Config）
+		//返回的也就是 /var/lib/docker/image/devicemapper/imagedb/content/sha256/$imageid中的内容
 		configJSON, err := p.pullSchema2Config(ctx, target.Digest)
 		if err != nil {
 			configErrChan <- ImageConfigPullError{Err: err}
 			cancel()
 			return
 		}
-		fmt.Printf("yang test 11111111111111\n");
-        fmt.Println(string(configJSON)) //yang test
+
+		//fmt.Println(string(configJSON)) //yang test
+		//在后面的 p.config.ImageStore.Put(configJSON) 创建/var/lib/docker/image/devicemapper/imagedb/content/sha256/$image并把相关image config内容写进去
 		configChan <- configJSON
 	}()
 
@@ -693,7 +721,6 @@ func (p *v2Puller) pullSchema2(ctx context.Context, ref reference.Named, mfst *s
 			return "", "", err
 		}
 
-        
 		if configRootFS == nil {
 			return "", "", errRootFSInvalid
 		}
@@ -707,6 +734,7 @@ func (p *v2Puller) pullSchema2(ctx context.Context, ref reference.Named, mfst *s
 			)
 			downloadRootFS := *image.NewRootFS()
 			//下载镜像 (ldm *LayerDownloadManager) Download
+			//downloadRootFS 对应一个新的RootFS结构，descriptors 对应manifest内容中的"layers"相关的layer信息(v2LayerDescriptor结构存储)， ImagePullConfig.Config.ProgressOutput
 			rootFS, release, err = p.config.DownloadManager.Download(ctx, downloadRootFS, descriptors, p.config.ProgressOutput)
 			if err != nil {
 				// Intentionally do not cancel the config download here
@@ -764,6 +792,8 @@ func (p *v2Puller) pullSchema2(ctx context.Context, ref reference.Named, mfst *s
 		}
 	}
 
+	/////var/lib/docker/image/devicemapper/imagedb/content/sha256/$image创建并把相关image config内容写进去
+	//(s *imageConfigStore) Put
 	imageID, err := p.config.ImageStore.Put(configJSON)
 	if err != nil {
 		return "", "", err
@@ -850,10 +880,148 @@ func (p *v2Puller) pullManifestList(ctx context.Context, ref reference.Named, mf
 	return id, manifestListDigest, err
 }
 
+/*
+{
+    "architecture": "amd64",
+    "config": {
+        "Hostname": "",
+        "Domainname": "",
+        "User": "",
+        "AttachStdin": false,
+        "AttachStdout": false,
+        "AttachStderr": false,
+        "ExposedPorts": {
+            "80/tcp": {}
+        },
+        "Tty": false,
+        "OpenStdin": false,
+        "StdinOnce": false,
+        "Env": [
+            "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+            "NGINX_VERSION=1.13.6-1~stretch",
+            "NJS_VERSION=1.13.6.0.1.14-1~stretch"
+        ],
+        "Cmd": [
+            "nginx",
+            "-g",
+            "daemon off;"
+        ],
+        "ArgsEscaped": true,
+        "Image": "sha256:03243c86770b0f1423bf50f17d6cb7841d378d3029efb57c07e34163bf01dbc8",
+        "Volumes": null,
+        "WorkingDir": "",
+        "Entrypoint": null,
+        "OnBuild": [],
+        "Labels": {
+            "maintainer": "NGINX Docker Maintainers <docker-maint@nginx.com>"
+        },
+        "StopSignal": "SIGTERM"
+    },
+    "container": "753ba8de84559c416ec91f5d86a9fa385194ea2d90a7b21853bbf8db2315dc60",
+    "container_config": {
+        "Hostname": "753ba8de8455",
+        "Domainname": "",
+        "User": "",
+        "AttachStdin": false,
+        "AttachStdout": false,
+        "AttachStderr": false,
+        "ExposedPorts": {
+            "80/tcp": {}
+        },
+        "Tty": false,
+        "OpenStdin": false,
+        "StdinOnce": false,
+        "Env": [
+            "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+            "NGINX_VERSION=1.13.6-1~stretch",
+            "NJS_VERSION=1.13.6.0.1.14-1~stretch"
+        ],
+        "Cmd": [
+            "/bin/sh",
+            "-c",
+            "#(nop) ",
+            "CMD [\"nginx\" \"-g\" \"daemon off;\"]"
+        ],
+        "ArgsEscaped": true,
+        "Image": "sha256:03243c86770b0f1423bf50f17d6cb7841d378d3029efb57c07e34163bf01dbc8",
+        "Volumes": null,
+        "WorkingDir": "",
+        "Entrypoint": null,
+        "OnBuild": [],
+        "Labels": {
+            "maintainer": "NGINX Docker Maintainers <docker-maint@nginx.com>"
+        },
+        "StopSignal": "SIGTERM"
+    },
+    "created": "2017-11-04T18:41:08.63323388Z",
+    "docker_version": "17.06.2-ce",
+    "history": [
+        {
+            "created": "2017-11-04T05:26:48.027090974Z",
+            "created_by": "/bin/sh -c #(nop) ADD file:45233d6b5c9b91e9437065d3e7c332d1c4eb4bce8e1079a4c1af342c450abe67 in / "
+        },
+        {
+            "created": "2017-11-04T05:26:48.324169027Z",
+            "created_by": "/bin/sh -c #(nop)  CMD [\"bash\"]",
+            "empty_layer": true
+        },
+        {
+            "created": "2017-11-04T18:40:48.797395609Z",
+            "created_by": "/bin/sh -c #(nop)  LABEL maintainer=NGINX Docker Maintainers <docker-maint@nginx.com>",
+            "empty_layer": true
+        },
+        {
+            "created": "2017-11-04T18:40:48.957138245Z",
+            "created_by": "/bin/sh -c #(nop)  ENV NGINX_VERSION=1.13.6-1~stretch",
+            "empty_layer": true
+        },
+        {
+            "created": "2017-11-04T18:40:49.130229964Z",
+            "created_by": "/bin/sh -c #(nop)  ENV NJS_VERSION=1.13.6.0.1.14-1~stretch",
+            "empty_layer": true
+        },
+        {
+            "created": "2017-11-04T18:41:07.163080323Z",
+            "created_by": "/bin/sh -c set -x \t&& apt-get update \t&& apt-get install --no-install-recommends --no-install-suggests -y gnupg1 \t&& \tNGINX_GPGKEY=573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62; \tfound=''; \tfor server in \t\tha.pool.sks-keyservers.net \t\thkp://keyserver.ubuntu.com:80 \t\thkp://p80.pool.sks-keyservers.net:80 \t\tpgp.mit.edu \t; do \t\techo \"Fetching GPG key $NGINX_GPGKEY from $server\"; \t\tapt-key adv --keyserver \"$server\" --keyserver-options timeout=10 --recv-keys \"$NGINX_GPGKEY\" && found=yes && break; \tdone; \ttest -z \"$found\" && echo >&2 \"error: failed to fetch GPG key $NGINX_GPGKEY\" && exit 1; \tapt-get remove --purge --auto-remove -y gnupg1 && rm -rf /var/lib/apt/lists/* \t&& dpkgArch=\"$(dpkg --print-architecture)\" \t&& nginxPackages=\" \t\tnginx=${NGINX_VERSION} \t\tnginx-module-xslt=${NGINX_VERSION} \t\tnginx-module-geoip=${NGINX_VERSION} \t\tnginx-module-image-filter=${NGINX_VERSION} \t\tnginx-module-njs=${NJS_VERSION} \t\" \t&& case \"$dpkgArch\" in \t\tamd64|i386) \t\t\techo \"deb http://nginx.org/packages/mainline/debian/ stretch nginx\" >> /etc/apt/sources.list \t\t\t&& apt-get update \t\t\t;; \t\t*) \t\t\techo \"deb-src http://nginx.org/packages/mainline/debian/ stretch nginx\" >> /etc/apt/sources.list \t\t\t\t\t\t&& tempDir=\"$(mktemp -d)\" \t\t\t&& chmod 777 \"$tempDir\" \t\t\t\t\t\t&& savedAptMark=\"$(apt-mark showmanual)\" \t\t\t\t\t\t&& apt-get update \t\t\t&& apt-get build-dep -y $nginxPackages \t\t\t&& ( \t\t\t\tcd \"$tempDir\" \t\t\t\t&& DEB_BUILD_OPTIONS=\"nocheck parallel=$(nproc)\" \t\t\t\t\tapt-get source --compile $nginxPackages \t\t\t) \t\t\t\t\t\t&& apt-mark showmanual | xargs apt-mark auto > /dev/null \t\t\t&& { [ -z \"$savedAptMark\" ] || apt-mark manual $savedAptMark; } \t\t\t\t\t\t&& ls -lAFh \"$tempDir\" \t\t\t&& ( cd \"$tempDir\" && dpkg-scanpackages . > Packages ) \t\t\t&& grep '^Package: ' \"$tempDir/Packages\" \t\t\t&& echo \"deb [ trusted=yes ] file://$tempDir ./\" > /etc/apt/sources.list.d/temp.list \t\t\t&& apt-get -o Acquire::GzipIndexes=false update \t\t\t;; \tesac \t\t&& apt-get install --no-install-recommends --no-install-suggests -y \t\t\t\t\t\t$nginxPackages \t\t\t\t\t\tgettext-base \t&& rm -rf /var/lib/apt/lists/* \t\t&& if [ -n \"$tempDir\" ]; then \t\tapt-get purge -y --auto-remove \t\t&& rm -rf \"$tempDir\" /etc/apt/sources.list.d/temp.list; \tfi"
+        },
+        {
+            "created": "2017-11-04T18:41:08.042863814Z",
+            "created_by": "/bin/sh -c ln -sf /dev/stdout /var/log/nginx/access.log \t&& ln -sf /dev/stderr /var/log/nginx/error.log"
+        },
+        {
+            "created": "2017-11-04T18:41:08.250002271Z",
+            "created_by": "/bin/sh -c #(nop)  EXPOSE 80/tcp",
+            "empty_layer": true
+        },
+        {
+            "created": "2017-11-04T18:41:08.445901099Z",
+            "created_by": "/bin/sh -c #(nop)  STOPSIGNAL [SIGTERM]",
+            "empty_layer": true
+        },
+        {
+            "created": "2017-11-04T18:41:08.63323388Z",
+            "created_by": "/bin/sh -c #(nop)  CMD [\"nginx\" \"-g\" \"daemon off;\"]",
+            "empty_layer": true
+        }
+    ],
+    "os": "linux",
+    "rootfs": {
+        "type": "layers",
+        "diff_ids": [
+            "sha256:cec7521cdf36a6d4ad8f2e92e41e3ac1b6fa6e05be07fa53cc84a63503bc5700",
+            "sha256:bba7659ae2e77090e21f86e69d199aff4fcf9c71204fa3f3d5c89463c43eae7e",
+            "sha256:f4cc3366d6a98b6cf5d047ad113ba76f67e4f5d20d12e37cd9a1f34ce0b421b9"
+        ]
+    }
+}
+*/
+//给registry服务器发请求（里面包含配置文件的sha256和media type），拿到image的配置文件（Image Config）
+//从仓库地址通过HTTP获取digest配置信息   (bs *blobs) Get
+//返回的也就是 /var/lib/docker/image/devicemapper/imagedb/content/sha256/$imageid中的内容
 func (p *v2Puller) pullSchema2Config(ctx context.Context, dgst digest.Digest) (configJSON []byte, err error) {
 	//(r *repository) Blobs
-	blobs := p.repo.Blobs(ctx)
-	//读取digest对应文件内容  /var/lib/docker/image/devicemapper/imagedb/content/sha256/image 文件内容
+	blobs := p.repo.Blobs(ctx) //构造blobs结构
+
 	////从仓库地址通过HTTP获取digest配置信息   (bs *blobs) Get
 	configJSON, err = blobs.Get(ctx, dgst)
 	if err != nil {
@@ -861,6 +1029,7 @@ func (p *v2Puller) pullSchema2Config(ctx context.Context, dgst digest.Digest) (c
 	}
 
 	// Verify image config digest
+	//(d Digest) Verifier() ，返回 hashVerifier 结构
 	verifier := dgst.Verifier()
 	if _, err := verifier.Write(configJSON); err != nil {
 		return nil, err
@@ -871,7 +1040,7 @@ func (p *v2Puller) pullSchema2Config(ctx context.Context, dgst digest.Digest) (c
 		return nil, err
 	}
 
-    
+	//fmt.Println(string(configJSON)) //yang test
 	return configJSON, nil
 }
 
@@ -931,8 +1100,6 @@ func schema2ManifestDigest(ref reference.Named, mfst distribution.Manifest) (dig
 	   ]
 	}
 	*/
-
-	
 	//返回 manifest 包体内容
 	return digest.FromBytes(canonical), nil
 }

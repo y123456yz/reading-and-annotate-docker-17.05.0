@@ -161,7 +161,8 @@ func (ctr *container) start(attachStdio StdioCallback) error {
 			State: StateStart,
 			Pid:   ctr.systemPid, // Not sure this is needed? Double-check monitor.go in daemon BUGBUG @jhowardmsft
 		}}
-	logrus.Debugf("libcontainerd: start() completed OK, %+v", si)
+	//
+	// logrus.Debugf("libcontainerd: start() completed OK, %+v", si)
 	return ctr.client.backend.StateChanged(ctr.containerID, si)
 
 }

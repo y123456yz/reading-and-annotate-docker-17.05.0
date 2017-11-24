@@ -13,6 +13,7 @@ import (
 // It includes json tags to deserialize configuration from a file
 // using the same names that the flags in the command line uses.
 type Config struct {
+	// Config 包含 CommonConfig(unix  windos都包含的共用配置)  CommonUnixConfig(unix系统特有的配置)
 	CommonConfig
 
 	// These fields are common to all unix platforms.
@@ -26,6 +27,7 @@ type Config struct {
 	Ulimits              map[string]*units.Ulimit `json:"default-ulimits,omitempty"`
 	CPURealtimePeriod    int64                    `json:"cpu-rt-period,omitempty"`
 	CPURealtimeRuntime   int64                    `json:"cpu-rt-runtime,omitempty"`
+	//默认-500
 	OOMScoreAdjust       int                      `json:"oom-score-adjust,omitempty"`
 	Init                 bool                     `json:"init,omitempty"`
 	InitPath             string                   `json:"init-path,omitempty"`

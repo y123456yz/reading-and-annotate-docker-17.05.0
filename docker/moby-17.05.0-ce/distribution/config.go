@@ -45,7 +45,8 @@ type Config struct {
 	// metadata.  被赋值为daemon.distributionMetadataStore, NewPusher中赋值给 v2Pusher.v2MetadataService
 	MetadataStore metadata.Store
 	// ImageStore manages images.
-	//赋值为distribution.NewImageConfigStoreFromStore(daemon.imageStore)
+	//type store struct (imageConfigStore 包含该类) 这两个结构共同实现image.Store接口的相关方法
+	//赋值为distribution.NewImageConfigStoreFromStore(Daemon.imageStore)   type Store interface {}
 	ImageStore ImageConfigStore
 	// ReferenceStore manages tags. This value is optional, when excluded
 	// content will not be tagged.
@@ -138,12 +139,16 @@ func NewImageConfigStoreFromStore(is image.Store) ImageConfigStore {
 	}
 }
 
+/////var/lib/docker/image/devicemapper/imagedb/content/sha256/$image创建并把相关image config内容写进去
+//(p *v2Puller) pullSchema2 中执行
 func (s *imageConfigStore) Put(c []byte) (digest.Digest, error) {
 	id, err := s.Store.Create(c)
 	return digest.Digest(id), err
 }
 
+////获取/var/lib/docker/image/devicemapper/imagedb/content/sha256目录下面的ID对应的文件内容配置信息
 func (s *imageConfigStore) Get(d digest.Digest) ([]byte, error) {
+	//获取/var/lib/docker/image/devicemapper/imagedb/content/sha256目录下面的ID对应的文件内容配置信息
 	img, err := s.Store.Get(image.IDFromDigest(d))
 	if err != nil {
 		return nil, err

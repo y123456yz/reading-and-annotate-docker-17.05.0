@@ -40,6 +40,8 @@ func (daemon *Daemon) ContainerStop(name string, seconds *int) error {
 // process to exit. If a negative duration is given, Stop will wait
 // for the initial signal forever. If the container is not running Stop returns
 // immediately.
+//向container发送kill信号
+//shutdownDaemon->(daemon *Daemon) Shutdown(daemon *Daemon) shutdownContainer->(daemon *Daemon) containerStop
 func (daemon *Daemon) containerStop(container *container.Container, seconds int) error {
 	if !container.IsRunning() {
 		return nil
@@ -47,6 +49,7 @@ func (daemon *Daemon) containerStop(container *container.Container, seconds int)
 
 	daemon.stopHealthchecks(container)
 
+	//获取kill docker-containerd进程的stop信号，如果没有配置，默认为DefaultStopSignal
 	stopSignal := container.StopSignal()
 	// 1. Send a stop signal
 	if err := daemon.killPossiblyDeadProcess(container, stopSignal); err != nil {
@@ -78,8 +81,6 @@ func (daemon *Daemon) containerStop(container *container.Container, seconds int)
 		}
 	}
 
-    fmt.Printf("yang test ....containerStop...\n");
 	daemon.LogContainerEvent(container, "stop")
-	fmt.Printf("yang test ..222..containerStop...\n");
 	return nil
 }

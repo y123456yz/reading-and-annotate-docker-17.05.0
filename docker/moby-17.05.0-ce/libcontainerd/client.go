@@ -9,7 +9,9 @@ import (
 
 // clientCommon contains the platform agnostic fields used in the client structure
 //type client struct中包含该成员，见client_linux.go
+//(r *remote) Client 中构造使用
 type clientCommon struct {
+	//Backend 对应 Daemon 类型
 	backend    Backend
 	//启动起来的容器，起ID和对应的容器信息存在该map中，参考getContainer
 	containers map[string]*container //启动起来的容器存在这里面  appendContainer 中赋值

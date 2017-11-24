@@ -27,6 +27,7 @@ import (
 //   the docker daemon is not restarted and also running under systemd.
 //   Fixes https://github.com/docker/docker/issues/19728
 //
+//(cli *DaemonCli) start 中执行，信号处理，例如ctrl+c,或者kIll进程都会这里面处理
 func Trap(cleanup func()) {
 	c := make(chan os.Signal, 1)
 	// we will handle INT, TERM, QUIT, SIGPIPE here
@@ -56,13 +57,12 @@ func Trap(cleanup func()) {
 						// 3 SIGTERM/INT signals received; force exit without cleanup
 						logrus.Info("Forcing docker daemon shutdown without cleanup; 3 interrupts received")
 					}
-				case syscall.SIGQUIT:
+				case syscall.SIGQUIT: //生成coredump
 					DumpStacks("")
 					logrus.Info("Forcing docker daemon shutdown without cleanup on SIGQUIT")
 				}
 				//for the SIGINT/TERM, and SIGQUIT non-clean shutdown case, exit with 128 + signal #
 				os.Exit(128 + int(sig.(syscall.Signal)))
-				
 			}(sig)
 		}
 	}()

@@ -311,6 +311,8 @@ func (tm *transferManager) SetConcurrency(concurrency int) {
 // Transfer checks if a transfer matching the given key is in progress. If not,
 // it starts one by calling xferFunc. The caller supplies a channel which
 // receives progress output from the transfer.
+//xferFunc对应 (ldm *LayerDownloadManager) makeDownloadFunc
+//(ldm *LayerDownloadManager) Download 中执行
 func (tm *transferManager) Transfer(key string, xferFunc DoFunc, progressOutput progress.Output) (Transfer, *Watcher) {
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
@@ -355,6 +357,7 @@ func (tm *transferManager) Transfer(key string, xferFunc DoFunc, progressOutput 
 	}
 
 	masterProgressChan := make(chan progress.Progress)
+	//(ldm *LayerDownloadManager) makeDownloadFunc
 	xfer := xferFunc(masterProgressChan, start, inactive)
 	watcher := xfer.Watch(progressOutput)
 	go xfer.Broadcast(masterProgressChan)
