@@ -27,6 +27,7 @@ type CommonAPIClient interface {
 	SwarmAPIClient
 	SecretAPIClient
 	SystemAPIClient
+	LxcfsAPIClient
 	VolumeAPIClient
 	ClientVersion() string
 	ServerVersion(ctx context.Context) (types.Version, error)
@@ -151,6 +152,10 @@ type SystemAPIClient interface {
 	RegistryLogin(ctx context.Context, auth types.AuthConfig) (registry.AuthenticateOKBody, error)
 	DiskUsage(ctx context.Context) (types.DiskUsage, error)
 	Ping(ctx context.Context) (types.Ping, error)
+}
+
+type LxcfsAPIClient interface {
+	LxcfsInfo(ctx context.Context) (types.LxcfsInfo, error)
 }
 
 // VolumeAPIClient defines API client methods for the volumes

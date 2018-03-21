@@ -92,6 +92,30 @@ func (cli *DaemonCli) getPlatformRemoteOptions() []libcontainerd.RemoteOption {
 	return opts
 }
 
+func (cli *DaemonCli) getPlatformLxcfsRemoteOptions() []libcontainerd.RemoteOption {
+	opts := []libcontainerd.RemoteOption{
+		libcontainerd.LxcfsWithDebugLog(cli.Config.LxcfsDebug),
+		libcontainerd.LxcfsWithAllowOther(cli.Config.LxcfsAllowOther),
+		libcontainerd.LxcfsWithOffMultithread(cli.Config.LxcfsOffMultithread),
+		libcontainerd.LxcfsWithOOMScore(cli.Config.OOMScoreAdjust),
+	}
+
+	if cli.Config.LxcfsAddr != "" {
+		opts = append(opts, libcontainerd.LxcfsWithRemoteAddr(cli.Config.LxcfsAddr))
+	}
+
+	if cli.Config.LxcfsLogPath != "" {
+		opts = append(opts, libcontainerd.LxcfsWithLogPath(cli.Config.LxcfsLogPath))
+	}
+
+	if cli.Config.LxcfsMountPath != "" {
+		opts = append(opts, libcontainerd.LxcfsWithMountPath(cli.Config.LxcfsMountPath))
+	}
+
+	return opts
+}
+
+
 // getLibcontainerdRoot gets the root directory for libcontainerd/containerd to
 // store their state.
 /*

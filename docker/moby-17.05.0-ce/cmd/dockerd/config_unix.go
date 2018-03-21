@@ -38,6 +38,16 @@ func installConfigFlags(conf *config.Config, flags *pflag.FlagSet) {
 	flags.StringVar(&conf.CgroupParent, "cgroup-parent", "", "Set parent cgroup for all containers")
 	flags.StringVar(&conf.RemappedRoot, "userns-remap", "", "User/Group setting for user namespaces")
 	flags.StringVar(&conf.ContainerdAddr, "containerd", "", "Path to containerd socket")
+
+    flags.BoolVar(&conf.LxcfsAutoStart, "lxcfs-autostart", true, "running lxcfs when docked start up")
+	flags.BoolVar(&conf.LxcfsDebug, "lxcfs-enable-debug", false, "Enable lxcfs debug mode")
+	flags.StringVar(&conf.LxcfsMountPath, "lxcfs-mount-path", "/usr/local/var/lib/lxcfs/", "set lxcfs mount dir path")
+	flags.StringVar(&conf.LxcfsAddr, "lxcfs-address", "", "Path to lxcfs socket")
+	flags.StringVar(&conf.LxcfsLogPath, "lxcfs-log-path", "", "set lxcfs log path")
+	flags.BoolVar(&conf.LxcfsOffMultithread, "lxcfs-off-multithread", true, "turn off multi-threading as libnih-dbus isn't thread safe")
+	flags.BoolVar(&conf.LxcfsAllowOther, "lxcfs-allow-other", true, "required to have non-root user be able to access the filesystem")
+
+
 	flags.BoolVar(&conf.LiveRestoreEnabled, "live-restore", false, "Enable live restore of docker when containers are still running")
 	flags.IntVar(&conf.OOMScoreAdjust, "oom-score-adjust", -500, "Set the oom_score_adj for the daemon")
 	flags.BoolVar(&conf.Init, "init", false, "Run an init in the container to forward signals and reap processes")

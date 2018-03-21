@@ -1,0 +1,12 @@
+hierarchies:
+  0: fd:   5: cpuset
+  1: fd:   6: perf_event
+  2: fd:   7: hugetlb
+  3: fd:   8: cpuacct,cpu
+  4: fd:   9: devices
+  5: fd:  10: memory
+  6: fd:  11: net_prio,net_cls
+  7: fd:  12: blkio
+  8: fd:  13: freezer
+  9: fd:  14: pids
+ 10: fd:  15: name=systemd

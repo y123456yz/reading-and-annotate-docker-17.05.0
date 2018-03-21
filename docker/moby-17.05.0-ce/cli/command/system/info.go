@@ -31,6 +31,7 @@ func NewInfoCommand(dockerCli *command.DockerCli) *cobra.Command {
 		Short: "Display system-wide information",
 		Args:  cli.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+		    fmt.Printf("yang test ... NewInfoCommand...\n")
 			return runInfo(dockerCli, &opts)
 		},
 	}

@@ -24,6 +24,7 @@ import (
 	pluginrouter "github.com/docker/docker/api/server/router/plugin"
 	swarmrouter "github.com/docker/docker/api/server/router/swarm"
 	systemrouter "github.com/docker/docker/api/server/router/system"
+	lxcfsrouter "github.com/docker/docker/api/server/router/lxcfs"
 	"github.com/docker/docker/api/server/router/volume"
 	"github.com/docker/docker/builder/dockerfile"
 	cliconfig "github.com/docker/docker/cli/config"
@@ -253,6 +254,16 @@ func (cli *DaemonCli) start(opts daemonOptions) (err error) {
 	// registry/service.go 新建一个default的registryserver
 	registryService := registry.NewService(cli.Config.ServiceOptions)
 
+	var lxcfsRemot *libcontainerd.LxcfsRemote
+	if cli.Config.LxcfsAutoStart == true {
+		lxcfsDir := filepath.Join(cli.getLibcontainerdRoot(), libcontainerd.GetLxcfsDir())
+		if lxcfsRemot, err = libcontainerd.NewLxcfs(lxcfsDir, cli.getPlatformLxcfsRemoteOptions()...); err != nil {
+			return err
+		}
+	} else {
+		logrus.Warning("lxcfs: lxcfs not enable\n")
+	}
+
 	//libcontainerd: new containerd process, pid:   启动libcontainerd   // libcontainerd/remote_unix.go
 	//  /var/run/docker路径 ，创建 containerd Remote，container相关处理启动grpc的client api，事件监控等
 	//libcontainerd->remote_unix.go中的type remote struct 类型
@@ -276,7 +287,7 @@ func (cli *DaemonCli) start(opts daemonOptions) (err error) {
 		logrus.Fatalf("Error creating middlewares: %v", err)
 	}
 	// daemon/daemon.go  新建daemon的所有东西   containerdRemote:remote_unix.go中的 remote 结构
-	d, err := daemon.NewDaemon(cli.Config, registryService, containerdRemote, pluginStore)
+	d, err := daemon.NewDaemon(cli.Config, registryService, containerdRemote, lxcfsRemot, pluginStore)
 	if err != nil {
 		return fmt.Errorf("Error starting daemon: %v", err)
 	}
@@ -348,6 +359,9 @@ func (cli *DaemonCli) start(opts daemonOptions) (err error) {
 	c.Cleanup()// 关闭cluster
 	shutdownDaemon(d)// 关闭daemon
 	//(r *remote) Cleanup()
+	if cli.Config.LxcfsAutoStart == true && lxcfsRemot != nil {
+		lxcfsRemot.Cleanup()
+	}
 	containerdRemote.Cleanup()// 关闭 container
 	if errAPI != nil {
 		return fmt.Errorf("Shutting down due to ServeAPI error: %v", errAPI)
@@ -512,6 +526,7 @@ func initRouter(s *apiserver.Server, d *daemon.Daemon, c *cluster.Cluster) {
 		container.NewRouter(d, decoder),
 		image.NewRouter(d, decoder),
 		systemrouter.NewRouter(d, c),
+		lxcfsrouter.NewRouter(d),
 		volume.NewRouter(d),
 		build.NewRouter(dockerfile.NewBuildManager(d)),
 		swarmrouter.NewRouter(c),

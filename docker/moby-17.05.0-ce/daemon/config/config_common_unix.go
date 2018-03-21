@@ -18,6 +18,15 @@ type CommonUnixConfig struct {
 	ExecRoot          string                   `json:"exec-root,omitempty"`
 	//--containerd string                     Path to containerd socket
 	ContainerdAddr    string                   `json:"containerd,omitempty"`
+
+    LxcfsAutoStart    bool 			   `json:"lxcfs-autostart,omitempty"`
+	LxcfsAddr         string                   `json:"lxcfs-addr,omitempty"`
+	LxcfsDebug        bool                     `json:"lxcfs-debug,omitempty"`
+	LxcfsLogPath      string                   `json:"lxcfs-log-path,omitempty"`
+	LxcfsOffMultithread  bool                `json:"lxcfs-off-multithread,omitempty"`
+	LxcfsAllowOther   bool                   `json:"lxcfs-allow-other,omitempty"`
+	LxcfsMountPath     string                   `json:"lxcfs-mount-path,omitempty"`
+	
 	//runc成员赋值见 verifyDaemonSettings
 	Runtimes          map[string]types.Runtime `json:"runtimes,omitempty"`
 	//赋值见verifyDaemonSettings

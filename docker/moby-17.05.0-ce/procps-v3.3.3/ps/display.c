@@ -536,7 +536,6 @@ int main(int argc, char *argv[]){
   myname = strrchr(*argv, '/');
   if (myname) ++myname; else myname = *argv;
 
-  printf("yang test 11111111111111111111111111111\r\n");
   setlocale (LC_ALL, "");
   bindtextdomain(PACKAGE, LOCALEDIR);
   textdomain(PACKAGE);

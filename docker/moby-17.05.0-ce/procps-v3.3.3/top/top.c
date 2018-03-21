@@ -4000,7 +4000,6 @@ int main (int dont_care_argc, char **argv) {
    wins_stage_2();                      //                 as bottom slice
                                         //                 +-------------+
 
-  // printf("yang test 111111111111111111111111 top\r\n");
   // fflush(stdout);
 
    for (;;) {

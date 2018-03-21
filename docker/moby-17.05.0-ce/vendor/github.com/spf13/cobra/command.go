@@ -727,7 +727,6 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		args = c.args
 	}
 
-	fmt.Printf("yang test ............. ExecuteC \n");
 	var flags []string
 	if c.TraverseChildren {
 		cmd, flags, err = c.Traverse(args)
@@ -745,7 +744,6 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		}
 		return c, err
 	}
-	fmt.Printf("yang test .......2222222222...... ExecuteC \n");
 	err = cmd.execute(flags) //主流程执行在这里面
 	if err != nil {
 		// Always show help if requested, even if SilenceErrors is in

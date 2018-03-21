@@ -66,7 +66,7 @@ func (d *downloadTransfer) result() (layer.Layer, error) {
 
 // A DownloadDescriptor references a layer that may need to be downloaded.
 //v2LayerDescriptor 结构实现该接口方法，参考 (p *v2Puller) pullSchema2       DownloadDescriptorWithRegistered 包含该接口
-type DownloadDescriptor interface { v2LayerDescriptor
+type DownloadDescriptor interface { 
 	// Key returns the key used to deduplicate downloads.
 	Key() string
 	// ID returns the ID for display purposes.

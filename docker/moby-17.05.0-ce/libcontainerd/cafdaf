@@ -1,0 +1,5 @@
+Usage:
+
+lxcfs [-p pidfile] mountpoint
+  Default pidfile is /run/lxcfs.pid
+lxcfs -h

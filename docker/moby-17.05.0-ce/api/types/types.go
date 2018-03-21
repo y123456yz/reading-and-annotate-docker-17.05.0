@@ -528,3 +528,17 @@ type PushResult struct {
 	Digest string
 	Size   int
 }
+
+type LxcfsCatItem struct {
+	Filename  string  `json:"Filename"`
+	Failed    string   `json:"Failed"`
+	Success   string   `json:"Success"`
+}
+
+//GET lxcfs info
+type LxcfsInfo struct {
+	Version       string
+	LxcfsCat      []LxcfsCatItem
+}
+
+

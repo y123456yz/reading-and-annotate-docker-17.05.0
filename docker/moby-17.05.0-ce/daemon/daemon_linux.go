@@ -44,8 +44,10 @@ func (daemon *Daemon) cleanupMountsFromReaderByID(reader io.Reader, id string, u
 	for sc.Scan() {
 		if fields := strings.Fields(sc.Text()); len(fields) >= 4 {
 			if mnt := fields[4]; strings.HasPrefix(mnt, daemon.root) {
+			    fmt.Printf("yang test 111  unmount:%v\n", mnt)
 				for _, p := range regexps {
 					if p.MatchString(mnt) {
+					    fmt.Printf("yang test  unmount:%v\n", mnt)
 						if err := unmount(mnt); err != nil {
 							logrus.Error(err)
 							errors = append(errors, err.Error())

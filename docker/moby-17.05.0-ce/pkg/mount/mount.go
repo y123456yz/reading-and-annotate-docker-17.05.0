@@ -1,5 +1,7 @@
 package mount
 
+import "fmt"
+
 // GetMounts retrieves a list of mounts for the current running process.
 func GetMounts() ([]*Info, error) {
 	return parseMountTable()
@@ -10,12 +12,14 @@ func GetMounts() ([]*Info, error) {
 func Mounted(mountpoint string) (bool, error) {
 	entries, err := parseMountTable()
 	if err != nil {
+	
 		return false, err
 	}
-
+    fmt.Printf("yang test 3xcddddddddddddd vmounted\n")
 	// Search the table for the mountpoint
 	for _, e := range entries {
 		if e.Mountpoint == mountpoint {
+		    fmt.Printf("yang test mounted\n")
 			return true, nil
 		}
 	}
@@ -27,6 +31,7 @@ func Mounted(mountpoint string) (bool, error) {
 // specified like the mount or fstab unix commands: "opt1=val1,opt2=val2". See
 // flags.go for supported option flags.
 func Mount(device, target, mType, options string) error {
+    
 	flag, _ := parseOptions(options)
 	if flag&REMOUNT != REMOUNT {
 		if mounted, err := Mounted(target); err != nil || mounted {
@@ -48,8 +53,16 @@ func ForceMount(device, target, mType, options string) error {
 // Unmount lazily unmounts a filesystem on supported platforms, otherwise
 // does a normal unmount.
 func Unmount(target string) error {
+
 	if mounted, err := Mounted(target); err != nil || !mounted {
 		return err
 	}
+
 	return unmount(target, mntDetach)
 }
+
+func ForceUnmount(target string) error {
+	return unmount(target, mntDetach)
+}
+
+

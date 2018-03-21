@@ -138,6 +138,7 @@ type Daemon struct { //赋值见NewDaemon 见 NewDaemon
 	containerd                libcontainerd.Client  //NewDaemon 中赋值
 	//:remote_unix.go中的 remote 结构
 	containerdRemote          libcontainerd.Remote
+	lxcfsRemote      	      *libcontainerd.LxcfsRemote
 	defaultIsolation          containertypes.Isolation // Default isolation mode on Windows
 	clusterProvider           cluster.Provider
 	cluster                   Cluster
@@ -525,7 +526,8 @@ func (daemon *Daemon) IsSwarmCompatible() error {
 // requests from the webserver.
 //dockerd\daemon.go中start函数和daemon\daemon.go中的NewDaemon是理解的主线
 //dockerd\daemon.go中start  func (cli *DaemonCli) start中执行该函数    各个客户端请求，daemon 对应的处理见 initRouter   containerdRemote:remote_unix.go中的 remote 结构
-func NewDaemon(config *config.Config, registryService registry.Service, containerdRemote libcontainerd.Remote, pluginStore *plugin.Store) (daemon *Daemon, err error) {
+func NewDaemon(config *config.Config, registryService registry.Service, containerdRemote libcontainerd.Remote,
+    lxcfsRemote *libcontainerd.LxcfsRemote, pluginStore *plugin.Store) (daemon *Daemon, err error) {
 	setDefaultMtu(config)//  设置默认MTU 1500
 
 	// Ensure that we have a correct root key limit for launching containers.
@@ -779,6 +781,7 @@ func NewDaemon(config *config.Config, registryService registry.Service, containe
 	d.nameIndex = registrar.NewRegistrar()
 	d.linkIndex = newLinkIndex()
 	d.containerdRemote = containerdRemote
+	d.lxcfsRemote = lxcfsRemote
 
 	go d.execCommandGC() // 新建协程清理容器不需要的命令
 

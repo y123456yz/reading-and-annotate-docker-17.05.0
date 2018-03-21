@@ -63,6 +63,11 @@ func NewExecCommand(dockerCli *command.DockerCli) *cobra.Command {
 }
 
 func runExec(dockerCli *command.DockerCli, opts *execOptions, container string, execCmd []string) error {
+    fmt.Printf("yang test .... dockercli:%+v\n", dockerCli)
+	fmt.Printf("yang test .... opts:%+v\n", opts)
+	fmt.Printf("yang test .... container:%+v\n", container)
+	fmt.Printf("yang test .... execCmd:%+v\n", execCmd)
+
 	execConfig, err := parseExec(opts, execCmd)
 	// just in case the ParseExec does not exit
 	if container == "" || err != nil {
