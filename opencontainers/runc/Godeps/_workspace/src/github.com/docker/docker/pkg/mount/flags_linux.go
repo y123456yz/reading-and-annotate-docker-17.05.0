@@ -60,7 +60,7 @@ const (
 	// RPRIVATE marks the entire mount tree as PRIVATE.
 	RPRIVATE = syscall.MS_PRIVATE | syscall.MS_REC
 
-	// SLAVE creates a mount which receives propagation from its master, but not
+	// SLAVE creates a mount which receives propagation from its main, but not
 	// vice versa.
 	SLAVE = syscall.MS_SLAVE
 

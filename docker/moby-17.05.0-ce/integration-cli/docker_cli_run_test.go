@@ -3917,7 +3917,7 @@ func (s *DockerSuite) TestRunVolumesMountedAsShared(c *check.C) {
 	mount.Unmount(path.Join(tmpDir, "mnt1"))
 }
 
-func (s *DockerSuite) TestRunVolumesMountedAsSlave(c *check.C) {
+func (s *DockerSuite) TestRunVolumesMountedAsSubordinate(c *check.C) {
 	// Volume propagation is linux only. Also it creates directories for
 	// bind mounting, so needs to be same host.
 	testRequires(c, DaemonIsLinux, SameHostDaemon, NotUserNamespace)
@@ -3941,7 +3941,7 @@ func (s *DockerSuite) TestRunVolumesMountedAsSlave(c *check.C) {
 	}
 	defer os.RemoveAll(tmpDir2)
 
-	if err := ioutil.WriteFile(path.Join(tmpDir2, "slave-testfile"), []byte("Test"), 0644); err != nil {
+	if err := ioutil.WriteFile(path.Join(tmpDir2, "subordinate-testfile"), []byte("Test"), 0644); err != nil {
 		c.Fatal(err)
 	}
 
@@ -3950,19 +3950,19 @@ func (s *DockerSuite) TestRunVolumesMountedAsSlave(c *check.C) {
 	icmd.RunCommand("mount", "--bind", tmpDir, tmpDir).Assert(c, icmd.Success)
 	icmd.RunCommand("mount", "--make-private", "--make-shared", tmpDir).Assert(c, icmd.Success)
 
-	dockerCmd(c, "run", "-i", "-d", "--name", "parent", "-v", fmt.Sprintf("%s:/volume-dest:slave", tmpDir), "busybox", "top")
+	dockerCmd(c, "run", "-i", "-d", "--name", "parent", "-v", fmt.Sprintf("%s:/volume-dest:subordinate", tmpDir), "busybox", "top")
 
 	// Bind mount tmpDir2/ onto tmpDir/mnt1. If mount propagates inside
-	// container then contents of tmpDir2/slave-testfile should become
-	// visible at "/volume-dest/mnt1/slave-testfile"
+	// container then contents of tmpDir2/subordinate-testfile should become
+	// visible at "/volume-dest/mnt1/subordinate-testfile"
 	icmd.RunCommand("mount", "--bind", tmpDir2, path.Join(tmpDir, "mnt1")).Assert(c, icmd.Success)
 
-	out, _ := dockerCmd(c, "exec", "parent", "cat", "/volume-dest/mnt1/slave-testfile")
+	out, _ := dockerCmd(c, "exec", "parent", "cat", "/volume-dest/mnt1/subordinate-testfile")
 
 	mount.Unmount(path.Join(tmpDir, "mnt1"))
 
 	if out != "Test" {
-		c.Fatalf("Bind mount under slave volume did not propagate to container")
+		c.Fatalf("Bind mount under subordinate volume did not propagate to container")
 	}
 }
 

@@ -36,9 +36,9 @@ func (n *networkNamespace) Bridge(isBridge bool) IfaceOption {
 	}
 }
 
-func (n *networkNamespace) Master(name string) IfaceOption {
+func (n *networkNamespace) Main(name string) IfaceOption {
 	return func(i *nwIface) {
-		i.master = name
+		i.main = name
 	}
 }
 

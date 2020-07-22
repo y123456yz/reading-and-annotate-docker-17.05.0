@@ -381,7 +381,7 @@ func (s *DockerSuite) TestBuildCacheAdd(c *check.C) {
 
 func (s *DockerSuite) TestBuildLastModified(c *check.C) {
 	// Temporary fix for #30890. TODO @jhowardmsft figure out what
-	// has changed in the master busybox image.
+	// has changed in the main busybox image.
 	testRequires(c, DaemonIsLinux)
 
 	name := "testbuildlastmodified"
@@ -3032,7 +3032,7 @@ func (s *DockerSuite) TestBuildFromGitWithContext(c *check.C) {
 	}, true)
 	defer git.Close()
 
-	buildImageSuccessfully(c, name, build.WithContextPath(fmt.Sprintf("%s#master:docker", git.RepoURL)))
+	buildImageSuccessfully(c, name, build.WithContextPath(fmt.Sprintf("%s#main:docker", git.RepoURL)))
 
 	res := inspectField(c, name, "Author")
 	if res != "docker" {

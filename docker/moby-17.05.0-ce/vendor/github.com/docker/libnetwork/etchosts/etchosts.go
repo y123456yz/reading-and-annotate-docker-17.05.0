@@ -69,7 +69,7 @@ func Drop(path string) {
 
 // Build function
 // path is path to host file string required
-// IP, hostname, and domainname set main record leave empty for no master record
+// IP, hostname, and domainname set main record leave empty for no main record
 // extraContent is an array of extra host records.
 func Build(path, IP, hostname, domainname string, extraContent []Record) error {
 	defer pathLock(path)()

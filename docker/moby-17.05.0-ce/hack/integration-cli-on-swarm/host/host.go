@@ -20,7 +20,7 @@ import (
 const (
 	defaultStackName       = "integration-cli-on-swarm"
 	defaultVolumeName      = "integration-cli-on-swarm"
-	defaultMasterImageName = "integration-cli-master"
+	defaultMainImageName = "integration-cli-main"
 	defaultWorkerImageName = "integration-cli-worker"
 )
 
@@ -62,7 +62,7 @@ func xmain() (int, error) {
 		logrus.Infof("Removing volume %s", defaultVolumeName)
 		removeVolume(cli, defaultVolumeName)
 	}
-	if err = ensureImages(cli, []string{defaultWorkerImageName, defaultMasterImageName}); err != nil {
+	if err = ensureImages(cli, []string{defaultWorkerImageName, defaultMainImageName}); err != nil {
 		return 1, err
 	}
 	workerImageForStack := defaultWorkerImageName
@@ -76,7 +76,7 @@ func xmain() (int, error) {
 	compose, err := createCompose("", cli, composeOptions{
 		Replicas:     *replicas,
 		Chunks:       *chunks,
-		MasterImage:  defaultMasterImageName,
+		MainImage:  defaultMainImageName,
 		WorkerImage:  workerImageForStack,
 		Volume:       defaultVolumeName,
 		Shuffle:      *shuffle,
@@ -95,7 +95,7 @@ func xmain() (int, error) {
 	if err = createVolumeWithData(cli,
 		defaultVolumeName,
 		map[string][]byte{"/input": filters},
-		defaultMasterImageName); err != nil {
+		defaultMainImageName); err != nil {
 		return 1, err
 	}
 	logrus.Infof("Deploying stack %s from %s", defaultStackName, compose)
@@ -104,7 +104,7 @@ func xmain() (int, error) {
 		logrus.Infof(" - Stack: %s", defaultStackName)
 		logrus.Infof(" - Volume: %s", defaultVolumeName)
 		logrus.Infof(" - Compose file: %s", compose)
-		logrus.Infof(" - Master image: %s", defaultMasterImageName)
+		logrus.Infof(" - Main image: %s", defaultMainImageName)
 		logrus.Infof(" - Worker image: %s", workerImageForStack)
 	}()
 	if err = deployStack(cli, defaultStackName, compose); err != nil {
@@ -113,11 +113,11 @@ func xmain() (int, error) {
 	logrus.Infof("The log will be displayed here after some duration."+
 		"You can watch the live status via `docker service logs %s_worker`",
 		defaultStackName)
-	masterContainerID, err := waitForMasterUp(cli, defaultStackName)
+	mainContainerID, err := waitForMainUp(cli, defaultStackName)
 	if err != nil {
 		return 1, err
 	}
-	rc, err := waitForContainerCompletion(cli, os.Stdout, os.Stderr, masterContainerID)
+	rc, err := waitForContainerCompletion(cli, os.Stdout, os.Stderr, mainContainerID)
 	if err != nil {
 		return 1, err
 	}
@@ -154,25 +154,25 @@ func filtersBytes(optionalFiltersFile string) ([]byte, error) {
 	return b, nil
 }
 
-func waitForMasterUp(cli *client.Client, stackName string) (string, error) {
-	// FIXME(AkihiroSuda): it should retry until master is up, rather than pre-sleeping
+func waitForMainUp(cli *client.Client, stackName string) (string, error) {
+	// FIXME(AkihiroSuda): it should retry until main is up, rather than pre-sleeping
 	time.Sleep(10 * time.Second)
 
 	fil := filters.NewArgs()
 	fil.Add("label", "com.docker.stack.namespace="+stackName)
 	// FIXME(AkihiroSuda): we should not rely on internal service naming convention
-	fil.Add("label", "com.docker.swarm.service.name="+stackName+"_master")
-	masters, err := cli.ContainerList(context.Background(), types.ContainerListOptions{
+	fil.Add("label", "com.docker.swarm.service.name="+stackName+"_main")
+	mains, err := cli.ContainerList(context.Background(), types.ContainerListOptions{
 		All:     true,
 		Filters: fil,
 	})
 	if err != nil {
 		return "", err
 	}
-	if len(masters) == 0 {
-		return "", fmt.Errorf("master not running in stack %s?", stackName)
+	if len(mains) == 0 {
+		return "", fmt.Errorf("main not running in stack %s?", stackName)
 	}
-	return masters[0].ID, nil
+	return mains[0].ID, nil
 }
 
 func waitForContainerCompletion(cli *client.Client, stdout, stderr io.Writer, containerID string) (int64, error) {

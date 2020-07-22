@@ -32,8 +32,8 @@ services:
 # The restart condition needs to be any for funker function
         condition: any
 
-  master:
-    image: "{{.MasterImage}}"
+  main:
+    image: "{{.MainImage}}"
     command: ["-worker-service=worker", "-input=/mnt/input", "-chunks={{.Chunks}}", "-shuffle={{.Shuffle}}", "-rand-seed={{.RandSeed}}"]
     networks:
       - net
@@ -45,7 +45,7 @@ services:
       restart_policy:
         condition: none
       placement:
-# Make sure the master can access the volume
+# Make sure the main can access the volume
         constraints: [node.id == {{.SelfNodeID}}]
 
 networks:
@@ -59,7 +59,7 @@ volumes:
 type composeOptions struct {
 	Replicas     int
 	Chunks       int
-	MasterImage  string
+	MainImage  string
 	WorkerImage  string
 	Volume       string
 	Shuffle      bool

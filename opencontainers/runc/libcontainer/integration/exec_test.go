@@ -1163,11 +1163,11 @@ func unmountOp(path string) error {
 	return nil
 }
 
-// Launch container with rootfsPropagation in rslave mode. Also
+// Launch container with rootfsPropagation in rsubordinate mode. Also
 // bind mount a volume /mnt1host at /mnt1cont at the time of launch. Now do
 // another mount on host (/mnt1host/mnt2host) and this new mount should
 // propagate to container (/mnt1cont/mnt2host)
-func TestRootfsPropagationSlaveMount(t *testing.T) {
+func TestRootfsPropagationSubordinateMount(t *testing.T) {
 	var mountPropagated bool
 	var dir1cont string
 	var dir2cont string
@@ -1190,7 +1190,7 @@ func TestRootfsPropagationSlaveMount(t *testing.T) {
 	defer os.RemoveAll(dir1host)
 
 	// Make this dir a "shared" mount point. This will make sure a
-	// slave relationship can be established in container.
+	// subordinate relationship can be established in container.
 	err = syscall.Mount(dir1host, dir1host, "bind", syscall.MS_BIND|syscall.MS_REC, "")
 	ok(t, err)
 	err = syscall.Mount("", dir1host, "", syscall.MS_SHARED|syscall.MS_REC, "")
@@ -1206,7 +1206,7 @@ func TestRootfsPropagationSlaveMount(t *testing.T) {
 	// TODO: systemd specific processing
 	f := factory
 
-	container, err := f.Create("testSlaveMount", config)
+	container, err := f.Create("testSubordinateMount", config)
 	ok(t, err)
 	defer container.Destroy()
 

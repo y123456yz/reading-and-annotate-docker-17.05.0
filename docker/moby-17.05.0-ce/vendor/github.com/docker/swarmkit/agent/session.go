@@ -25,7 +25,7 @@ var (
 // starts the registration and heartbeat control cycle. Any failure will result
 // in a complete shutdown of the session and it must be reestablished.
 //
-// All communication with the master is done through session.  Changes that
+// All communication with the main is done through session.  Changes that
 // flow into the agent, such as task assignment, are called back into the
 // agent through errs, messages and tasks.
 type session struct {

@@ -50,19 +50,19 @@ func TestMount(t *testing.T) {
 		{source, "", "bind", "", ""},
 		{source, "", "bind,private", "", ""},
 		{source, "", "bind,shared", "", "shared"},
-		{source, "", "bind,slave", "", "master"},
+		{source, "", "bind,subordinate", "", "main"},
 		{source, "", "bind,unbindable", "", "unbindable"},
 		// Read Write tests
 		{source, "", "bind,rw", "rw", ""},
 		{source, "", "bind,rw,private", "rw", ""},
 		{source, "", "bind,rw,shared", "rw", "shared"},
-		{source, "", "bind,rw,slave", "rw", "master"},
+		{source, "", "bind,rw,subordinate", "rw", "main"},
 		{source, "", "bind,rw,unbindable", "rw", "unbindable"},
 		// Read Only tests
 		{source, "", "bind,ro", "ro", ""},
 		{source, "", "bind,ro,private", "ro", ""},
 		{source, "", "bind,ro,shared", "ro", "shared"},
-		{source, "", "bind,ro,slave", "ro", "master"},
+		{source, "", "bind,ro,subordinate", "ro", "main"},
 		{source, "", "bind,ro,unbindable", "ro", "unbindable"},
 	}
 
@@ -76,8 +76,8 @@ func TestMount(t *testing.T) {
 		}
 
 		t.Run(fmt.Sprintf("%v-%v", ftype, options), func(t *testing.T) {
-			if strings.Contains(tc.options, "slave") {
-				// Slave requires a shared source
+			if strings.Contains(tc.options, "subordinate") {
+				// Subordinate requires a shared source
 				if err := MakeShared(source); err != nil {
 					t.Fatal(err)
 				}

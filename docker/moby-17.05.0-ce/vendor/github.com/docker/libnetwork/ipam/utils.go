@@ -15,12 +15,12 @@ const (
 	v6 = 6
 )
 
-func getAddressRange(pool string, masterNw *net.IPNet) (*AddressRange, error) {
+func getAddressRange(pool string, mainNw *net.IPNet) (*AddressRange, error) {
 	ip, nw, err := net.ParseCIDR(pool)
 	if err != nil {
 		return nil, ipamapi.ErrInvalidSubPool
 	}
-	lIP, e := types.GetHostPartIP(nw.IP, masterNw.Mask)
+	lIP, e := types.GetHostPartIP(nw.IP, mainNw.Mask)
 	if e != nil {
 		return nil, fmt.Errorf("failed to compute range's lowest ip address: %v", e)
 	}
@@ -28,7 +28,7 @@ func getAddressRange(pool string, masterNw *net.IPNet) (*AddressRange, error) {
 	if e != nil {
 		return nil, fmt.Errorf("failed to compute range's broadcast ip address: %v", e)
 	}
-	hIP, e := types.GetHostPartIP(bIP, masterNw.Mask)
+	hIP, e := types.GetHostPartIP(bIP, mainNw.Mask)
 	if e != nil {
 		return nil, fmt.Errorf("failed to compute range's highest ip address: %v", e)
 	}

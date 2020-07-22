@@ -95,7 +95,7 @@ func (d *driver) createNetwork(config *configuration) error {
 			if err != nil {
 				return err
 			}
-			config.CreatedSlaveLink = true
+			config.CreatedSubordinateLink = true
 			// notify the user in logs they have limited comunicatins
 			if config.Parent == getDummyName(stringid.TruncateID(config.ID)) {
 				logrus.Debugf("Empty -o parent= and --internal flags limit communications to other containers inside of network: %s",
@@ -108,8 +108,8 @@ func (d *driver) createNetwork(config *configuration) error {
 			if err != nil {
 				return err
 			}
-			// if driver created the networks slave link, record it for future deletion
-			config.CreatedSlaveLink = true
+			// if driver created the networks subordinate link, record it for future deletion
+			config.CreatedSubordinateLink = true
 		}
 	}
 	n := &network{
@@ -131,8 +131,8 @@ func (d *driver) DeleteNetwork(nid string) error {
 	if n == nil {
 		return fmt.Errorf("network id %s not found", nid)
 	}
-	// if the driver created the slave interface, delete it, otherwise leave it
-	if ok := n.config.CreatedSlaveLink; ok {
+	// if the driver created the subordinate interface, delete it, otherwise leave it
+	if ok := n.config.CreatedSubordinateLink; ok {
 		// if the interface exists, only delete if it matches iface.vlan or dummy.net_id naming
 		if ok := parentExists(n.config.Parent); ok {
 			// only delete the link if it is named the net_id

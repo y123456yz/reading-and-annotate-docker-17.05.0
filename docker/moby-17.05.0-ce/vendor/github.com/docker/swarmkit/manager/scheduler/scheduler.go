@@ -393,7 +393,7 @@ func (s *Scheduler) applySchedulingDecisions(ctx context.Context, schedulingDeci
 
 	successful = make([]schedulingDecision, 0, len(schedulingDecisions))
 
-	// Apply changes to master store
+	// Apply changes to main store
 	applied, err := s.store.Batch(func(batch *store.Batch) error {
 		for len(schedulingDecisions) > 0 {
 			err := batch.Update(func(tx store.Tx) error {

@@ -119,14 +119,14 @@ type networkDBTable struct {
 
 // IpamConf contains all the ipam related configurations for a network
 type IpamConf struct {
-	// The master address pool for containers and network interfaces
+	// The main address pool for containers and network interfaces
 	PreferredPool string
-	// A subset of the master pool. If specified,
+	// A subset of the main pool. If specified,
 	// this becomes the container pool
 	SubPool string
 	// Preferred Network Gateway address (optional)
 	Gateway string
-	// Auxiliary addresses for network driver. Must be within the master pool.
+	// Auxiliary addresses for network driver. Must be within the main pool.
 	// libnetwork will reserve them if they fall into the container pool
 	AuxAddresses map[string]string
 }
@@ -1371,7 +1371,7 @@ func (n *network) ipamAllocateVersion(ipVer int, ipam ipamapi.Ipam) error {
 			}
 		}
 
-		// Auxiliary addresses must be part of the master address pool
+		// Auxiliary addresses must be part of the main address pool
 		// If they fall into the container addressable pool, libnetwork will reserve them
 		if cfg.AuxAddresses != nil {
 			var ip net.IP
@@ -1381,7 +1381,7 @@ func (n *network) ipamAllocateVersion(ipVer int, ipam ipamapi.Ipam) error {
 					return types.BadRequestErrorf("non parsable secondary ip address (%s:%s) passed for network %s", k, v, n.Name())
 				}
 				if !d.Pool.Contains(ip) {
-					return types.ForbiddenErrorf("auxilairy address: (%s:%s) must belong to the master pool: %s", k, v, d.Pool)
+					return types.ForbiddenErrorf("auxilairy address: (%s:%s) must belong to the main pool: %s", k, v, d.Pool)
 				}
 				// Attempt reservation in the container addressable pool, silent the error if address does not belong to that pool
 				if d.IPAMData.AuxAddresses[k], _, err = ipam.RequestAddress(d.PoolID, ip, nil); err != nil && err != ipamapi.ErrIPOutOfRange {

@@ -270,17 +270,17 @@ func (aSpace *addrSpace) updatePoolDBOnAdd(k SubnetKey, nw *net.IPNet, ipr *Addr
 		return func() error { return nil }, nil
 	}
 
-	// If master pool, check for overlap
+	// If main pool, check for overlap
 	if ipr == nil {
 		if aSpace.contains(k.AddressSpace, nw) {
 			return nil, ipamapi.ErrPoolOverlap
 		}
-		// This is a new master pool, add it along with corresponding bitmask
+		// This is a new main pool, add it along with corresponding bitmask
 		aSpace.subnets[k] = &PoolData{Pool: nw, RefCount: 1}
 		return func() error { return aSpace.alloc.insertBitMask(k, nw) }, nil
 	}
 
-	// This is a new non-master pool
+	// This is a new non-main pool
 	p := &PoolData{
 		ParentKey: SubnetKey{AddressSpace: k.AddressSpace, Subnet: k.Subnet},
 		Pool:      nw,

@@ -163,7 +163,7 @@ func TestCheckoutGit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err = gitWithinDir(gitDir, "checkout", "master"); err != nil {
+	if _, err = gitWithinDir(gitDir, "checkout", "main"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -175,13 +175,13 @@ func TestCheckoutGit(t *testing.T) {
 
 	cases := []singleCase{
 		{"", "FROM scratch", false},
-		{"master", "FROM scratch", false},
+		{"main", "FROM scratch", false},
 		{":subdir", "FROM scratch" + eol + "EXPOSE 5000", false},
 		{":nosubdir", "", true},   // missing directory error
 		{":Dockerfile", "", true}, // not a directory error
-		{"master:nosubdir", "", true},
-		{"master:subdir", "FROM scratch" + eol + "EXPOSE 5000", false},
-		{"master:../subdir", "", true},
+		{"main:nosubdir", "", true},
+		{"main:subdir", "FROM scratch" + eol + "EXPOSE 5000", false},
+		{"main:../subdir", "", true},
 		{"test", "FROM scratch" + eol + "EXPOSE 3000", false},
 		{"test:", "FROM scratch" + eol + "EXPOSE 3000", false},
 		{"test:subdir", "FROM busybox" + eol + "EXPOSE 5000", false},
@@ -193,8 +193,8 @@ func TestCheckoutGit(t *testing.T) {
 		//	error: readlink("absolutelink"): Function not implemented
 		// 	error: unable to index file absolutelink
 		// 	fatal: adding files failed
-		cases = append(cases, singleCase{frag: "master:absolutelink", exp: "FROM scratch" + eol + "EXPOSE 5000", fail: false})
-		cases = append(cases, singleCase{frag: "master:parentlink", exp: "FROM scratch" + eol + "EXPOSE 5000", fail: false})
+		cases = append(cases, singleCase{frag: "main:absolutelink", exp: "FROM scratch" + eol + "EXPOSE 5000", fail: false})
+		cases = append(cases, singleCase{frag: "main:parentlink", exp: "FROM scratch" + eol + "EXPOSE 5000", fail: false})
 	}
 
 	for _, c := range cases {

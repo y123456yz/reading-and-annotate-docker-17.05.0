@@ -48,9 +48,9 @@ func getIfSocket() (fd int, err error) {
 	return -1, err
 }
 
-func ifIoctBridge(iface, master *net.Interface, op uintptr) error {
-	if len(master.Name) >= ifNameSize {
-		return fmt.Errorf("Interface name %s too long", master.Name)
+func ifIoctBridge(iface, main *net.Interface, op uintptr) error {
+	if len(main.Name) >= ifNameSize {
+		return fmt.Errorf("Interface name %s too long", main.Name)
 	}
 
 	s, err := getIfSocket()
@@ -60,7 +60,7 @@ func ifIoctBridge(iface, master *net.Interface, op uintptr) error {
 	defer syscall.Close(s)
 
 	ifr := ifreqIndex{}
-	copy(ifr.IfrnName[:len(ifr.IfrnName)-1], master.Name)
+	copy(ifr.IfrnName[:len(ifr.IfrnName)-1], main.Name)
 	ifr.IfruIndex = int32(iface.Index)
 
 	if _, _, err := syscall.Syscall(syscall.SYS_IOCTL, uintptr(s), op, uintptr(unsafe.Pointer(&ifr))); err != 0 {
@@ -70,10 +70,10 @@ func ifIoctBridge(iface, master *net.Interface, op uintptr) error {
 	return nil
 }
 
-// Add a slave to a bridge device.  This is more backward-compatible than
-// netlink.NetworkSetMaster and works on RHEL 6.
-func ioctlAddToBridge(iface, master *net.Interface) error {
-	return ifIoctBridge(iface, master, ioctlBrAddIf)
+// Add a subordinate to a bridge device.  This is more backward-compatible than
+// netlink.NetworkSetMain and works on RHEL 6.
+func ioctlAddToBridge(iface, main *net.Interface) error {
+	return ifIoctBridge(iface, main, ioctlBrAddIf)
 }
 
 func ioctlSetMacAddress(name, addr string) error {

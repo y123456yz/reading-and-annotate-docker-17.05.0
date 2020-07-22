@@ -75,9 +75,9 @@ type transaction struct {
 }
 
 /*
-root@fd-xxx-slave38.gz01:/var/lib/docker/devicemapper/metadata$ cat 73566c5a5e7f6cb18378dac0f4f0415b9d982f4231418fc2321de9395d386ab2-init
+root@fd-xxx-subordinate38.gz01:/var/lib/docker/devicemapper/metadata$ cat 73566c5a5e7f6cb18378dac0f4f0415b9d982f4231418fc2321de9395d386ab2-init
 {"device_id":39,"size":42949672960,"transaction_id":61,"initialized":false,"deleted":false}
-root@fd-mesos-slave38.gz01:/var/lib/docker/devicemapper/metadata$
+root@fd-mesos-subordinate38.gz01:/var/lib/docker/devicemapper/metadata$
 */
 //  /var/lib/docker/devicemapper/metadata 文件夹中的json文件内容反序列号后存入devInfo结构的各个变量中，赋值初始化见 loadMetadata
 // DeviceSet:thin pool数据结构    DevInfo:thin device数据结构
@@ -1878,7 +1878,7 @@ func (devices *DeviceSet) initDevmapper(doInit bool) error {
 	//	- If <inode> is defined, use that file inside the device as a loopback image. Otherwise use the device itself.
 
 	/*
-	root@ob-slave-465.gz01:/var/lib/docker/devicemapper$ stat /var/lib/docker/devicemapper/
+	root@ob-subordinate-465.gz01:/var/lib/docker/devicemapper$ stat /var/lib/docker/devicemapper/
 	  File: '/var/lib/docker/devicemapper/'
 	  Size: 4096            Blocks: 8          IO Block: 4096   directory
 	Device: 804h/2052d      Inode: 1184401     Links: 4
@@ -1916,7 +1916,7 @@ func (devices *DeviceSet) initDevmapper(doInit bool) error {
 	// If the pool doesn't exist, create it
 	//dockerd -D -s devicemapper，并且不要配置/etc/docker/daemon.json的时候会走到这个流程
 	/*
-	root@ob-slave-465.gz01:/home/odin/yangyazhou$ cat /etc/docker/daemon.json
+	root@ob-subordinate-465.gz01:/home/odin/yangyazhou$ cat /etc/docker/daemon.json
 	{
 	  "storage-driver": "devicemapper",
 	   "storage-opts": [

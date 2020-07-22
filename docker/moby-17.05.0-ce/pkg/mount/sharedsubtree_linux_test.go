@@ -174,9 +174,9 @@ func TestSubtreeShared(t *testing.T) {
 	}
 }
 
-// testing that mounts to a shared source show up in the slave target,
-// and that mounts into a slave target do _not_ show up in the shared source
-func TestSubtreeSharedSlave(t *testing.T) {
+// testing that mounts to a shared source show up in the subordinate target,
+// and that mounts into a subordinate target do _not_ show up in the shared source
+func TestSubtreeSharedSubordinate(t *testing.T) {
 	tmp := path.Join(os.TempDir(), "mount-tests")
 	if err := os.MkdirAll(tmp, 0777); err != nil {
 		t.Fatal(err)
@@ -237,8 +237,8 @@ func TestSubtreeSharedSlave(t *testing.T) {
 		}
 	}()
 
-	// next, make the target slave
-	if err := MakeSlave(targetDir); err != nil {
+	// next, make the target subordinate
+	if err := MakeSubordinate(targetDir); err != nil {
 		t.Fatal(err)
 	}
 	defer func() {
