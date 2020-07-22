@@ -31,7 +31,7 @@ type Remotes interface {
 	//
 	// The observation will be used to calculate a moving weight, which is
 	// implementation dependent. This method will be called such that repeated
-	// observations of the same master in each session request are favored.
+	// observations of the same main in each session request are favored.
 	Observe(peer api.Peer, weight int)
 
 	// ObserveIfExists records an experience with a particular remote if when a
@@ -84,7 +84,7 @@ func (mwr *remotesWeightedRandom) Select(excludes ...string) (api.Peer, error) {
 
 	// NOTE(stevvooe): We then use a weighted random selection algorithm
 	// (http://stackoverflow.com/questions/4463561/weighted-random-selection-from-array)
-	// to choose the master to connect to.
+	// to choose the main to connect to.
 	//
 	// It is possible that this is insufficient. The following may inform a
 	// better solution:
@@ -92,7 +92,7 @@ func (mwr *remotesWeightedRandom) Select(excludes ...string) (api.Peer, error) {
 	// https://github.com/LK4D4/sample
 	//
 	// The first link applies exponential distribution weight choice reservoir
-	// sampling. This may be relevant if we view the master selection as a
+	// sampling. This may be relevant if we view the main selection as a
 	// distributed reservoir sampling problem.
 
 	// bias to zero-weighted remotes have same probability. otherwise, we

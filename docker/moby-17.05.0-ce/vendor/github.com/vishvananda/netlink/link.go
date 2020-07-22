@@ -28,7 +28,7 @@ type LinkAttrs struct {
 	Flags        net.Flags
 	RawFlags     uint32
 	ParentIndex  int         // index of the parent link device
-	MasterIndex  int         // must be the index of a bridge
+	MainIndex  int         // must be the index of a bridge
 	Namespace    interface{} // nil | NsPid | NsFd
 	Alias        string
 	Statistics   *LinkStatistics
@@ -568,7 +568,7 @@ type BondAdInfo struct {
 type Bond struct {
 	LinkAttrs
 	Mode            BondMode
-	ActiveSlave     int
+	ActiveSubordinate     int
 	Miimon          int
 	UpDelay         int
 	DownDelay       int
@@ -583,10 +583,10 @@ type Bond struct {
 	XmitHashPolicy  BondXmitHashPolicy
 	ResendIgmp      int
 	NumPeerNotif    int
-	AllSlavesActive int
+	AllSubordinatesActive int
 	MinLinks        int
 	LpInterval      int
-	PackersPerSlave int
+	PackersPerSubordinate int
 	LacpRate        BondLacpRate
 	AdSelect        BondAdSelect
 	// looking at iproute tool AdInfo can only be retrived. It can't be set.
@@ -597,7 +597,7 @@ func NewLinkBond(atr LinkAttrs) *Bond {
 	return &Bond{
 		LinkAttrs:       atr,
 		Mode:            -1,
-		ActiveSlave:     -1,
+		ActiveSubordinate:     -1,
 		Miimon:          -1,
 		UpDelay:         -1,
 		DownDelay:       -1,
@@ -612,10 +612,10 @@ func NewLinkBond(atr LinkAttrs) *Bond {
 		XmitHashPolicy:  -1,
 		ResendIgmp:      -1,
 		NumPeerNotif:    -1,
-		AllSlavesActive: -1,
+		AllSubordinatesActive: -1,
 		MinLinks:        -1,
 		LpInterval:      -1,
-		PackersPerSlave: -1,
+		PackersPerSubordinate: -1,
 		LacpRate:        -1,
 		AdSelect:        -1,
 	}
@@ -735,4 +735,4 @@ func (vrf *Vrf) Type() string {
 // vlan | veth | vcan | dummy | ifb | macvlan | macvtap |
 // bridge | bond | ipoib | ip6tnl | ipip | sit | vxlan |
 // gre | gretap | ip6gre | ip6gretap | vti | nlmon |
-// bond_slave | ipvlan
+// bond_subordinate | ipvlan

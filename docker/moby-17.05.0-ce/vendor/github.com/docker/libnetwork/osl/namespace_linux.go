@@ -438,11 +438,11 @@ func (n *networkNamespace) Restore(ifsopt map[string][]IfaceOption, routes []*ty
 		dstPrefix := seps[1]
 		i := &nwIface{srcName: srcName, dstName: dstPrefix, ns: n}
 		i.processInterfaceOptions(opts...)
-		if i.master != "" {
-			i.dstMaster = n.findDst(i.master, true)
-			if i.dstMaster == "" {
-				return fmt.Errorf("could not find an appropriate master %q for %q",
-					i.master, i.srcName)
+		if i.main != "" {
+			i.dstMain = n.findDst(i.main, true)
+			if i.dstMain == "" {
+				return fmt.Errorf("could not find an appropriate main %q for %q",
+					i.main, i.srcName)
 			}
 		}
 		if n.isDefault {
@@ -481,7 +481,7 @@ func (n *networkNamespace) Restore(ifsopt map[string][]IfaceOption, routes []*ty
 				}
 				// This is to find the interface name of the pair in overlay sandbox
 				if strings.HasPrefix(ifaceName, "veth") {
-					if i.master != "" && i.dstName == "veth" {
+					if i.main != "" && i.dstName == "veth" {
 						i.dstName = ifaceName
 					}
 				}

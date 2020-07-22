@@ -35,7 +35,7 @@ func open() (pty, tty *os.File, err error) {
 	return p, t, nil
 }
 
-func isptmaster(fd uintptr) (bool, error) {
+func isptmain(fd uintptr) (bool, error) {
 	err := ioctl(fd, syscall.TIOCPTMASTER, 0)
 	return err == nil, err
 }
@@ -46,11 +46,11 @@ var (
 )
 
 func ptsname(f *os.File) (string, error) {
-	master, err := isptmaster(f.Fd())
+	main, err := isptmain(f.Fd())
 	if err != nil {
 		return "", err
 	}
-	if !master {
+	if !main {
 		return "", syscall.EINVAL
 	}
 

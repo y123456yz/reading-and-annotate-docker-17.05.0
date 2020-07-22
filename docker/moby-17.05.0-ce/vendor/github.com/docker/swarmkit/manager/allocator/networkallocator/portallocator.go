@@ -16,15 +16,15 @@ const (
 	// allocated when the user did not specify a port.
 	dynamicPortEnd = 32767
 
-	// The start of master port range which will hold all the
+	// The start of main port range which will hold all the
 	// allocation state of ports allocated so far regardless of
 	// whether it was user defined or not.
-	masterPortStart = 1
+	mainPortStart = 1
 
-	// The end of master port range which will hold all the
+	// The end of main port range which will hold all the
 	// allocation state of ports allocated so far regardless of
 	// whether it was user defined or not.
-	masterPortEnd = 65535
+	mainPortEnd = 65535
 )
 
 type portAllocator struct {
@@ -34,7 +34,7 @@ type portAllocator struct {
 
 type portSpace struct {
 	protocol         api.PortConfig_Protocol
-	masterPortSpace  *idm.Idm
+	mainPortSpace  *idm.Idm
 	dynamicPortSpace *idm.Idm
 }
 
@@ -118,10 +118,10 @@ func newPortAllocator() (*portAllocator, error) {
 }
 
 func newPortSpace(protocol api.PortConfig_Protocol) (*portSpace, error) {
-	masterName := fmt.Sprintf("%s-master-ports", protocol)
+	mainName := fmt.Sprintf("%s-main-ports", protocol)
 	dynamicName := fmt.Sprintf("%s-dynamic-ports", protocol)
 
-	master, err := idm.New(nil, masterName, masterPortStart, masterPortEnd)
+	main, err := idm.New(nil, mainName, mainPortStart, mainPortEnd)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +133,7 @@ func newPortSpace(protocol api.PortConfig_Protocol) (*portSpace, error) {
 
 	return &portSpace{
 		protocol:         protocol,
-		masterPortSpace:  master,
+		mainPortSpace:  main,
 		dynamicPortSpace: dynamic,
 	}, nil
 }
@@ -378,7 +378,7 @@ func (ps *portSpace) allocate(p *api.PortConfig) (err error) {
 			}()
 		}
 
-		return ps.masterPortSpace.GetSpecificID(uint64(p.PublishedPort))
+		return ps.mainPortSpace.GetSpecificID(uint64(p.PublishedPort))
 	}
 
 	// Check out an arbitrary port from dynamic port space.
@@ -392,8 +392,8 @@ func (ps *portSpace) allocate(p *api.PortConfig) (err error) {
 		}
 	}()
 
-	// Make sure we allocate the same port from the master space.
-	if err = ps.masterPortSpace.GetSpecificID(uint64(swarmPort)); err != nil {
+	// Make sure we allocate the same port from the main space.
+	if err = ps.mainPortSpace.GetSpecificID(uint64(swarmPort)); err != nil {
 		return
 	}
 
@@ -406,5 +406,5 @@ func (ps *portSpace) free(p *api.PortConfig) {
 		ps.dynamicPortSpace.Release(uint64(p.PublishedPort))
 	}
 
-	ps.masterPortSpace.Release(uint64(p.PublishedPort))
+	ps.mainPortSpace.Release(uint64(p.PublishedPort))
 }

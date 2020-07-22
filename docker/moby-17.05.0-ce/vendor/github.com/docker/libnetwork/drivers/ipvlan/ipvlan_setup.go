@@ -16,7 +16,7 @@ const (
 	ipvlanMajorVer  = 2     // minimum ipvlan major kernel support
 )
 
-// createIPVlan Create the ipvlan slave specifying the source name
+// createIPVlan Create the ipvlan subordinate specifying the source name
 func createIPVlan(containerIfName, parent, ipvlanMode string) (string, error) {
 	// Set the ipvlan mode. Default is bridge mode
 	mode, err := setIPVlanMode(ipvlanMode)
@@ -27,7 +27,7 @@ func createIPVlan(containerIfName, parent, ipvlanMode string) (string, error) {
 	if !parentExists(parent) {
 		return "", fmt.Errorf("the requested parent interface %s was not found on the Docker host", parent)
 	}
-	// Get the link for the master index (Example: the docker host eth iface)
+	// Get the link for the main index (Example: the docker host eth iface)
 	parentLink, err := ns.NlHandle().LinkByName(parent)
 	if err != nil {
 		return "", fmt.Errorf("error occoured looking up the %s parent iface %s error: %s", ipvlanType, parent, err)
@@ -41,7 +41,7 @@ func createIPVlan(containerIfName, parent, ipvlanMode string) (string, error) {
 		Mode: mode,
 	}
 	if err := ns.NlHandle().LinkAdd(ipvlan); err != nil {
-		// If a user creates a macvlan and ipvlan on same parent, only one slave iface can be active at a time.
+		// If a user creates a macvlan and ipvlan on same parent, only one subordinate iface can be active at a time.
 		return "", fmt.Errorf("failed to create the %s port: %v", ipvlanType, err)
 	}
 
@@ -84,7 +84,7 @@ func createVlanLink(parentName string) error {
 		// get the parent link to attach a vlan subinterface
 		parentLink, err := ns.NlHandle().LinkByName(parent)
 		if err != nil {
-			return fmt.Errorf("failed to find master interface %s on the Docker host: %v", parent, err)
+			return fmt.Errorf("failed to find main interface %s on the Docker host: %v", parent, err)
 		}
 		vlanLink := &netlink.Vlan{
 			LinkAttrs: netlink.LinkAttrs{
@@ -122,9 +122,9 @@ func delVlanLink(linkName string) error {
 		}
 		// verify a parent interface isn't being deleted
 		if vlanLink.Attrs().ParentIndex == 0 {
-			return fmt.Errorf("interface %s does not appear to be a slave device: %v", linkName, err)
+			return fmt.Errorf("interface %s does not appear to be a subordinate device: %v", linkName, err)
 		}
-		// delete the ipvlan slave device
+		// delete the ipvlan subordinate device
 		if err := ns.NlHandle().LinkDel(vlanLink); err != nil {
 			return fmt.Errorf("failed to delete  %s link: %v", linkName, err)
 		}
@@ -135,7 +135,7 @@ func delVlanLink(linkName string) error {
 	return nil
 }
 
-// parseVlan parses and verifies a slave interface name: -o parent=eth0.10
+// parseVlan parses and verifies a subordinate interface name: -o parent=eth0.10
 func parseVlan(linkName string) (string, int, error) {
 	// parse -o parent=eth0.10
 	splitName := strings.Split(linkName, ".")

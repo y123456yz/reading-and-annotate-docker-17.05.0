@@ -851,7 +851,7 @@ func addToBridge(nlh *netlink.Handle, ifaceName, bridgeName string) error {
 	if err != nil {
 		return fmt.Errorf("could not find interface %s: %v", ifaceName, err)
 	}
-	if err = nlh.LinkSetMaster(link,
+	if err = nlh.LinkSetMain(link,
 		&netlink.Bridge{LinkAttrs: netlink.LinkAttrs{Name: bridgeName}}); err != nil {
 		logrus.Debugf("Failed to add %s to bridge via netlink.Trying ioctl: %v", ifaceName, err)
 		iface, err := net.InterfaceByName(ifaceName)
@@ -859,12 +859,12 @@ func addToBridge(nlh *netlink.Handle, ifaceName, bridgeName string) error {
 			return fmt.Errorf("could not find network interface %s: %v", ifaceName, err)
 		}
 
-		master, err := net.InterfaceByName(bridgeName)
+		main, err := net.InterfaceByName(bridgeName)
 		if err != nil {
 			return fmt.Errorf("could not find bridge %s: %v", bridgeName, err)
 		}
 
-		return ioctlAddToBridge(iface, master)
+		return ioctlAddToBridge(iface, main)
 	}
 	return nil
 }

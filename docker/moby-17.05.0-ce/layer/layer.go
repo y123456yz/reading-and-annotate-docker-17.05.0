@@ -87,25 +87,25 @@ chainID计算过程：假设某个镜像diff_ids如下  cat /var/lib/docker/imag
       #2的chainID计算方法：(父层的chainID(第一层chainID)和第二层的diff_id计算sha256sum的结果)
       root@fd-mesos-xxx.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ echo -n "sha256:51a45fddc531d0138a18ad6f073310daab3a3fe4862997b51b6c8571f3776b62 sha256:5792d8202a821076989a52ced68d1382fc0596f937e7808abbd5ffc1db93fffb" | sha256sum
       e299130128d155d60bac3991100c2cda6a35c5ad0b542a5ffab2679654dfd445  -
-      root@fd-mesos-master04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ cat e299130128d155d60bac3991100c2cda6a35c5ad0b542a5ffab2679654dfd445/diff
+      root@fd-mesos-main04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ cat e299130128d155d60bac3991100c2cda6a35c5ad0b542a5ffab2679654dfd445/diff
       sha256:5792d8202a821076989a52ced68d1382fc0596f937e7808abbd5ffc1db93fffb  //diff内容就和diff_ids第二层一样
-      root@fd-mesos-master04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$
-      root@fd-mesos-master04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ cat e299130128d155d60bac3991100c2cda6a35c5ad0b542a5ffab2679654dfd445/parent
+      root@fd-mesos-main04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$
+      root@fd-mesos-main04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ cat e299130128d155d60bac3991100c2cda6a35c5ad0b542a5ffab2679654dfd445/parent
       sha256:51a45fddc531d0138a18ad6f073310daab3a3fe4862997b51b6c8571f3776b62  //parent内容就是第一层chainID
-      root@fd-mesos-master04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$
-      root@fd-mesos-master04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$
+      root@fd-mesos-main04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$
+      root@fd-mesos-main04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$
 
       #3的chainID计算方法：(父层的chainID(第二层chainID)和第三层的diff_id计算sha256sum的结果)
         root@fd-mesos-xxx.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ echo -n "sha256:e299130128d155d60bac3991100c2cda6a35c5ad0b542a5ffab2679654dfd445 sha256:b7bbef1946d74cdfd84b0db815b4fe9fc9405451190aa65b9eab6ae198c560b4" | sha256sum
 	c6c38436b063046117fb9b4210a54c0d29aa8b5f350964d1723468e6a324e1a8  -
-	root@fd-mesos-master04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ ls c6c38436b063046117fb9b4210a54c0d29aa8b5f350964d1723468e6a324e1a8/
+	root@fd-mesos-main04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ ls c6c38436b063046117fb9b4210a54c0d29aa8b5f350964d1723468e6a324e1a8/
 	cache-id  diff  parent  size  tar-split.json.gz
-	root@fd-mesos-master04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ cat c6c38436b063046117fb9b4210a54c0d29aa8b5f350964d1723468e6a324e1a8/parent
+	root@fd-mesos-main04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ cat c6c38436b063046117fb9b4210a54c0d29aa8b5f350964d1723468e6a324e1a8/parent
 	sha256:e299130128d155d60bac3991100c2cda6a35c5ad0b542a5ffab2679654dfd445  //parent内容就是第二层chainID
-	root@fd-mesos-master04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$
-	root@fd-mesos-master04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ cat c6c38436b063046117fb9b4210a54c0d29aa8b5f350964d1723468e6a324e1a8/diff
+	root@fd-mesos-main04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$
+	root@fd-mesos-main04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ cat c6c38436b063046117fb9b4210a54c0d29aa8b5f350964d1723468e6a324e1a8/diff
 	sha256:b7bbef1946d74cdfd84b0db815b4fe9fc9405451190aa65b9eab6ae198c560b4 //diff内容就和diff_ids第二层一样
-	root@fd-mesos-master04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$
+	root@fd-mesos-main04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$
 */
 
 //ChainID 通过 createChainIDFromParent 计算得到，根据/var/lib/docker/image/devicemapper/imagedb/content/sha256/XXX文件内容中的diff_ids递归计算得到，
@@ -355,25 +355,25 @@ chainID计算过程：假设某个镜像diff_ids如下  cat /var/lib/docker/imag
       #2的chainID计算方法：(父层的chainID(第一层chainID)和第二层的diff_id计算sha256sum的结果)
       root@fd-mesos-xxx.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ echo -n "sha256:51a45fddc531d0138a18ad6f073310daab3a3fe4862997b51b6c8571f3776b62 sha256:5792d8202a821076989a52ced68d1382fc0596f937e7808abbd5ffc1db93fffb" | sha256sum
       e299130128d155d60bac3991100c2cda6a35c5ad0b542a5ffab2679654dfd445  -
-      root@fd-mesos-master04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ cat e299130128d155d60bac3991100c2cda6a35c5ad0b542a5ffab2679654dfd445/diff
+      root@fd-mesos-main04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ cat e299130128d155d60bac3991100c2cda6a35c5ad0b542a5ffab2679654dfd445/diff
       sha256:5792d8202a821076989a52ced68d1382fc0596f937e7808abbd5ffc1db93fffb  //diff内容就和diff_ids第二层一样
-      root@fd-mesos-master04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$
-      root@fd-mesos-master04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ cat e299130128d155d60bac3991100c2cda6a35c5ad0b542a5ffab2679654dfd445/parent
+      root@fd-mesos-main04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$
+      root@fd-mesos-main04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ cat e299130128d155d60bac3991100c2cda6a35c5ad0b542a5ffab2679654dfd445/parent
       sha256:51a45fddc531d0138a18ad6f073310daab3a3fe4862997b51b6c8571f3776b62  //parent内容就是第一层chainID
-      root@fd-mesos-master04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$
-      root@fd-mesos-master04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$
+      root@fd-mesos-main04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$
+      root@fd-mesos-main04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$
 
       #3的chainID计算方法：(父层的chainID(第二层chainID)和第三层的diff_id计算sha256sum的结果)
         root@fd-mesos-xxx.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ echo -n "sha256:e299130128d155d60bac3991100c2cda6a35c5ad0b542a5ffab2679654dfd445 sha256:b7bbef1946d74cdfd84b0db815b4fe9fc9405451190aa65b9eab6ae198c560b4" | sha256sum
 	c6c38436b063046117fb9b4210a54c0d29aa8b5f350964d1723468e6a324e1a8  -
-	root@fd-mesos-master04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ ls c6c38436b063046117fb9b4210a54c0d29aa8b5f350964d1723468e6a324e1a8/
+	root@fd-mesos-main04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ ls c6c38436b063046117fb9b4210a54c0d29aa8b5f350964d1723468e6a324e1a8/
 	cache-id  diff  parent  size  tar-split.json.gz
-	root@fd-mesos-master04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ cat c6c38436b063046117fb9b4210a54c0d29aa8b5f350964d1723468e6a324e1a8/parent
+	root@fd-mesos-main04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ cat c6c38436b063046117fb9b4210a54c0d29aa8b5f350964d1723468e6a324e1a8/parent
 	sha256:e299130128d155d60bac3991100c2cda6a35c5ad0b542a5ffab2679654dfd445  //parent内容就是第二层chainID
-	root@fd-mesos-master04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$
-	root@fd-mesos-master04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ cat c6c38436b063046117fb9b4210a54c0d29aa8b5f350964d1723468e6a324e1a8/diff
+	root@fd-mesos-main04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$
+	root@fd-mesos-main04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$ cat c6c38436b063046117fb9b4210a54c0d29aa8b5f350964d1723468e6a324e1a8/diff
 	sha256:b7bbef1946d74cdfd84b0db815b4fe9fc9405451190aa65b9eab6ae198c560b4 //diff内容就和diff_ids第二层一样
-	root@fd-mesos-master04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$
+	root@fd-mesos-main04.gz01:/var/lib/docker/image/devicemapper/layerdb/sha256$
 */
  //根据parent 和 dgsts 算出一个ChainID   参考https://segmentfault.com/a/1190000009730986
 //这里是算出最顶层的 b7bbef1946d74cdfd84b0db815b4fe9fc9405451190aa65b9eab6ae198c560b4 diff_id对应的chainID对应,也就是上面的#3的chainID

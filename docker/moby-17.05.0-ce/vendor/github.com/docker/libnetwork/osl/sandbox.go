@@ -94,10 +94,10 @@ type IfaceOptionSetter interface {
 	// IPAliases returns an option setter to set IP address Aliases
 	IPAliases([]*net.IPNet) IfaceOption
 
-	// Master returns an option setter to set the master interface if any for this
-	// interface. The master interface name should refer to the srcname of a
+	// Main returns an option setter to set the main interface if any for this
+	// interface. The main interface name should refer to the srcname of a
 	// previously added interface of type bridge.
-	Master(string) IfaceOption
+	Main(string) IfaceOption
 
 	// Address returns an option setter to set interface routes.
 	Routes([]*net.IPNet) IfaceOption
@@ -159,8 +159,8 @@ type Interface interface {
 	// Bridge returns true if the interface is a bridge
 	Bridge() bool
 
-	// Master returns the srcname of the master interface for this interface.
-	Master() string
+	// Main returns the srcname of the main interface for this interface.
+	Main() string
 
 	// Remove an interface from the sandbox by renaming to original name
 	// and moving it out of the sandbox.

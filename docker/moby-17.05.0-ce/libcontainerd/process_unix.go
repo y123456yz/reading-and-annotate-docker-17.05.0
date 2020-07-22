@@ -17,7 +17,7 @@ import (
 )
 
 /*
-root@fd-mesos-slave50.gz01:/var/run/docker/libcontainerd/246d243260dc647eb174421c05b88567a0f0d64f451cbc17fde53d24cc6af340$ ls
+root@fd-mesos-subordinate50.gz01:/var/run/docker/libcontainerd/246d243260dc647eb174421c05b88567a0f0d64f451cbc17fde53d24cc6af340$ ls
 config.json  init-stdin  init-stdout
 io相关的命名管道，用来和容器之间进行通信，比如这里的init-stdin文件用来向容器的stdin中写数据，init-stdout用来接收容器的stdout输出
 上面只有init-stdin和init-stdout，没有init-stderr，那是因为我们创建容器的时候指定了-t参数，意思是让docker为容器创建一个tty（虚拟的），

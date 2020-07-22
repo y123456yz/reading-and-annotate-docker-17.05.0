@@ -26,16 +26,16 @@ func MakeRPrivate(mountPoint string) error {
 	return ensureMountedAs(mountPoint, "rprivate")
 }
 
-// MakeSlave ensures a mounted filesystem has the SLAVE mount option enabled.
+// MakeSubordinate ensures a mounted filesystem has the SLAVE mount option enabled.
 // See the supported options in flags.go for further reference.
-func MakeSlave(mountPoint string) error {
-	return ensureMountedAs(mountPoint, "slave")
+func MakeSubordinate(mountPoint string) error {
+	return ensureMountedAs(mountPoint, "subordinate")
 }
 
-// MakeRSlave ensures a mounted filesystem has the RSLAVE mount option enabled.
+// MakeRSubordinate ensures a mounted filesystem has the RSLAVE mount option enabled.
 // See the supported options in flags.go for further reference.
-func MakeRSlave(mountPoint string) error {
-	return ensureMountedAs(mountPoint, "rslave")
+func MakeRSubordinate(mountPoint string) error {
+	return ensureMountedAs(mountPoint, "rsubordinate")
 }
 
 // MakeUnbindable ensures a mounted filesystem has the UNBINDABLE mount option

@@ -123,7 +123,7 @@ func (cs *ContainerdSuite) StopDaemon(kill bool) {
 			select {
 			case err := <-cs.syncChild:
 				if err != nil {
-					fmt.Printf("master containerd did not exit cleanly: %v\n", err)
+					fmt.Printf("main containerd did not exit cleanly: %v\n", err)
 				}
 				done = true
 			case <-time.After(3 * time.Second):
@@ -203,17 +203,17 @@ func (cs *ContainerdSuite) SetUpSuite(c *check.C) {
 	// Create our output directory
 	cs.outputDir = fmt.Sprintf(utils.OutputDirFormat, time.Now().Format("2006-01-02_150405.000000"))
 
-	cs.stateDir = filepath.Join(cs.outputDir, "containerd-master")
+	cs.stateDir = filepath.Join(cs.outputDir, "containerd-main")
 	if err := os.MkdirAll(cs.stateDir, 0755); err != nil {
 		c.Fatalf("Unable to created output directory '%s': %v", cs.stateDir, err)
 	}
 
-	cs.grpcSocket = "unix://" + filepath.Join(cs.outputDir, "containerd-master", "containerd.sock")
-	cdLogFile := filepath.Join(cs.outputDir, "containerd-master", "containerd.log")
+	cs.grpcSocket = "unix://" + filepath.Join(cs.outputDir, "containerd-main", "containerd.sock")
+	cdLogFile := filepath.Join(cs.outputDir, "containerd-main", "containerd.log")
 
 	f, err := os.OpenFile(cdLogFile, os.O_CREATE|os.O_TRUNC|os.O_RDWR|os.O_SYNC, 0777)
 	if err != nil {
-		c.Fatalf("Failed to create master containerd log file: %v", err)
+		c.Fatalf("Failed to create main containerd log file: %v", err)
 	}
 	cs.logFile = f
 
@@ -232,7 +232,7 @@ func (cs *ContainerdSuite) TearDownSuite(c *check.C) {
 			select {
 			case err := <-cs.syncChild:
 				if err != nil {
-					c.Errorf("master containerd did not exit cleanly: %v", err)
+					c.Errorf("main containerd did not exit cleanly: %v", err)
 				}
 				done = true
 			case <-time.After(3 * time.Second):

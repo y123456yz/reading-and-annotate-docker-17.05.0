@@ -89,7 +89,7 @@ func (daemon *Daemon) ContainerInspectCurrent(name string, size bool) (*types.Co
 	}, nil
 }
 
-// containerInspect120 serializes the master version of a container into a json type.
+// containerInspect120 serializes the main version of a container into a json type.
 func (daemon *Daemon) containerInspect120(name string) (*v1p20.ContainerJSON, error) {
 	container, err := daemon.GetContainer(name)
 	if err != nil {

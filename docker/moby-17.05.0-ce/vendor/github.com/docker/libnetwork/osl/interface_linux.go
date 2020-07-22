@@ -21,8 +21,8 @@ type IfaceOption func(i *nwIface)
 type nwIface struct {
 	srcName     string
 	dstName     string
-	master      string
-	dstMaster   string
+	main      string
+	dstMain   string
 	mac         net.HardwareAddr
 	address     *net.IPNet
 	addressIPv6 *net.IPNet
@@ -48,11 +48,11 @@ func (i *nwIface) DstName() string {
 	return i.dstName
 }
 
-func (i *nwIface) DstMaster() string {
+func (i *nwIface) DstMain() string {
 	i.Lock()
 	defer i.Unlock()
 
-	return i.dstMaster
+	return i.dstMain
 }
 
 func (i *nwIface) Bridge() bool {
@@ -62,11 +62,11 @@ func (i *nwIface) Bridge() bool {
 	return i.bridge
 }
 
-func (i *nwIface) Master() string {
+func (i *nwIface) Main() string {
 	i.Lock()
 	defer i.Unlock()
 
-	return i.master
+	return i.main
 }
 
 func (i *nwIface) MacAddress() net.HardwareAddr {
@@ -215,8 +215,8 @@ func (n *networkNamespace) findDst(srcName string, isBridge bool) string {
 	defer n.Unlock()
 
 	for _, i := range n.iFaces {
-		// The master should match the srcname of the interface and the
-		// master interface should be of type bridge, if searching for a bridge type
+		// The main should match the srcname of the interface and the
+		// main interface should be of type bridge, if searching for a bridge type
 		if i.SrcName() == srcName && (!isBridge || i.Bridge()) {
 			return i.DstName()
 		}
@@ -229,11 +229,11 @@ func (n *networkNamespace) AddInterface(srcName, dstPrefix string, options ...If
 	i := &nwIface{srcName: srcName, dstName: dstPrefix, ns: n}
 	i.processInterfaceOptions(options...)
 
-	if i.master != "" {
-		i.dstMaster = n.findDst(i.master, true)
-		if i.dstMaster == "" {
-			return fmt.Errorf("could not find an appropriate master %q for %q",
-				i.master, i.srcName)
+	if i.main != "" {
+		i.dstMain = n.findDst(i.main, true)
+		if i.dstMain == "" {
+			return fmt.Errorf("could not find an appropriate main %q for %q",
+				i.main, i.srcName)
 		}
 	}
 
@@ -335,7 +335,7 @@ func configureInterface(nlh *netlink.Handle, iface netlink.Link, i *nwIface) err
 		{setInterfaceMAC, fmt.Sprintf("error setting interface %q MAC to %q", ifaceName, i.MacAddress())},
 		{setInterfaceIP, fmt.Sprintf("error setting interface %q IP to %v", ifaceName, i.Address())},
 		{setInterfaceIPv6, fmt.Sprintf("error setting interface %q IPv6 to %v", ifaceName, i.AddressIPv6())},
-		{setInterfaceMaster, fmt.Sprintf("error setting interface %q master to %q", ifaceName, i.DstMaster())},
+		{setInterfaceMain, fmt.Sprintf("error setting interface %q main to %q", ifaceName, i.DstMain())},
 		{setInterfaceLinkLocalIPs, fmt.Sprintf("error setting interface %q link local IPs to %v", ifaceName, i.LinkLocalAddresses())},
 		{setInterfaceIPAliases, fmt.Sprintf("error setting interface %q IP Aliases to %v", ifaceName, i.IPAliases())},
 	}
@@ -348,13 +348,13 @@ func configureInterface(nlh *netlink.Handle, iface netlink.Link, i *nwIface) err
 	return nil
 }
 
-func setInterfaceMaster(nlh *netlink.Handle, iface netlink.Link, i *nwIface) error {
-	if i.DstMaster() == "" {
+func setInterfaceMain(nlh *netlink.Handle, iface netlink.Link, i *nwIface) error {
+	if i.DstMain() == "" {
 		return nil
 	}
 
-	return nlh.LinkSetMaster(iface, &netlink.Bridge{
-		LinkAttrs: netlink.LinkAttrs{Name: i.DstMaster()}})
+	return nlh.LinkSetMain(iface, &netlink.Bridge{
+		LinkAttrs: netlink.LinkAttrs{Name: i.DstMain()}})
 }
 
 func setInterfaceMAC(nlh *netlink.Handle, iface netlink.Link, i *nwIface) error {

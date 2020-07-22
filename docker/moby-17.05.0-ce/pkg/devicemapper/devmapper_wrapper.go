@@ -23,7 +23,7 @@
 	 vgremove docker
 	 pvremove /dev/sdm1
 	 rm -rf /var/lib/docker/*  删除后需要加上这个
-	 如果root@ob-slave-465.gz01:~/yyz/docker/bundles/17.05.0-ce/binary-daemon$ lvremove docker-yyz
+	 如果root@ob-subordinate-465.gz01:~/yyz/docker/bundles/17.05.0-ce/binary-daemon$ lvremove docker-yyz
   	Logical volume docker-yyz/thinpool is used by another device.
   	处理方法：dmsetup ls； dmsetup remove docker-xxx这个docker设备，参考https://forum.proxmox.com/threads/lvremove-logical-volume-is-used-by-another-device.33768/
 

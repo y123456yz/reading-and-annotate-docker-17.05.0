@@ -319,7 +319,7 @@ type CriuOpts struct {
 	InheritFd         []*InheritFd        `protobuf:"bytes,27,rep,name=inherit_fd" json:"inherit_fd,omitempty"`
 	AutoExtMnt        *bool               `protobuf:"varint,28,opt,name=auto_ext_mnt" json:"auto_ext_mnt,omitempty"`
 	ExtSharing        *bool               `protobuf:"varint,29,opt,name=ext_sharing" json:"ext_sharing,omitempty"`
-	ExtMasters        *bool               `protobuf:"varint,30,opt,name=ext_masters" json:"ext_masters,omitempty"`
+	ExtMains        *bool               `protobuf:"varint,30,opt,name=ext_mains" json:"ext_mains,omitempty"`
 	SkipMnt           []string            `protobuf:"bytes,31,rep,name=skip_mnt" json:"skip_mnt,omitempty"`
 	EnableFs          []string            `protobuf:"bytes,32,rep,name=enable_fs" json:"enable_fs,omitempty"`
 	UnixSkIno         []*UnixSk           `protobuf:"bytes,33,rep,name=unix_sk_ino" json:"unix_sk_ino,omitempty"`
@@ -543,9 +543,9 @@ func (m *CriuOpts) GetExtSharing() bool {
 	return false
 }
 
-func (m *CriuOpts) GetExtMasters() bool {
-	if m != nil && m.ExtMasters != nil {
-		return *m.ExtMasters
+func (m *CriuOpts) GetExtMains() bool {
+	if m != nil && m.ExtMains != nil {
+		return *m.ExtMains
 	}
 	return false
 }

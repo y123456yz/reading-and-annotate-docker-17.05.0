@@ -36,8 +36,8 @@ var flags = map[string]struct {
 	"rprivate":      {false, RPRIVATE},
 	"shared":        {false, SHARED},
 	"rshared":       {false, RSHARED},
-	"slave":         {false, SLAVE},
-	"rslave":        {false, RSLAVE},
+	"subordinate":         {false, SLAVE},
+	"rsubordinate":        {false, RSLAVE},
 	"relatime":      {false, RELATIME},
 	"norelatime":    {true, RELATIME},
 	"strictatime":   {false, STRICTATIME},
@@ -64,8 +64,8 @@ var propagationFlags = map[string]bool{
 	"rprivate":    true,
 	"shared":      true,
 	"rshared":     true,
-	"slave":       true,
-	"rslave":      true,
+	"subordinate":       true,
+	"rsubordinate":      true,
 }
 
 // MergeTmpfsOptions merge mount options to make sure there is no duplicate.

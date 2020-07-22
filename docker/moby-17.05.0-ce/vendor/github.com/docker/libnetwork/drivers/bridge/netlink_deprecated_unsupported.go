@@ -7,9 +7,9 @@ import (
 	"net"
 )
 
-// Add a slave to a bridge device.  This is more backward-compatible than
-// netlink.NetworkSetMaster and works on RHEL 6.
-func ioctlAddToBridge(iface, master *net.Interface) error {
+// Add a subordinate to a bridge device.  This is more backward-compatible than
+// netlink.NetworkSetMain and works on RHEL 6.
+func ioctlAddToBridge(iface, main *net.Interface) error {
 	return errors.New("not implemented")
 }
 

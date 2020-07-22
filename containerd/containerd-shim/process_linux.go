@@ -40,20 +40,20 @@ func (p *process) openIO() error {
 	p.stdinCloser = stdinCloser
 
 	if p.state.Terminal {
-		master, console, err := newConsole(uid, gid)
+		main, console, err := newConsole(uid, gid)
 		if err != nil {
 			return err
 		}
-		p.console = master
+		p.console = main
 		p.consolePath = console
 		stdin, err := fifo.OpenFifo(ctx, p.state.Stdin, syscall.O_RDONLY, 0)
 		if err != nil {
 			return err
 		}
 
-		//io.Copy将stdin/stdout与master相连
+		//io.Copy将stdin/stdout与main相连
 		//p.state.Stdout和p.state.Stderr（方式为可读写）分别与i.Stdou和i.Stderr相连。接着打开p.state.Stdin为只读模式，再将i.Stdin和p.state.Stdin相连
-		go io.Copy(master, stdin)
+		go io.Copy(main, stdin)
 		stdoutw, err := fifo.OpenFifo(ctx, p.state.Stdout, syscall.O_WRONLY, 0)
 		if err != nil {
 			return err
@@ -64,8 +64,8 @@ func (p *process) openIO() error {
 		}
 		p.Add(1)
 		go func() {
-			io.Copy(stdoutw, master)
-			master.Close()
+			io.Copy(stdoutw, main)
+			main.Close()
 			stdoutr.Close()
 			stdoutw.Close()
 			p.Done()

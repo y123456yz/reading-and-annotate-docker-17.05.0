@@ -31,7 +31,7 @@ following will output a list of processes running in the container:
 	Flags: []cli.Flag{
 		cli.StringFlag{
 			Name:  "console",
-			Usage: "specify the pty slave path for use with the container",
+			Usage: "specify the pty subordinate path for use with the container",
 		},
 		cli.StringFlag{
 			Name:  "cwd",

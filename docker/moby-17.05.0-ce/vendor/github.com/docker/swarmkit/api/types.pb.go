@@ -418,8 +418,8 @@ const (
 	MountPropagationPrivate  Mount_BindOptions_MountPropagation = 1
 	MountPropagationRShared  Mount_BindOptions_MountPropagation = 2
 	MountPropagationShared   Mount_BindOptions_MountPropagation = 3
-	MountPropagationRSlave   Mount_BindOptions_MountPropagation = 4
-	MountPropagationSlave    Mount_BindOptions_MountPropagation = 5
+	MountPropagationRSubordinate   Mount_BindOptions_MountPropagation = 4
+	MountPropagationSubordinate    Mount_BindOptions_MountPropagation = 5
 )
 
 var Mount_BindOptions_MountPropagation_name = map[int32]string{
@@ -1229,7 +1229,7 @@ type IPAMConfig struct {
 	Range string `protobuf:"bytes,3,opt,name=range,proto3" json:"range,omitempty"`
 	// Gateway address within the subnet.
 	Gateway string `protobuf:"bytes,4,opt,name=gateway,proto3" json:"gateway,omitempty"`
-	// Reserved is a list of address from the master pool that should *not* be
+	// Reserved is a list of address from the main pool that should *not* be
 	// allocated. These addresses may have already been allocated or may be
 	// reserved for another allocation manager.
 	Reserved map[string]string `protobuf:"bytes,5,rep,name=reserved" json:"reserved,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`

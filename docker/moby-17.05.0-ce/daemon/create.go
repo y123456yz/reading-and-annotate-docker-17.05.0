@@ -41,7 +41,7 @@ func (daemon *Daemon) ContainerCreate(params types.ContainerCreateConfig) (conta
 }
 
 /*
-root@fd-mesos-master04.gz01:/var/lib/docker/containers/9be24974a6a7cf064f4a238f70260b13b15359248b3267602bfc49e00f13d670$ ls
+root@fd-mesos-main04.gz01:/var/lib/docker/containers/9be24974a6a7cf064f4a238f70260b13b15359248b3267602bfc49e00f13d670$ ls
 9be24974a6a7cf064f4a238f70260b13b15359248b3267602bfc49e00f13d670-json.log  checkpoints  config.v2.json  hostconfig.json  hostname  hosts  resolv.conf  resolv.conf.hash  shm
 
 这些配置文件包含了9be24974a6a7cf064f4a238f70260b13b15359248b3267602bfc49e00f13d670这个容器的所有元数据

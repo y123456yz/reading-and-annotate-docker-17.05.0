@@ -30,7 +30,7 @@ func TestConvertVolumeToMountConflictingOptionsBind(t *testing.T) {
 		Source: "foo",
 		Target: "/target",
 		Bind: &composetypes.ServiceVolumeBind{
-			Propagation: "slave",
+			Propagation: "subordinate",
 		},
 	}
 	_, err := convertVolumeToMount(config, volumes{}, namespace)

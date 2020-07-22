@@ -32,7 +32,7 @@ command(s) that get executed on start, edit the args parameter of the spec. See
 		cli.StringFlag{
 			Name:  "console",
 			Value: "",
-			Usage: "specify the pty slave path for use with the container",
+			Usage: "specify the pty subordinate path for use with the container",
 		},
 		cli.StringFlag{
 			Name:  "pid-file",

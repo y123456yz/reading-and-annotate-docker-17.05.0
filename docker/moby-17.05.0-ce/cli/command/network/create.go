@@ -67,7 +67,7 @@ func newCreateCommand(dockerCli *command.DockerCli) *cobra.Command {
 	flags.StringVar(&opts.ipamDriver, "ipam-driver", "default", "IP Address Management Driver")
 	flags.StringSliceVar(&opts.ipamSubnet, "subnet", []string{}, "Subnet in CIDR format that represents a network segment")
 	flags.StringSliceVar(&opts.ipamIPRange, "ip-range", []string{}, "Allocate container ip from a sub-range")
-	flags.StringSliceVar(&opts.ipamGateway, "gateway", []string{}, "IPv4 or IPv6 Gateway for the master subnet")
+	flags.StringSliceVar(&opts.ipamGateway, "gateway", []string{}, "IPv4 or IPv6 Gateway for the main subnet")
 
 	flags.Var(&opts.ipamAux, "aux-address", "Auxiliary IPv4 or IPv6 addresses used by Network driver")
 	flags.Var(&opts.ipamOpt, "ipam-opt", "Set IPAM driver specific options")
